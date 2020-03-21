@@ -20,10 +20,10 @@ namespace JobsOfOpportunity
 
                 foreach (var thing in pawn.Map.listerHaulables.ThingsPotentiallyNeedingHauling()) {
                     var pawnToThing = pawn.Position.DistanceTo(thing.Position);
-                    if (pawnToThing > 30f) continue;
-                    if (pawnToThing > pawnToJob * 0.5f) continue;
+                    if (maxStartToThing.Value > 0 && pawnToThing > maxStartToThing.Value) continue;
+                    if (maxStartToThingPctOrigTrip.Value > 0 && pawnToThing > pawnToJob * maxStartToThingPctOrigTrip.Value) continue;
                     var thingToJob = thing.Position.DistanceTo(jobCell);
-                    if (pawnToThing + thingToJob > pawnToJob * 1.7f) continue;
+                    if (maxTotalTripPctOrigTrip.Value > 0 && pawnToThing + thingToJob > pawnToJob * maxTotalTripPctOrigTrip.Value) continue;
                     if (pawn.Map.reservationManager.FirstRespectedReserver(thing, pawn) != null) continue;
                     if (thing.IsForbidden(pawn)) continue;
                     if (!HaulAIUtility.PawnCanAutomaticallyHaulFast(pawn, thing, false)) continue;
@@ -32,11 +32,11 @@ namespace JobsOfOpportunity
                     if (!StoreUtility.TryFindBestBetterStoreCellFor(thing, pawn, pawn.Map, currentPriority, pawn.Faction, out var storeCell)) continue;
 
                     var storeToJob = storeCell.DistanceTo(jobCell);
-                    if (storeToJob > 50f) continue;
-                    if (storeToJob > pawnToJob * 0.6f) continue;
+                    if (maxStoreToJob.Value > 0 && storeToJob > maxStoreToJob.Value) continue;
+                    if (maxStoreToJobPctOrigTrip.Value > 0 && storeToJob > pawnToJob * maxStoreToJobPctOrigTrip.Value) continue;
                     var thingToStore = thing.Position.DistanceTo(storeCell);
-                    if (pawnToThing + thingToStore + storeToJob > pawnToJob * 1.7f) continue;
-                    if (pawnToThing + storeToJob > pawnToJob) continue;
+                    if (maxTotalTripPctOrigTrip.Value > 0 && pawnToThing + thingToStore + storeToJob > pawnToJob * maxTotalTripPctOrigTrip.Value) continue;
+                    if (maxNewLegsPctOrigTrip.Value > 0 && pawnToThing + storeToJob > pawnToJob * maxNewLegsPctOrigTrip.Value) continue;
                     if (!pawn.Position.WithinRegions(thing.Position, pawn.Map, 25, TraverseParms.For(pawn))) continue;
                     if (!storeCell.WithinRegions(jobCell, pawn.Map, 25, TraverseParms.For(pawn))) continue;
 

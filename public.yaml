@@ -1,0 +1,26 @@
+﻿---
+name: Jobs of Opportunity
+packageId: CodeOptimist.JobsOfOpportunity
+supportedVersions:
+  - 1.1
+intro: |-
+  Intro.
+header: |+
+  Header.
+  
+features:
+  - settings:
+      - name: showVanillaParameters
+        title: Show core/vanilla parameters…
+      - name: maxNewLegsPctOrigTrip
+        title: Max start-to-thing + storage-to-job % of original trip.
+      - name: maxTotalTripPctOrigTrip
+        title: Max total trip % of original trip.
+      - name: maxStartToThing
+        title: Max start-to-thing.
+      - name: maxStartToThingPctOrigTrip
+        title: Max start-to-thing % of original trip.
+      - name: maxStoreToJob
+        title: Max storage-to-job.
+      - name: maxStoreToJobPctOrigTrip
+        title: Max storage-to-job % of original trip.
