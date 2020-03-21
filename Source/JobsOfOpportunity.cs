@@ -11,6 +11,7 @@ namespace JobsOfOpportunity
     {
         static string modIdentifier;
 
+        static SettingHandle<HaulProximities> haulProximities;
         static SettingHandle<bool> showVanillaParameters;
         static SettingHandle<float> maxStartToThing, maxStartToThingPctOrigTrip, maxStoreToJob, maxStoreToJobPctOrigTrip, maxTotalTripPctOrigTrip, maxNewLegsPctOrigTrip;
 
@@ -24,6 +25,8 @@ namespace JobsOfOpportunity
                 settingHandle.VisibilityPredicate = shouldDisplay;
                 return settingHandle;
             }
+
+            haulProximities = GetSettingHandle("haulProximities", HaulProximities.PreferWithin, default, default, $"{modIdentifier}_SettingTitle_haulProximities_");
 
             showVanillaParameters = GetSettingHandle("showVanillaParameters", false);
             var ShowVanillaParameters = new SettingHandle.ShouldDisplay(() => showVanillaParameters.Value);
@@ -59,5 +62,7 @@ namespace JobsOfOpportunity
                 newCodes.Add(codes[i + offset]);
             }
         }
+
+        enum HaulProximities { RequireWithin, PreferWithin, Ignore }
     }
 }

@@ -10,6 +10,15 @@ header: |+
   
 features:
   - settings:
+      - name: haulProximities
+        title: Start-to-thing & storage-to-job settings (below).
+      - name: haulProximities_RequireWithin
+        title: Enforced
+      - name: haulProximities_PreferWithin
+        title: Preferred
+      - name: haulProximities_Ignore
+        title: Ignored
+
       - name: showVanillaParameters
         title: Show core/vanilla parameters…
       - name: maxNewLegsPctOrigTrip
