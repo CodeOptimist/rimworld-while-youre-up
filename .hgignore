@@ -1,0 +1,9 @@
+Source/obj/
+Source/.vs/
+Assemblies/
+AssemblyInfo.cs
+.suo
+.user
+About.xml
+UpdateFeatures.xml
+Settings.xml
