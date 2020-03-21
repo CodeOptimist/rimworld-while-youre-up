@@ -10,6 +10,9 @@ header: |+
   
 features:
   - settings:
+      - name: haulToInventory
+        title: Haul to inventory (Pick Up And Haul mod)
+
       - name: haulProximities
         title: Start-to-thing & storage-to-job settings (below).
       - name: haulProximities_RequireWithin

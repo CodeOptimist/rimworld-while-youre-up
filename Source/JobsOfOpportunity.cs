@@ -1,8 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 using HarmonyLib;
 using HugsLib;
 using HugsLib.Settings;
+using RimWorld;
 using Verse;
 
 namespace JobsOfOpportunity
@@ -11,11 +14,18 @@ namespace JobsOfOpportunity
     {
         static string modIdentifier;
 
+        static SettingHandle<bool> showVanillaParameters, haulToInventory;
         static SettingHandle<HaulProximities> haulProximities;
-        static SettingHandle<bool> showVanillaParameters;
         static SettingHandle<float> maxStartToThing, maxStartToThingPctOrigTrip, maxStoreToJob, maxStoreToJobPctOrigTrip, maxTotalTripPctOrigTrip, maxNewLegsPctOrigTrip;
+        static readonly SettingHandle.ShouldDisplay HavePuah = ModLister.HasActiveModWithName("Pick Up And Haul") ? new SettingHandle.ShouldDisplay(() => true) : () => false;
+
+        // Pick Up And Haul
+        static readonly List<Assembly> puahAssemblies = LoadedModManager.RunningMods.SingleOrDefault(x => x.PackageIdPlayerFacing == "Mehni.PickUpAndHaul")?.assemblies.loadedAssemblies;
+        static readonly Type PuahWorkGiver_HaulToInventory_Type = puahAssemblies?.Select(x => x.GetType("PickUpAndHaul.WorkGiver_HaulToInventory")).SingleOrDefault(x => x != null);
+        static WorkGiver puahWorkGiver;
 
         public override void DefsLoaded() {
+            puahWorkGiver = DefDatabase<WorkGiverDef>.GetNamedSilentFail("HaulToInventory")?.Worker;
             modIdentifier = ModContentPack.PackageIdPlayerFacing;
 
             SettingHandle<T> GetSettingHandle<T>(string settingName, T defaultValue = default, SettingHandle.ValueIsValid validator = default,
@@ -26,6 +36,7 @@ namespace JobsOfOpportunity
                 return settingHandle;
             }
 
+            haulToInventory = GetSettingHandle("haulToInventory", true, default, HavePuah);
             haulProximities = GetSettingHandle("haulProximities", HaulProximities.PreferWithin, default, default, $"{modIdentifier}_SettingTitle_haulProximities_");
 
             showVanillaParameters = GetSettingHandle("showVanillaParameters", false);

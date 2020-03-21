@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using System.Reflection.Emit;
 using HarmonyLib;
 using RimWorld;
@@ -80,7 +81,13 @@ namespace JobsOfOpportunity
                         pawn.Map.debugDrawer.FlashLine(storeCell, jobCell, 600, SimpleColor.Blue);
                     }
 
-                    return HaulAIUtility.HaulToCellStorageJob(pawn, thing, storeCell, false);
+                    Job puahJob = null;
+                    if (haulToInventory.Value && puahWorkGiver != null) {
+                        if (AccessTools.Method(PuahWorkGiver_HaulToInventory_Type, "JobOnThing") is MethodInfo method)
+                            puahJob = (Job) method.Invoke(puahWorkGiver, new object[] {pawn, thing, false});
+                    }
+
+                    return puahJob ?? HaulAIUtility.HaulToCellStorageJob(pawn, thing, storeCell, false);
                 }
 
                 return null;
