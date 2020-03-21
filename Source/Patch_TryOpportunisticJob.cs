@@ -15,33 +15,39 @@ namespace JobsOfOpportunity
         {
             static Job TryOpportunisticJob(Pawn_JobTracker __instance, Job job) {
                 var pawn = Traverse.Create(__instance).Field("pawn").GetValue<Pawn>();
-                var cell = job.targetA.Cell;
-                var num = pawn.Position.DistanceTo(cell);
+                var jobCell = job.targetA.Cell;
+                var pawnToJob = pawn.Position.DistanceTo(jobCell);
 
-                var list = pawn.Map.listerHaulables.ThingsPotentiallyNeedingHauling();
-                for (var i = 0; i < list.Count; i++) {
-                    var thing = list[i];
-                    var num2 = pawn.Position.DistanceTo(thing.Position);
-                    if (num2 <= 30f && num2 <= num * 0.5f && num2 + thing.Position.DistanceTo(cell) <= num * 1.7f
-                        && pawn.Map.reservationManager.FirstRespectedReserver(thing, pawn) == null && !thing.IsForbidden(pawn)
-                        && HaulAIUtility.PawnCanAutomaticallyHaulFast(pawn, thing, false)) {
-                        var currentPriority = StoreUtility.CurrentStoragePriorityOf(thing);
-                        var invalid = IntVec3.Invalid;
-                        if (StoreUtility.TryFindBestBetterStoreCellFor(thing, pawn, pawn.Map, currentPriority, pawn.Faction, out invalid)) {
-                            var num3 = invalid.DistanceTo(cell);
-                            if (num3 <= 50f && num3 <= num * 0.6f && num2 + thing.Position.DistanceTo(invalid) + num3 <= num * 1.7f && num2 + num3 <= num
-                                && pawn.Position.WithinRegions(thing.Position, pawn.Map, 25, TraverseParms.For(pawn)) && invalid.WithinRegions(cell, pawn.Map, 25, TraverseParms.For(pawn))) {
-                                if (DebugViewSettings.drawOpportunisticJobs) {
-                                    Log.Message("Opportunistic job spawned");
-                                    pawn.Map.debugDrawer.FlashLine(pawn.Position, thing.Position, 600, SimpleColor.Red);
-                                    pawn.Map.debugDrawer.FlashLine(thing.Position, invalid, 600, SimpleColor.Green);
-                                    pawn.Map.debugDrawer.FlashLine(invalid, cell, 600, SimpleColor.Blue);
-                                }
+                foreach (var thing in pawn.Map.listerHaulables.ThingsPotentiallyNeedingHauling()) {
+                    var pawnToThing = pawn.Position.DistanceTo(thing.Position);
+                    if (pawnToThing > 30f) continue;
+                    if (pawnToThing > pawnToJob * 0.5f) continue;
+                    var thingToJob = thing.Position.DistanceTo(jobCell);
+                    if (pawnToThing + thingToJob > pawnToJob * 1.7f) continue;
+                    if (pawn.Map.reservationManager.FirstRespectedReserver(thing, pawn) != null) continue;
+                    if (thing.IsForbidden(pawn)) continue;
+                    if (!HaulAIUtility.PawnCanAutomaticallyHaulFast(pawn, thing, false)) continue;
 
-                                return HaulAIUtility.HaulToCellStorageJob(pawn, thing, invalid, false);
-                            }
-                        }
+                    var currentPriority = StoreUtility.CurrentStoragePriorityOf(thing);
+                    if (!StoreUtility.TryFindBestBetterStoreCellFor(thing, pawn, pawn.Map, currentPriority, pawn.Faction, out var storeCell)) continue;
+
+                    var storeToJob = storeCell.DistanceTo(jobCell);
+                    if (storeToJob > 50f) continue;
+                    if (storeToJob > pawnToJob * 0.6f) continue;
+                    var thingToStore = thing.Position.DistanceTo(storeCell);
+                    if (pawnToThing + thingToStore + storeToJob > pawnToJob * 1.7f) continue;
+                    if (pawnToThing + storeToJob > pawnToJob) continue;
+                    if (!pawn.Position.WithinRegions(thing.Position, pawn.Map, 25, TraverseParms.For(pawn))) continue;
+                    if (!storeCell.WithinRegions(jobCell, pawn.Map, 25, TraverseParms.For(pawn))) continue;
+
+                    if (DebugViewSettings.drawOpportunisticJobs) {
+                        Log.Message("Opportunistic job spawned");
+                        pawn.Map.debugDrawer.FlashLine(pawn.Position, thing.Position, 600, SimpleColor.Red);
+                        pawn.Map.debugDrawer.FlashLine(thing.Position, storeCell, 600, SimpleColor.Green);
+                        pawn.Map.debugDrawer.FlashLine(storeCell, jobCell, 600, SimpleColor.Blue);
                     }
+
+                    return HaulAIUtility.HaulToCellStorageJob(pawn, thing, storeCell, false);
                 }
 
                 return null;
