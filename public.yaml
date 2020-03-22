@@ -9,6 +9,16 @@ header: |+
   Header.
   
 features:
+  - title: Optimize hauling to construction
+    at: 1.0.0
+    steam: |-
+      If you've ever seen your builder cross the map to retrieve a [i]single[/i] component.
+    desc: |-
+      If [i]and only if[/i] hauling a resource to storage would bring it closer to a blueprint, do that first.
+      Extremely useful with [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1279012058][i]Mehni's[/i] Pick Up And Haul[/url].
+    settings:
+      - name: haulBeforeSupply
+
   - settings:
       - name: haulToInventory
         title: Haul to inventory (Pick Up And Haul mod)
