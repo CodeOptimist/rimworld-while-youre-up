@@ -15,7 +15,7 @@ namespace JobsOfOpportunity
         static string modIdentifier;
 
         static SettingHandle<bool> showVanillaParameters, haulToInventory, haulBeforeSupply;
-        static SettingHandle<HaulProximities> haulProximities;
+        static SettingHandle<Hauling.HaulProximities> haulProximities;
         static SettingHandle<float> maxStartToThing, maxStartToThingPctOrigTrip, maxStoreToJob, maxStoreToJobPctOrigTrip, maxTotalTripPctOrigTrip, maxNewLegsPctOrigTrip;
         static readonly SettingHandle.ShouldDisplay HavePuah = ModLister.HasActiveModWithName("Pick Up And Haul") ? new SettingHandle.ShouldDisplay(() => true) : () => false;
 
@@ -38,7 +38,7 @@ namespace JobsOfOpportunity
 
             haulToInventory = GetSettingHandle("haulToInventory", true, default, HavePuah);
             haulBeforeSupply = GetSettingHandle("haulBeforeSupply", true, default, HavePuah);
-            haulProximities = GetSettingHandle("haulProximities", HaulProximities.PreferWithin, default, default, $"{modIdentifier}_SettingTitle_haulProximities_");
+            haulProximities = GetSettingHandle("haulProximities", Hauling.HaulProximities.PreferWithin, default, default, $"{modIdentifier}_SettingTitle_haulProximities_");
 
             showVanillaParameters = GetSettingHandle("showVanillaParameters", false);
             var ShowVanillaParameters = new SettingHandle.ShouldDisplay(() => showVanillaParameters.Value);
@@ -74,7 +74,5 @@ namespace JobsOfOpportunity
                 newCodes.Add(codes[i + offset]);
             }
         }
-
-        enum HaulProximities { RequireWithin, PreferWithin, Ignore }
     }
 }

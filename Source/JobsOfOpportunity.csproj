@@ -35,6 +35,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Patch_ResourceDeliverJobFor.cs" />
+    <Compile Include="Hauling.cs" />
     <Compile Include="Patch_TryOpportunisticJob.cs" />
     <Compile Include="JobsOfOpportunity.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
