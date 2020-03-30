@@ -34,6 +34,14 @@ features:
     settings:
       - name: haulToInventory
 
+  - title: Skip when bleeding
+    at: 1.1.0
+    steam: (1.0 missed this feature when integrating the original [i]While You're Up[/i])
+    desc: |-
+      Don't take jobs of opportunity when bleeding.
+    settings:
+      - name: skipIfBleeding
+
   - title: More hauling opportunities
     desc: |-
       By default prefers the proximity requirements set by vanilla, but loosens them to find valid haulables. Adjustable for optimal performance.

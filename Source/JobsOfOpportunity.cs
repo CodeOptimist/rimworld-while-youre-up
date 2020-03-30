@@ -14,7 +14,7 @@ namespace JobsOfOpportunity
     {
         static string modIdentifier;
 
-        static SettingHandle<bool> showVanillaParameters, haulToInventory, haulBeforeSupply;
+        static SettingHandle<bool> showVanillaParameters, haulToInventory, haulBeforeSupply, skipIfBleeding;
         static SettingHandle<Hauling.HaulProximities> haulProximities;
         static SettingHandle<float> maxStartToThing, maxStartToThingPctOrigTrip, maxStoreToJob, maxStoreToJobPctOrigTrip, maxTotalTripPctOrigTrip, maxNewLegsPctOrigTrip;
         static readonly SettingHandle.ShouldDisplay HavePuah = ModLister.HasActiveModWithName("Pick Up And Haul") ? new SettingHandle.ShouldDisplay(() => true) : () => false;
@@ -38,6 +38,8 @@ namespace JobsOfOpportunity
 
             haulToInventory = GetSettingHandle("haulToInventory", true, default, HavePuah);
             haulBeforeSupply = GetSettingHandle("haulBeforeSupply", true, default, HavePuah);
+            skipIfBleeding = GetSettingHandle("skipIfBleeding", true);
+
             haulProximities = GetSettingHandle("haulProximities", Hauling.HaulProximities.BothThenEitherThenIgnored, default, default, $"{modIdentifier}_SettingTitle_haulProximities_");
 
             showVanillaParameters = GetSettingHandle("showVanillaParameters", false);

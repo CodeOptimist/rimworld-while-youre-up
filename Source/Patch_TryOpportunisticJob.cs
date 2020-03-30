@@ -17,6 +17,8 @@ namespace JobsOfOpportunity
                 Debug.WriteLine($"Opportunity checking {job}");
                 var pawn = Traverse.Create(__instance).Field("pawn").GetValue<Pawn>();
                 var jobCell = job.targetA.Cell;
+
+                if (skipIfBleeding.Value && pawn.health.hediffSet.BleedRateTotal > 0.001f) return null;
                 return Hauling.TryHaul(pawn, jobCell); // ?? Cleaning.TryClean(pawn, jobCell);
             }
 
