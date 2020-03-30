@@ -63,6 +63,12 @@ features:
     settings:
       - name: haulBeforeSupply
 
+  - at: 1.1.0
+    desc: |-
+      [b]Updated [i]Optimize hauling to construction[/i][/b]
+      Now works as expected: instead of denying the inefficient supply job so [i]some[/i] hauler [i]eventually[/i] hauls, the builder themselves will.
+      This feature appears if you've installed [i]Pick Up And Haul[/i].
+
   - settings:
       - name: haulProximities_Ignored
         title: Ignored

@@ -1,8 +1,13 @@
-﻿using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Reflection;
+using System.Reflection.Emit;
 using HarmonyLib;
 using RimWorld;
 using Verse;
+using Verse.AI;
 
 namespace JobsOfOpportunity
 {
@@ -10,47 +15,82 @@ namespace JobsOfOpportunity
     {
         static class Patch_ResourceDeliverJobFor
         {
-            static IConstructible constructible;
-
             [HarmonyPatch(typeof(WorkGiver_ConstructDeliverResources), "ResourceDeliverJobFor")]
             static class WorkGiver_ConstructDeliverResources_ResourceDeliverJobFor_Patch
             {
-                [HarmonyPrefix]
-                [SuppressMessage("ReSharper", "UnusedParameter.Local")]
-                static bool GetConstructible(Pawn pawn, IConstructible c) {
-                    constructible = c;
-                    return true;
+                static List<CodeInstruction> codes, newCodes;
+                static int i;
+
+                static void InsertCode(int offset, Func<bool> when, Func<List<CodeInstruction>> what, bool bringLabels = false) {
+                    JobsOfOpportunity.InsertCode(ref i, ref codes, ref newCodes, offset, when, what, bringLabels);
                 }
-            }
 
-            [HarmonyPatch(typeof(WorkGiver_ConstructDeliverResources), "ResourceValidator")]
-            static class WorkGiver_ConstructDeliverResources_ResourceValidator_Patch
-            {
-                [HarmonyPostfix]
-                [SuppressMessage("ReSharper", "UnusedParameter.Local")]
-                static void DenySupplyingDistantResources(ref bool __result, Pawn pawn, ThingDefCountClass need, Thing th) {
-                    if (!__result) return;
-                    if (!HavePuah()) return;
-                    if (!haulBeforeSupply.Value) return;
-                    if (!(Patch_ResourceDeliverJobFor.constructible is Thing constructible)) return;
-                    if (th.IsInValidStorage()) return;
-                    if (!StoreUtility.TryFindBestBetterStoreCellFor(th, pawn, pawn.Map, StoragePriority.Unstored, pawn.Faction, out var storeCell, false)) return;
+                static Job _HaulBeforeSupply(Pawn pawn, IConstructible c, Thing th) {
+                    if (!HavePuah()) return null;
+                    if (!haulToInventory.Value) return null;
+                    if (!haulBeforeSupply.Value) return null;
+                    if (th.IsInValidStorage()) return null;
+                    if (!StoreUtility.TryFindBestBetterStoreCellFor(th, pawn, pawn.Map, StoragePriority.Unstored, pawn.Faction, out var storeCell, false)) return null;
 
+                    var constructible = (Thing) c;
                     var supplyFromHereDist = th.Position.DistanceTo(constructible.Position);
                     var supplyFromStoreDist = storeCell.DistanceTo(constructible.Position);
-                    Debug.WriteLine($"Supply from here: {supplyFromStoreDist}; supply from store: {supplyFromStoreDist}");
-
-                    // if it's closer to our constructible once stored, let's exclude it from consideration so that a
-                    // Haul (rather than Supply) job will retrieve it *and* any adjacent resources via Mehni's "Pick Up And Haul"
-                    // https://steamcommunity.com/sharedfiles/filedetails/?id=1279012058
-
-                    // and with opportunistic hauling,  if our pawn is sufficiently close we'll end up grabbing this *anyway*
-                    // simply on our WAY to the stockpile we'd now be supplying from (provided we're headed that way, e.g. it has resources)
+                    Debug.WriteLine($"Supply from here: {supplyFromHereDist}; supply from store: {supplyFromStoreDist}");
 
                     if (supplyFromStoreDist < supplyFromHereDist) {
-                        __result = false;
-                        Debug.WriteLine($"'{pawn}' denied supply job for '{th.Label}' because '{storeCell.GetSlotGroup(pawn.Map).parent}' is closer.");
+                        Debug.WriteLine($"'{pawn}' replaced supply job with haul job for '{th.Label}' because '{storeCell.GetSlotGroup(pawn.Map).parent}' is closer to '{c}'.");
+
+                        if (puahWorkGiver != null) {
+                            if (AccessTools.Method(PuahWorkGiver_HaulToInventory_Type, "JobOnThing") is MethodInfo method)
+                                return (Job) method.Invoke(puahWorkGiver, new object[] {pawn, th, false});
+                        }
                     }
+
+                    return null;
+                }
+
+                [HarmonyTranspiler]
+                static IEnumerable<CodeInstruction> HaulBeforeSupply(IEnumerable<CodeInstruction> instructions, ILGenerator generator) {
+                    codes = instructions.ToList();
+                    newCodes = new List<CodeInstruction>();
+                    i = 0;
+
+                    // locate patch
+                    var nearbyResourcesIdx = codes.FindIndex(code => code.Calls(AccessTools.Method(typeof(WorkGiver_ConstructDeliverResources), "FindAvailableNearbyResources")));
+                    var foundResIdx = nearbyResourcesIdx == -1 ? -1 : codes.FindLastIndex(nearbyResourcesIdx, code => code.opcode == OpCodes.Brfalse);
+
+                    // just to reuse the same local variable IL that's returned here
+                    var returnJobIdx = foundResIdx == -1 ? -1 : codes.FindIndex(foundResIdx, code => code.opcode == OpCodes.Ret);
+
+                    var resourceFoundLabel = generator.DefineLabel();
+                    InsertCode(
+                        1,
+                        () => i == foundResIdx,
+                        () => new List<CodeInstruction> {
+                            // Pawn and IConstructible
+                            new CodeInstruction(OpCodes.Ldarg_1),
+                            new CodeInstruction(OpCodes.Ldarg_2),
+
+                            // Thing (foundRes)
+                            new CodeInstruction(codes[i - 2]),
+                            new CodeInstruction(codes[i - 1]),
+
+                            new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(WorkGiver_ConstructDeliverResources_ResourceDeliverJobFor_Patch), nameof(_HaulBeforeSupply))),
+                            // return only if non-null
+                            new CodeInstruction(OpCodes.Stloc_S, codes[returnJobIdx - 1].operand),
+                            new CodeInstruction(codes[returnJobIdx - 1]),
+                            new CodeInstruction(OpCodes.Brfalse_S, resourceFoundLabel),
+                            new CodeInstruction(codes[returnJobIdx - 1]),
+                            new CodeInstruction(OpCodes.Ret),
+                        }, true);
+
+                    // where we jump if our call returned null
+                    if (foundResIdx != -1)
+                        codes[foundResIdx + 1].labels.Add(resourceFoundLabel);
+
+                    for (; i < codes.Count; i++)
+                        newCodes.Add(codes[i]);
+                    return newCodes.AsEnumerable();
                 }
             }
         }
