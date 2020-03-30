@@ -1,30 +1,61 @@
 ﻿---
-name: Jobs of Opportunity
+name: Jobs of Opportunity (While You're Up)
 packageId: CodeOptimist.JobsOfOpportunity
 supportedVersions:
   - 1.1
-intro: |-
-  Intro.
+incompatibleWith:
+  - hoodie.whileyoureup
+  - kevlou127.WhileHYouOreHUpHQ1V0S
+intro: Vanilla's opportunistic hauling, only better. Although patched for compatibility, [i]While You're Up[/i] has not changed since 1.0 integrated it. This mod is a direct replacement and significant improvement. Compatible with existing saves. Any load order.
 header: |+
-  Header.
+  
+  
+  [h1]Jobs Of Opportunity[/h1]
+  A spiritual successor to [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1544626521][i]kevlou's[/i] While You're Up[/url], which 1.0 integrated. This mod exposes vanilla's opportunistic hauling settings and improves upon them.
+
+  As a performance optimization, vanilla requires a haulable be near your [b]start[/b] position, and its stockpile near your job. Too far and it won't be hauled, [i]even if it's directly in your path[/i]. We can do better.
+  
+footer: |+
+
+
+  [h1]Background[/h1]
+  I began with the intention to fork While You're Up, until I saw 1.0 had [i]fully[/i] integrated and improved it. Since it appears discontinued, and this in its spirit, I'm hoping to get away with carrying on the name <3.
+  
+  This mod's (now exposed) settings show how vanilla does opportunistic hauling. For those curious, While You're Up worked a little different:
+  [i]Max total trip % of original trip[/i] of 1.5 (vanilla is 1.7).
+  [i]Max start-to-thing % of original trip[/i] of 0.35 with a 2 minimum (vanilla is 0.5).
+  Although tighter than vanilla's, the lack of a storage-to-job check gave his mod extra hauling opportunities even on 1.0, though it triggered on a shorter hardcoded list of jobs.
+  Now that this check is merely [i]preferred[/i], and we have all the new job triggers, we have the best of both!
   
 features:
+  - title: Haul to inventory support
+    at: 1.0.0
+    desc: Works with [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1279012058][i]Mehni's[/i] Pick Up And Haul[/url]!
+    settings:
+      - name: haulToInventory
+
+  - title: More hauling opportunities
+    desc: |-
+      By default prefers the proximity requirements set by vanilla, but loosens them to find valid haulables. Adjustable for optimal performance.
+    at: 1.0.0
+    settings:
+    - name: haulProximities
+      title: Thing near start & storage near job
+      desc: |-
+        For performance reasons we don't calculate and sort all paths. Instead we check for good-enough. Extra loops through the haulables yields more optimal jobs. The stricter we are, the less opportunities.
+        Although computations are cached, extra loops (→) [i]may[/i] lag large colonies (untested).
+    
   - title: Optimize hauling to construction
     at: 1.0.0
     steam: |-
       If you've ever seen your builder cross the map to retrieve a [i]single[/i] component.
     desc: |-
       If [i]and only if[/i] hauling a resource to storage would bring it closer to a blueprint, do that first.
-      Extremely useful with [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1279012058][i]Mehni's[/i] Pick Up And Haul[/url].
+      Haul jobs carry more materials, and with [i]Pick Up And Haul[/i], much more.
     settings:
       - name: haulBeforeSupply
 
   - settings:
-      - name: haulToInventory
-        title: Haul to inventory (Pick Up And Haul mod)
-
-      - name: haulProximities
-        title: Start-to-thing & storage-to-job settings (below).
       - name: haulProximities_Ignored
         title: Ignored
       - name: haulProximities_Either
@@ -40,15 +71,25 @@ features:
 
       - name: showVanillaParameters
         title: Show core/vanilla parameters…
+	
       - name: maxNewLegsPctOrigTrip
-        title: Max start-to-thing + storage-to-job % of original trip.
+        title: Max new legs % of original trip
+        desc: |-
+          Max start-to-thing + storage-to-job % of original trip.
+          This is a vanilla parameter.
       - name: maxTotalTripPctOrigTrip
-        title: Max total trip % of original trip.
+        title: Max total trip % of original trip
+        desc: This is a vanilla parameter.
+	
       - name: maxStartToThing
-        title: Max start-to-thing.
+        title: ¹Max start-to-thing
+        desc: This is a vanilla parameter. Adjust how it's used above.
       - name: maxStartToThingPctOrigTrip
-        title: Max start-to-thing % of original trip.
+        title: ¹Max start-to-thing % of original trip
+        desc: This is a vanilla parameter. Adjust how it's used above.
       - name: maxStoreToJob
-        title: Max storage-to-job.
+        title: ¹Max storage-to-job
+        desc: This is a vanilla parameter. Adjust how it's used above.
       - name: maxStoreToJobPctOrigTrip
-        title: Max storage-to-job % of original trip.
+        title: ¹Max storage-to-job % of original trip
+        desc: This is a vanilla parameter. Adjust how it's used above.
