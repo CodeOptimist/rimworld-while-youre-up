@@ -25,12 +25,18 @@ features:
 
       - name: haulProximities
         title: Start-to-thing & storage-to-job settings (below).
-      - name: haulProximities_RequireWithin
-        title: Enforced
-      - name: haulProximities_PreferWithin
-        title: Preferred
-      - name: haulProximities_Ignore
+      - name: haulProximities_Ignored
         title: Ignored
+      - name: haulProximities_Either
+        title: ¹Either
+      - name: haulProximities_Both
+        title: ¹Both (vanilla)
+      - name: haulProximities_EitherThenIgnored
+        title: ¹Either → Ignored
+      - name: haulProximities_BothThenEither
+        title: ¹Both → Either
+      - name: haulProximities_BothThenEitherThenIgnored
+        title: ¹Both → Either → Ignored (recommended)
 
       - name: showVanillaParameters
         title: Show core/vanilla parameters…
