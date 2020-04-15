@@ -69,19 +69,34 @@ namespace JobsOfOpportunity
                 cachedStoreCell.SetOrAdd(thing, storeCell);
 
                 var storeToJob = storeCell.DistanceTo(jobCell);
-                var atMax2 = maxStoreToJob.Value > 0 && storeToJob > maxStoreToJob.Value;
-                var atMaxPct2 = maxStoreToJobPctOrigTrip.Value > 0 && storeToJob > pawnToJob * maxStoreToJobPctOrigTrip.Value;
-                var storeToJobFail = atMax2 || atMaxPct2;
-                switch (proximityCheck) {
-                    case ProximityCheck.Both when storeToJobFail: return ProximityStage.StoreToJob;
-                    case ProximityCheck.Either when proximityStage == ProximityStage.PawnToThing && storeToJobFail: return ProximityStage.StoreToJob;
+                if (proximityStage < ProximityStage.PawnToThingRegion) {
+                    var atMax2 = maxStoreToJob.Value > 0 && storeToJob > maxStoreToJob.Value;
+                    var atMaxPct2 = maxStoreToJobPctOrigTrip.Value > 0 && storeToJob > pawnToJob * maxStoreToJobPctOrigTrip.Value;
+                    var storeToJobFail = atMax2 || atMaxPct2;
+                    switch (proximityCheck) {
+                        case ProximityCheck.Both when storeToJobFail: return ProximityStage.StoreToJob;
+                        case ProximityCheck.Either when proximityStage == ProximityStage.PawnToThing && storeToJobFail: return ProximityStage.StoreToJob;
+                    }
+
+                    var thingToStore = thing.Position.DistanceTo(storeCell);
+                    if (maxTotalTripPctOrigTrip.Value > 0 && pawnToThing + thingToStore + storeToJob > pawnToJob * maxTotalTripPctOrigTrip.Value) return ProximityStage.Fail;
+                    if (maxNewLegsPctOrigTrip.Value > 0 && pawnToThing + storeToJob > pawnToJob * maxNewLegsPctOrigTrip.Value) return ProximityStage.Fail;
                 }
 
-                var thingToStore = thing.Position.DistanceTo(storeCell);
-                if (maxTotalTripPctOrigTrip.Value > 0 && pawnToThing + thingToStore + storeToJob > pawnToJob * maxTotalTripPctOrigTrip.Value) return ProximityStage.Fail;
-                if (maxNewLegsPctOrigTrip.Value > 0 && pawnToThing + storeToJob > pawnToJob * maxNewLegsPctOrigTrip.Value) return ProximityStage.Fail;
-                if (!pawn.Position.WithinRegions(thing.Position, pawn.Map, 25, TraverseParms.For(pawn))) return ProximityStage.Fail;
-                if (!storeCell.WithinRegions(jobCell, pawn.Map, 25, TraverseParms.For(pawn))) return ProximityStage.Fail;
+                bool PawnToThingRegionFail() {
+                    return maxStartToThingRegionLookCount.Value > 0 && !pawn.Position.WithinRegions(thing.Position, pawn.Map, maxStartToThingRegionLookCount.Value, TraverseParms.For(pawn));
+                }
+
+                bool StoreToJobRegionFail(IntVec3 _storeCell) {
+                    return maxStoreToJobRegionLookCount.Value > 0 && !_storeCell.WithinRegions(jobCell, pawn.Map, maxStoreToJobRegionLookCount.Value, TraverseParms.For(pawn));
+                }
+
+                switch (proximityCheck) {
+                    case ProximityCheck.Both when PawnToThingRegionFail(): return ProximityStage.PawnToThingRegion;
+                    case ProximityCheck.Both when StoreToJobRegionFail(storeCell): return ProximityStage.Fail;
+                    case ProximityCheck.Either when proximityStage == ProximityStage.PawnToThingRegion && StoreToJobRegionFail(storeCell): return ProximityStage.Fail;
+                }
+
                 return ProximityStage.Success;
             }
 
@@ -116,7 +131,7 @@ namespace JobsOfOpportunity
 
             enum ProximityCheck { Both, Either, Ignored }
 
-            enum ProximityStage { Initial, PawnToThing, StoreToJob, Fail, Success }
+            enum ProximityStage { Initial, PawnToThing, StoreToJob, PawnToThingRegion, Fail, Success }
         }
     }
 }

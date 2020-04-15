@@ -69,6 +69,13 @@ features:
     settings:
       - name: haulBeforeSupply
 
+  - at: 1.2.0
+    desc: |-
+      Hauls are substantially improved on the default "recommended" setting. No longer should distant wood cut or metal mined be neglected.
+      
+      (I've integrated the very last vanilla pathing check into this mod's magic.)
+      Setting tooltips updated with detailed descriptions.
+
   - at: 1.1.0
     desc: |-
       [b]Updated [i]Optimize hauling to construction[/i][/b]
@@ -118,9 +125,22 @@ features:
       - name: maxStartToThingPctOrigTrip
         title: ¹Max start-to-haulable % of original trip
         desc: *dist
+      - name: maxStartToThingRegionLookCount
+        title: ¹Max start-to-haulable region look count
+        desc: &region_look_count |-
+          This parameter limits our actual pathing.
+          To understand it, enable [i]Development mode → inspector icon → Visibility → Draw Regions[/i].
+          
+          Exploration begins from the start region spreading out to all neighbors until encountering the destination region. This setting caps the total number explored - even those in the wrong direction.
+          
+          It can't be calculated perfectly from distance, as regions will vary in size and neighbors. (A corridor has only forward and back, so they're explored further.)
+          But in a completely open field, if a pawn must travel the distance of n=3 full-sized 12x12 regions (~36 tiles), the algorithm will explore 2(n^2+n)+1 or 25 regions.
       - name: maxStoreToJob
         title: ¹Max storage-to-job
         desc: *dist
       - name: maxStoreToJobPctOrigTrip
         title: ¹Max storage-to-job % of original trip
         desc: *dist
+      - name: maxStoreToJobRegionLookCount
+        title: ¹Max storage-to-job region look count
+        desc: *region_look_count
