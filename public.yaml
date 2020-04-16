@@ -83,6 +83,14 @@ features:
       This feature appears if you've installed [i]Pick Up And Haul[/i].
 
   - settings:
+      - name: drawOpportunisticJobs
+        title: Draw opportunistic jobs
+        desc: |-
+          Paths are colored red, green, blue.
+          start →ᴿ haulable →ᴳ storage →ᴮ job
+  
+          (This is vanilla's [i]Development mode → inspector icon → Visibility → Draw Opportunistic Jobs)[/i]
+
       - name: haulProximities_Ignored
         title: Ignored
       - name: haulProximities_Either

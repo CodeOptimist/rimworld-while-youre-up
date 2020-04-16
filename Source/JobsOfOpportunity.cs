@@ -7,6 +7,7 @@ using HugsLib;
 using HugsLib.Settings;
 using RimWorld;
 using Verse;
+using Dialog_ModSettings = HugsLib.Settings.Dialog_ModSettings;
 
 namespace JobsOfOpportunity
 {
@@ -14,7 +15,7 @@ namespace JobsOfOpportunity
     {
         static string modIdentifier;
 
-        static SettingHandle<bool> showVanillaParameters, haulToInventory, haulBeforeSupply, skipIfBleeding;
+        static SettingHandle<bool> showVanillaParameters, haulToInventory, haulBeforeSupply, skipIfBleeding, drawOpportunisticJobs;
         static SettingHandle<Hauling.HaulProximities> haulProximities;
         static SettingHandle<float> maxStartToThing, maxStartToThingPctOrigTrip, maxStoreToJob, maxStoreToJobPctOrigTrip, maxTotalTripPctOrigTrip, maxNewLegsPctOrigTrip;
         static SettingHandle<int> maxStartToThingRegionLookCount, maxStoreToJobRegionLookCount;
@@ -42,6 +43,10 @@ namespace JobsOfOpportunity
             skipIfBleeding = GetSettingHandle("skipIfBleeding", true);
 
             haulProximities = GetSettingHandle("haulProximities", Hauling.HaulProximities.BothThenEitherThenIgnored, default, default, $"{modIdentifier}_SettingTitle_haulProximities_");
+
+            drawOpportunisticJobs = GetSettingHandle("drawOpportunisticJobs", DebugViewSettings.drawOpportunisticJobs);
+            drawOpportunisticJobs.Unsaved = true;
+            drawOpportunisticJobs.OnValueChanged += value => DebugViewSettings.drawOpportunisticJobs = value;
 
             showVanillaParameters = GetSettingHandle("showVanillaParameters", false);
             var ShowVanillaParameters = new SettingHandle.ShouldDisplay(() => showVanillaParameters.Value);
@@ -77,6 +82,15 @@ namespace JobsOfOpportunity
                 }
 
                 newCodes.Add(codes[i + offset]);
+            }
+        }
+
+        [HarmonyPatch(typeof(Dialog_ModSettings), "PopulateControlInfo")]
+        static class Dialog_ModSettings_PopulateControlInfo_Patch
+        {
+            [HarmonyPrefix]
+            static void UpdateDynamicSettings() {
+                drawOpportunisticJobs.Value = DebugViewSettings.drawOpportunisticJobs;
             }
         }
     }
