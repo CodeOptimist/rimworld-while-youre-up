@@ -14,29 +14,35 @@ namespace JobsOfOpportunity
         {
             public enum HaulProximities { Ignored, Either, Both, EitherThenIgnored, BothThenEither, BothThenEitherThenIgnored }
 
+            public static readonly Dictionary<Pawn, ForPuah> pawnPuah = new Dictionary<Pawn, ForPuah>();
+
             static readonly Dictionary<Thing, ProximityStage> thingProximityStage = new Dictionary<Thing, ProximityStage>();
-            static readonly Dictionary<Thing, IntVec3> cachedStoreCell = new Dictionary<Thing, IntVec3>();
+            public static readonly Dictionary<Thing, IntVec3> cachedStoreCell = new Dictionary<Thing, IntVec3>();
 
             public static Job TryHaul(Pawn pawn, IntVec3 jobCell) {
+                Job _TryHaul() {
+                    switch (haulProximities.Value) {
+                        case HaulProximities.Ignored:
+                            return TryHaulStage(pawn, jobCell, ProximityCheck.Ignored);
+                        case HaulProximities.Either:
+                            return TryHaulStage(pawn, jobCell, ProximityCheck.Either);
+                        case HaulProximities.Both:
+                            return TryHaulStage(pawn, jobCell, ProximityCheck.Both);
+                        case HaulProximities.EitherThenIgnored:
+                            return TryHaulStage(pawn, jobCell, ProximityCheck.Either) ?? TryHaulStage(pawn, jobCell, ProximityCheck.Ignored);
+                        case HaulProximities.BothThenEither:
+                            return TryHaulStage(pawn, jobCell, ProximityCheck.Both) ?? TryHaulStage(pawn, jobCell, ProximityCheck.Either);
+                        case HaulProximities.BothThenEitherThenIgnored:
+                            return TryHaulStage(pawn, jobCell, ProximityCheck.Both) ?? TryHaulStage(pawn, jobCell, ProximityCheck.Either) ?? TryHaulStage(pawn, jobCell, ProximityCheck.Ignored);
+                        default:
+                            return null;
+                    }
+                }
+
+                var result = _TryHaul();
                 thingProximityStage.Clear();
                 cachedStoreCell.Clear();
-
-                switch (haulProximities.Value) {
-                    case HaulProximities.Ignored:
-                        return TryHaulStage(pawn, jobCell, ProximityCheck.Ignored);
-                    case HaulProximities.Either:
-                        return TryHaulStage(pawn, jobCell, ProximityCheck.Either);
-                    case HaulProximities.Both:
-                        return TryHaulStage(pawn, jobCell, ProximityCheck.Both);
-                    case HaulProximities.EitherThenIgnored:
-                        return TryHaulStage(pawn, jobCell, ProximityCheck.Either) ?? TryHaulStage(pawn, jobCell, ProximityCheck.Ignored);
-                    case HaulProximities.BothThenEither:
-                        return TryHaulStage(pawn, jobCell, ProximityCheck.Both) ?? TryHaulStage(pawn, jobCell, ProximityCheck.Either);
-                    case HaulProximities.BothThenEitherThenIgnored:
-                        return TryHaulStage(pawn, jobCell, ProximityCheck.Both) ?? TryHaulStage(pawn, jobCell, ProximityCheck.Either) ?? TryHaulStage(pawn, jobCell, ProximityCheck.Ignored);
-                    default:
-                        return null;
-                }
+                return result;
             }
 
             static ProximityStage CanHaul(ProximityStage proximityStage, Pawn pawn, Thing thing, IntVec3 jobCell, ProximityCheck proximityCheck, out IntVec3 storeCell) {
@@ -119,14 +125,24 @@ namespace JobsOfOpportunity
 
                     Job puahJob = null;
                     if (haulToInventory.Value && puahWorkGiver != null) {
-                        if (AccessTools.Method(PuahWorkGiver_HaulToInventory_Type, "JobOnThing") is MethodInfo method)
+                        if (AccessTools.Method(PuahWorkGiver_HaulToInventory_Type, "JobOnThing") is MethodInfo method) {
+                            pawnPuah.SetOrAdd(pawn, new ForPuah {firstStore = storeCell, prevStore = storeCell, jobCell = jobCell});
                             puahJob = (Job) method.Invoke(puahWorkGiver, new object[] {pawn, thing, false});
+                        }
                     }
 
                     return puahJob ?? HaulAIUtility.HaulToCellStorageJob(pawn, thing, storeCell, false);
                 }
 
                 return null;
+            }
+
+            public struct ForPuah
+            {
+                public float curCumStoreDistance;
+                public IntVec3 firstStore;
+                public IntVec3 jobCell;
+                public IntVec3 prevStore;
             }
 
             enum ProximityCheck { Both, Either, Ignored }

@@ -6,20 +6,24 @@ supportedVersions:
 incompatibleWith:
   - hoodie.whileyoureup
   - kevlou127.WhileHYouOreHUpHQ1V0S
-intro: Vanilla's opportunistic hauling, only better. Although patched for compatibility, [i]While You're Up[/i] has not changed since 1.0 integrated it. This mod is a direct replacement and significant improvement. Compatible with existing saves. Any load order.
+intro: |-
+  Vanilla's opportunistic hauling, only better. Although patched for compatibility, [i]While You're Up[/i] has not changed since 1.0 integrated it. This mod is a direct replacement and significant improvement. Compatible with existing saves. Any load order.
+  
+  [img]https://i.imgur.com/d9bnEO5.gif[/img]
+  
 header: |+
   A replacement for [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1544626521][i]kevlou's[/i] While You're Up[/url], which 1.0 integrated. This mod exposes vanilla's opportunistic hauling settings and improves upon them.
 
-  As a performance optimization, vanilla requires a haulable be near your [b]start[/b] position, and its stockpile near your job. Too far and it won't be hauled, [i]even if it's directly in your path[/i]. We can do better.
+  Vanilla requires a haulable be near your [b]start[/b] position, and its stockpile near your job. Too far and it won't be hauled, [i]even if it's directly in your path[/i]. We can do better.
   
 footer: |+
 
 
   [h1]Background[/h1]
-  I began with the intention to fork While You're Up, until I saw 1.0 had [i]fully[/i] integrated and improved it. Since it appears discontinued, and this in its spirit, I'm hoping to get away with carrying on the name <3.
+  I began with the intention to fork While You're Up, until I saw 1.0 had integrated and improved it. Since it appears discontinued, and this in its spirit, I'm hoping to get away with carrying on the name ♥.
   
-  These (now adjustable) settings show [url=https://i.imgur.com/h1DNZmz.png]how vanilla does opportunistic hauling[/url].
-  And for those curious, here are the [url=https://i.imgur.com/1gn74b3.png]settings for the original While You're Up[/url] (not recommended).
+  These (now adjustable) settings show [url=https://steamuserimages-a.akamaihd.net/ugc/1000305627047582524/6DCE6BD8630614062AADAFAF2C441451BADCDFCF/]how vanilla does opportunistic hauling[/url].
+  And for those curious, here are the [url=https://i.imgur.com/eRSl8t0.png]settings for the original While You're Up[/url] (not recommended).
   
   Although tighter than vanilla's, these fewer checks gave his mod extra hauling opportunities even on 1.0, though it triggered on a shorter hardcoded list of jobs.
   Now that these checks are merely [i]preferred[/i], and we trigger for all jobs, it's the best of both worlds!
@@ -28,8 +32,12 @@ footer: |+
   
 features:
   - title: Haul to inventory support
-    at: 1.0.0
-    desc: Support for [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1279012058][i]Mehni's[/i] Pick Up And Haul[/url]!
+    at: 1.4.0
+    desc: |-
+      Advanced support for [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1279012058][i]Mehni's[/i] Pick Up And Haul[/url]!
+      
+      Only items qualifying as opportunistic will be hauled; solves issue with spread-out stockpiles and [url=https://youtu.be/97aNVniNlGE]unloading madness[/url].
+      (Dedicated haul jobs behave as normal, gathering as much as they can.)
     settings:
       - name: haulToInventory
 
@@ -58,7 +66,7 @@ features:
         Although coded as optimally as possible, a second or third look through potential hauls does cost performance, but it's still faster than sorting.
         
         Because other² parameters limit travel distance, a setting of "Ignored" will still give rational hauls (and more than "Both" or "Either") without reducing performance, but a pawn may choose a longer haul over a shorter one, since they are unordered.
-    
+
   - title: Optimize hauling to construction
     at: 1.0.0
     steam: |-
@@ -81,6 +89,10 @@ features:
       [b]Updated [i]Optimize hauling to construction[/i][/b]
       Now works as expected: instead of denying the inefficient supply job so [i]some[/i] hauler [i]eventually[/i] hauls, the builder themselves will.
       This feature appears if you've installed [i]Pick Up And Haul[/i].
+
+  - at: 1.0.0
+    desc: |-
+      Support for [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1279012058][i]Mehni's[/i] Pick Up And Haul[/url]!
 
   - settings:
       - name: drawOpportunisticJobs
