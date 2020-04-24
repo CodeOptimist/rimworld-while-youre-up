@@ -126,7 +126,8 @@ namespace JobsOfOpportunity
                     Job puahJob = null;
                     if (haulToInventory.Value && puahWorkGiver != null) {
                         if (AccessTools.Method(PuahWorkGiver_HaulToInventory_Type, "JobOnThing") is MethodInfo method) {
-                            pawnPuah.SetOrAdd(pawn, new ForPuah {firstStore = storeCell, prevStore = storeCell, jobCell = jobCell});
+                            Debug.WriteLine("Activating Pick Up And Haul.");
+                            pawnPuah.SetOrAdd(pawn, new ForPuah {hauls = new List<(Thing thing, IntVec3 store)> {(thing, storeCell)}, startCell = pawn.Position, jobCell = jobCell});
                             puahJob = (Job) method.Invoke(puahWorkGiver, new object[] {pawn, thing, false});
                         }
                     }
@@ -137,12 +138,11 @@ namespace JobsOfOpportunity
                 return null;
             }
 
-            public struct ForPuah
+            public class ForPuah
             {
-                public float curCumStoreDistance;
-                public IntVec3 firstStore;
+                public List<(Thing thing, IntVec3 store)> hauls;
                 public IntVec3 jobCell;
-                public IntVec3 prevStore;
+                public IntVec3 startCell;
             }
 
             enum ProximityCheck { Both, Either, Ignored }

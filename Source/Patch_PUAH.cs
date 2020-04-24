@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Reflection;
 using HarmonyLib;
 using RimWorld;
@@ -41,24 +42,60 @@ namespace JobsOfOpportunity
                     if (foundCell == IntVec3.Invalid) return;
                     if (!Hauling.pawnPuah.TryGetValue(carrier, out var forPuah)) return;
 
-                    Debug.WriteLine($"Evaluating if {thing} is an opportunistic haul for {carrier}.");
-                    var pawnToJob = carrier.Position.DistanceTo(forPuah.jobCell);
-                    var pawnToThing = carrier.Position.DistanceTo(thing.Position);
-                    var thingToFirstStore = thing.Position.DistanceTo(forPuah.firstStore);
-                    var curCumStoreDistance = forPuah.curCumStoreDistance + forPuah.prevStore.DistanceTo(foundCell);
-                    var storeToJob = foundCell.DistanceTo(forPuah.jobCell);
+                    var hauls = new List<(Thing thing, IntVec3 store)>(forPuah.hauls);
+                    var latestHaul = (thing, store: foundCell);
+                    if (hauls.Last().thing != latestHaul.thing)
+                        hauls.Add(latestHaul);
 
-                    var exceedsMaxTrip = maxTotalTripPctOrigTrip.Value > 0 && pawnToThing + thingToFirstStore + curCumStoreDistance + storeToJob > pawnToJob * maxTotalTripPctOrigTrip.Value;
-                    var exceedsMaxNewLegs = maxNewLegsPctOrigTrip.Value > 0 && pawnToThing + curCumStoreDistance + storeToJob > pawnToJob * maxNewLegsPctOrigTrip.Value;
-                    if (exceedsMaxTrip || exceedsMaxNewLegs) {
+                    var startToLatestThing = 0f;
+                    var curPos = forPuah.startCell;
+                    foreach (var (thing_, _) in hauls) {
+                        startToLatestThing += curPos.DistanceTo(thing_.Position);
+                        curPos = thing_.Position;
+                    }
+
+                    // actual unloading cells are determined on-the-fly, but these will represent the parent stockpiles with equal correctness
+                    // may also be extras if don't all fit in one cell, etc.
+                    var haulsByUnloadOrder = hauls.GetRange(0, hauls.Count - 1).OrderBy(haul => haul.thing.def.FirstThingCategory?.index).ToList();
+                    haulsByUnloadOrder.Insert(0, latestHaul); // already holding this one
+
+                    var storeToLastStore = 0f;
+                    var curPos_ = latestHaul.store;
+                    foreach (var (_, store) in haulsByUnloadOrder) {
+                        storeToLastStore += curPos_.DistanceTo(store);
+                        curPos_ = store;
+                    }
+
+                    var latestThingToStore = latestHaul.thing.Position.DistanceTo(latestHaul.store);
+                    var lastStoreToJob = haulsByUnloadOrder.Last().store.DistanceTo(forPuah.jobCell);
+                    var origTrip = forPuah.startCell.DistanceTo(forPuah.jobCell);
+                    var totalTrip = startToLatestThing + latestThingToStore + storeToLastStore + lastStoreToJob;
+                    var maxTotalTrip = origTrip * maxTotalTripPctOrigTrip.Value;
+                    var newLegs = startToLatestThing + storeToLastStore + lastStoreToJob;
+                    var maxNewLegs = origTrip * maxNewLegsPctOrigTrip.Value;
+                    var exceedsMaxTrip = maxTotalTripPctOrigTrip.Value > 0 && totalTrip > maxTotalTrip;
+                    var exceedsMaxNewLegs = maxNewLegsPctOrigTrip.Value > 0 && newLegs > maxNewLegs;
+                    var isRejected = exceedsMaxTrip || exceedsMaxNewLegs;
+
+                    Debug.WriteLine($"{(isRejected ? "REJECTED" : "APPROVED")} {latestHaul} for {carrier}");
+                    Debug.WriteLine($"\tstartToLatestThing: {carrier}{forPuah.startCell} -> {string.Join(" -> ", hauls.Select(x => $"{x.thing}{x.thing.Position}"))} = {startToLatestThing}");
+                    Debug.WriteLine($"\tlatestThingToStore: {latestHaul.thing}{latestHaul.thing.Position} -> {latestHaul} = {latestThingToStore}");
+                    Debug.WriteLine($"\tstoreToLastStore: {string.Join(" -> ", haulsByUnloadOrder)} = {storeToLastStore}");
+                    Debug.WriteLine($"\tlastStoreToJob: {haulsByUnloadOrder.Last()} -> {forPuah.jobCell} = {lastStoreToJob}");
+                    Debug.WriteLine($"\torigTrip: {carrier}{forPuah.startCell} -> {forPuah.jobCell} = {origTrip}");
+                    Debug.WriteLine($"\ttotalTrip: {startToLatestThing} + {latestThingToStore} + {storeToLastStore} + {lastStoreToJob}  = {totalTrip}");
+                    Debug.WriteLine($"\tmaxTotalTrip: {origTrip} * {maxTotalTripPctOrigTrip.Value} = {maxTotalTrip}");
+                    Debug.WriteLine($"\tnewLegs: {startToLatestThing} + {storeToLastStore} + {lastStoreToJob} = {newLegs}");
+                    Debug.WriteLine($"\tmaxNewLegs: {origTrip} * {maxNewLegsPctOrigTrip.Value} = {maxNewLegs}");
+                    Debug.WriteLine("");
+
+                    if (isRejected) {
                         foundCell = IntVec3.Invalid;
                         __result = false;
-                        Debug.WriteLine($"{carrier} denied hauling {thing} to inventory because it isn't opportunistic.");
                         return;
                     }
 
-                    forPuah.prevStore = foundCell;
-                    forPuah.curCumStoreDistance = curCumStoreDistance;
+                    forPuah.hauls = hauls;
                 }
             }
 
@@ -76,8 +113,7 @@ namespace JobsOfOpportunity
                 [HarmonyPrefix]
                 static void ClearJooDataForNewHaul(Pawn pawn) {
                     // keep for the haulMoreWork toil that extends our path, otherwise clear it for fresh distance calculations
-                    if (pawn.CurJobDef?.defName != "HaulToInventory")
-                        Hauling.pawnPuah.Remove(pawn);
+                    if (pawn.CurJobDef?.defName != "HaulToInventory") Hauling.pawnPuah.Remove(pawn);
                 }
 
                 // we need to patch PUAH's use of vanilla TryFindBestBetterStoreCellFor within HasJobOnThing for the haulMoreWork toil
