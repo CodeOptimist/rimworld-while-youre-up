@@ -56,8 +56,21 @@ namespace JobsOfOpportunity
 
                     // actual unloading cells are determined on-the-fly, but these will represent the parent stockpiles with equal correctness
                     // may also be extras if don't all fit in one cell, etc.
-                    var haulsByUnloadOrder = hauls.GetRange(0, hauls.Count - 1).OrderBy(haul => haul.thing.def.FirstThingCategory?.index).ToList();
-                    haulsByUnloadOrder.Insert(0, latestHaul); // already holding this one
+                    List<(Thing thing, IntVec3 store)> haulsByUnloadOrder;
+
+                    ushort? PuahFirstUnloadableThing((Thing thing, IntVec3 store) haul) {
+                        return haul.thing.def.FirstThingCategory?.index;
+                    }
+
+                    if (carrier.carryTracker?.CarriedThing == latestHaul.thing) {
+                        haulsByUnloadOrder = hauls.GetRange(0, hauls.Count - 1).OrderBy(PuahFirstUnloadableThing).ToList();
+                        haulsByUnloadOrder.Insert(0, latestHaul);
+                    } else {
+                        haulsByUnloadOrder = hauls.OrderBy(PuahFirstUnloadableThing).ToList();
+                        var mandatoryFirstStoreIsFirstUnload = hauls.First().store.GetSlotGroup(carrier.Map) == haulsByUnloadOrder.First().store.GetSlotGroup(carrier.Map);
+                        if (!mandatoryFirstStoreIsFirstUnload)
+                            haulsByUnloadOrder.Insert(0, (thing: null, hauls.First().store));
+                    }
 
                     var storeToLastStore = 0f;
                     var curPos_ = latestHaul.store;
