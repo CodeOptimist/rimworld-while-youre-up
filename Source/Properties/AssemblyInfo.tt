@@ -37,6 +37,6 @@ using System.Runtime.InteropServices;
 
 <#@ template language="C#" #>
 <#+
-	string BaseVersion = "1.4.2";
+	string BaseVersion = "1.4.3";
 	int RevisionNumber = (int)(DateTime.UtcNow - new DateTime(2019,1,1)).TotalSeconds % 10000;
 #>

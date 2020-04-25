@@ -25,8 +25,6 @@ namespace JobsOfOpportunity
                 }
 
                 static Job _HaulBeforeSupply(Pawn pawn, IConstructible c, Thing th) {
-                    if (!HavePuah()) return null;
-                    if (!haulToInventory.Value) return null;
                     if (!haulBeforeSupply.Value) return null;
                     if (th.IsInValidStorage()) return null;
                     if (!StoreUtility.TryFindBestBetterStoreCellFor(th, pawn, pawn.Map, StoragePriority.Unstored, pawn.Faction, out var storeCell, false)) return null;
@@ -38,7 +36,7 @@ namespace JobsOfOpportunity
 
                     if (supplyFromStoreDist < supplyFromHereDist) {
                         Debug.WriteLine($"'{pawn}' replaced supply job with haul job for '{th.Label}' because '{storeCell.GetSlotGroup(pawn.Map)}' is closer to '{c}'.");
-                        return Hauling.PuahJob(pawn, constructible.Position, th, storeCell);
+                        return Hauling.PuahJob(pawn, constructible.Position, th, storeCell) ?? HaulAIUtility.HaulToCellStorageJob(pawn, th, storeCell, false);
                     }
 
                     return null;

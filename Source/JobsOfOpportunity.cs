@@ -39,7 +39,7 @@ namespace JobsOfOpportunity
             }
 
             haulToInventory = GetSettingHandle("haulToInventory", true, default, HavePuah);
-            haulBeforeSupply = GetSettingHandle("haulBeforeSupply", true, default, HavePuah);
+            haulBeforeSupply = GetSettingHandle("haulBeforeSupply", true);
             skipIfBleeding = GetSettingHandle("skipIfBleeding", true);
 
             haulProximities = GetSettingHandle("haulProximities", Hauling.HaulProximities.BothThenEitherThenIgnored, default, default, $"{modIdentifier}_SettingTitle_haulProximities_");
