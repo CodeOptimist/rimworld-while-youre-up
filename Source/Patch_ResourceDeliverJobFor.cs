@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Reflection;
 using System.Reflection.Emit;
 using HarmonyLib;
 using RimWorld;
@@ -38,12 +37,8 @@ namespace JobsOfOpportunity
                     Debug.WriteLine($"Supply from here: {supplyFromHereDist}; supply from store: {supplyFromStoreDist}");
 
                     if (supplyFromStoreDist < supplyFromHereDist) {
-                        Debug.WriteLine($"'{pawn}' replaced supply job with haul job for '{th.Label}' because '{storeCell.GetSlotGroup(pawn.Map).parent}' is closer to '{c}'.");
-
-                        if (puahWorkGiver != null) {
-                            if (AccessTools.Method(PuahWorkGiver_HaulToInventory_Type, "JobOnThing") is MethodInfo method)
-                                return (Job) method.Invoke(puahWorkGiver, new object[] {pawn, th, false});
-                        }
+                        Debug.WriteLine($"'{pawn}' replaced supply job with haul job for '{th.Label}' because '{storeCell.GetSlotGroup(pawn.Map)}' is closer to '{c}'.");
+                        return Hauling.PuahJob(pawn, constructible.Position, th, storeCell);
                     }
 
                     return null;

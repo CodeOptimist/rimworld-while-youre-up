@@ -123,16 +123,19 @@ namespace JobsOfOpportunity
                         pawn.Map.debugDrawer.FlashLine(storeCell, jobCell, 600, SimpleColor.Blue);
                     }
 
-                    Job puahJob = null;
-                    if (haulToInventory.Value && puahWorkGiver != null) {
-                        if (AccessTools.Method(PuahWorkGiver_HaulToInventory_Type, "JobOnThing") is MethodInfo method) {
-                            Debug.WriteLine("Activating Pick Up And Haul.");
-                            pawnPuah.SetOrAdd(pawn, new ForPuah {hauls = new List<(Thing thing, IntVec3 store)> {(thing, storeCell)}, startCell = pawn.Position, jobCell = jobCell});
-                            puahJob = (Job) method.Invoke(puahWorkGiver, new object[] {pawn, thing, false});
-                        }
-                    }
+                    return PuahJob(pawn, jobCell, thing, storeCell) ?? HaulAIUtility.HaulToCellStorageJob(pawn, thing, storeCell, false);
+                }
 
-                    return puahJob ?? HaulAIUtility.HaulToCellStorageJob(pawn, thing, storeCell, false);
+                return null;
+            }
+
+            public static Job PuahJob(Pawn pawn, IntVec3 jobCell, Thing thing, IntVec3 storeCell) {
+                if (haulToInventory.Value && puahWorkGiver != null) {
+                    if (AccessTools.Method(PuahWorkGiver_HaulToInventory_Type, "JobOnThing") is MethodInfo method) {
+                        Debug.WriteLine("Activating Pick Up And Haul.");
+                        pawnPuah.SetOrAdd(pawn, new ForPuah {hauls = new List<(Thing thing, IntVec3 store)> {(thing, storeCell)}, startCell = pawn.Position, jobCell = jobCell});
+                        return (Job) method.Invoke(puahWorkGiver, new object[] {pawn, thing, false});
+                    }
                 }
 
                 return null;
