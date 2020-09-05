@@ -24,18 +24,17 @@ namespace JobsOfOpportunity
                     JobsOfOpportunity.InsertCode(ref i, ref codes, ref newCodes, offset, when, what, bringLabels);
                 }
 
-                static Job _HaulBeforeSupply(Pawn pawn, IConstructible c, Thing th) {
+                static Job _HaulBeforeSupply(Pawn pawn, Thing constructible, Thing th) {
                     if (!haulBeforeSupply.Value) return null;
                     if (th.IsInValidStorage()) return null;
                     if (!StoreUtility.TryFindBestBetterStoreCellFor(th, pawn, pawn.Map, StoragePriority.Unstored, pawn.Faction, out var storeCell, false)) return null;
 
-                    var constructible = (Thing) c;
                     var supplyFromHereDist = th.Position.DistanceTo(constructible.Position);
                     var supplyFromStoreDist = storeCell.DistanceTo(constructible.Position);
                     Debug.WriteLine($"Supply from here: {supplyFromHereDist}; supply from store: {supplyFromStoreDist}");
 
                     if (supplyFromStoreDist < supplyFromHereDist) {
-                        Debug.WriteLine($"'{pawn}' replaced supply job with haul job for '{th.Label}' because '{storeCell.GetSlotGroup(pawn.Map)}' is closer to '{c}'.");
+                        Debug.WriteLine($"'{pawn}' replaced supply job with haul job for '{th.Label}' because '{storeCell.GetSlotGroup(pawn.Map)}' is closer to '{constructible}'.");
                         return Hauling.PuahJob(pawn, constructible.Position, th, storeCell) ?? HaulAIUtility.HaulToCellStorageJob(pawn, th, storeCell, false);
                     }
 
@@ -60,9 +59,9 @@ namespace JobsOfOpportunity
                         1,
                         () => i == foundResIdx,
                         () => new List<CodeInstruction> {
-                            // Pawn and IConstructible
-                            new CodeInstruction(OpCodes.Ldarg_1),
-                            new CodeInstruction(OpCodes.Ldarg_2),
+                            new CodeInstruction(OpCodes.Ldarg_1), // Pawn
+                            new CodeInstruction(OpCodes.Ldarg_2), // IConstructible
+                            new CodeInstruction(OpCodes.Castclass, typeof(Thing)),
 
                             // Thing (foundRes)
                             new CodeInstruction(codes[i - 2]),
