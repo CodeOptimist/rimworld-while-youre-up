@@ -12,7 +12,7 @@ namespace JobsOfOpportunity
     {
         static class Hauling
         {
-            public enum HaulProximities { Ignored, Either, Both, EitherThenIgnored, BothThenEither, BothThenEitherThenIgnored }
+            public enum HaulProximities { Both, Either, Ignored }
 
             public static readonly Dictionary<Pawn, ForPuah> pawnPuah = new Dictionary<Pawn, ForPuah>();
 
@@ -22,17 +22,11 @@ namespace JobsOfOpportunity
             public static Job TryHaul(Pawn pawn, IntVec3 jobCell) {
                 Job _TryHaul() {
                     switch (haulProximities.Value) {
-                        case HaulProximities.Ignored:
-                            return TryHaulStage(pawn, jobCell, ProximityCheck.Ignored);
-                        case HaulProximities.Either:
-                            return TryHaulStage(pawn, jobCell, ProximityCheck.Either);
                         case HaulProximities.Both:
                             return TryHaulStage(pawn, jobCell, ProximityCheck.Both);
-                        case HaulProximities.EitherThenIgnored:
-                            return TryHaulStage(pawn, jobCell, ProximityCheck.Either) ?? TryHaulStage(pawn, jobCell, ProximityCheck.Ignored);
-                        case HaulProximities.BothThenEither:
+                        case HaulProximities.Either:
                             return TryHaulStage(pawn, jobCell, ProximityCheck.Both) ?? TryHaulStage(pawn, jobCell, ProximityCheck.Either);
-                        case HaulProximities.BothThenEitherThenIgnored:
+                        case HaulProximities.Ignored:
                             return TryHaulStage(pawn, jobCell, ProximityCheck.Both) ?? TryHaulStage(pawn, jobCell, ProximityCheck.Either) ?? TryHaulStage(pawn, jobCell, ProximityCheck.Ignored);
                         default:
                             return null;

@@ -41,7 +41,7 @@ namespace JobsOfOpportunity
             haulBeforeSupply = GetSettingHandle("haulBeforeSupply", true);
             skipIfBleeding = GetSettingHandle("skipIfBleeding", true);
 
-            haulProximities = GetSettingHandle("haulProximities", Hauling.HaulProximities.BothThenEitherThenIgnored, default, default, $"{modIdentifier}_SettingTitle_haulProximities_");
+            haulProximities = GetSettingHandle("haulProximities", Hauling.HaulProximities.Ignored, default, default, $"{modIdentifier}_SettingTitle_haulProximities_");
 
             drawOpportunisticJobs = GetSettingHandle("drawOpportunisticJobs", DebugViewSettings.drawOpportunisticJobs);
             drawOpportunisticJobs.Unsaved = true;

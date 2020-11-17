@@ -56,17 +56,14 @@ features:
     at: 1.0.0
     settings:
     - name: haulProximities
-      title: Haulable & storage initial-proximity
+      title: Haulable & storage initial closeness
       desc: |-
-        For performance reasons vanilla doesn't calculate and sort all haul paths, instead it settles for the first found with a haulable and its (storage) destination in range of our original start and original (job) destination, respectively.
+        For performance reasons vanilla doesn't calculate and sort all haul paths, instead it settles for the first found with a haulable near our starting position, and its storage near our job destination. I've made these parameters configurable (marked with ¹).
 
-        It pays no attention to how close our pawn may pass in the middle of their trip: it checks only the beginning and end.
-        
-        With this setting we can loosen these requirements in stages to find more hauls while preferring the best.
-  
-        Although coded as optimally as possible, a second or third look through potential hauls does cost performance, but it's still faster than sorting.
-        
-        Because other² parameters limit travel distance, a setting of "Ignored" will still give rational hauls (and more than "Both" or "Either") without reducing performance, but a pawn may choose a longer haul over a shorter one, since they are unordered.
+        Since other parameters do well in limiting travel distance (marked with ²) we can change this from a requirement to simply a preference for closer hauls.
+
+        If performance is an issue, set this stricter to reduce available hauls.
+        If straight-line distance poorly represents your actual haul paths, set this stricter and adjust "max region look count"¹.
 
   - title: Optimize hauling to construction
     at: 1.0.0
@@ -110,29 +107,19 @@ features:
   
           (This is vanilla's [i]Development mode → inspector icon → Visibility → Draw Opportunistic Jobs)[/i]
 
-      - name: haulProximities_Ignored
-        title: Ignored
-      - name: haulProximities_Either
-        title: Either¹
       - name: haulProximities_Both
-        title: Both¹ (vanilla)
-      - name: haulProximities_EitherThenIgnored
-        title: Either¹ → Ignored
-      - name: haulProximities_BothThenEither
-        title: Both¹ → Either¹
-      - name: haulProximities_BothThenEitherThenIgnored
-        title: Both¹ → Either¹ → Ignored (recommended)
+        title: Both required (vanilla)
+      - name: haulProximities_Either
+        title: Either required
+      - name: haulProximities_Ignored
+        title: Preferred (recommended)
         
       - name: showVanillaParameters
         title: Show core/vanilla parameters…
         desc: |-
           These settings are provided for explaining and tweaking the built-in opportunistic hauling.
-          
-          Those marked with ¹ we only check during their phases above. On the "recommended" setting we use these not to limit hauls, but to decide those selected [i]first[/i], and thus they won't merit changing for most users.
-          
-          Those marked with ² will always apply.
-          
-          Right click to reset individual parameters. A value of 0 will skip the check.
+
+          A value of 0 will skip a check.
 
       - name: maxNewLegsPctOrigTrip
         title: ²Max new legs % of original trip
