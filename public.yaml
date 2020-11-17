@@ -95,6 +95,13 @@ features:
       Support for [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1279012058][i]Mehni's[/i] Pick Up And Haul[/url]!
 
   - settings:
+      - name: enabled
+        title: Enabled
+        desc: |-
+          Toggle mod without restarting.
+
+          Off is equivalent to disabling all features, resetting each vanilla parameter, and "initial closeness" set to "(vanilla)".
+
       - name: drawOpportunisticJobs
         title: Draw opportunistic jobs
         desc: |-

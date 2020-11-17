@@ -15,7 +15,7 @@ namespace JobsOfOpportunity
     {
         static string modIdentifier;
 
-        static SettingHandle<bool> showVanillaParameters, haulToInventory, haulBeforeSupply, skipIfBleeding, drawOpportunisticJobs;
+        static SettingHandle<bool> enabled, showVanillaParameters, haulToInventory, haulBeforeSupply, skipIfBleeding, drawOpportunisticJobs;
         static SettingHandle<Hauling.HaulProximities> haulProximities;
         static SettingHandle<float> maxStartToThing, maxStartToThingPctOrigTrip, maxStoreToJob, maxStoreToJobPctOrigTrip, maxTotalTripPctOrigTrip, maxNewLegsPctOrigTrip;
         static SettingHandle<int> maxStartToThingRegionLookCount, maxStoreToJobRegionLookCount;
@@ -36,6 +36,7 @@ namespace JobsOfOpportunity
                 return settingHandle;
             }
 
+            enabled = GetSettingHandle("enabled", true);
             haulToInventory = GetSettingHandle("haulToInventory", true, default, HavePuah);
             haulBeforeSupply = GetSettingHandle("haulBeforeSupply", true);
             skipIfBleeding = GetSettingHandle("skipIfBleeding", true);

@@ -25,7 +25,7 @@ namespace JobsOfOpportunity
                 }
 
                 static Job _HaulBeforeSupply(Pawn pawn, Thing constructible, Thing th) {
-                    if (!haulBeforeSupply.Value) return null;
+                    if (!haulBeforeSupply.Value || !enabled.Value) return null;
                     if (th.IsInValidStorage()) return null;
                     if (!StoreUtility.TryFindBestBetterStoreCellFor(th, pawn, pawn.Map, StoragePriority.Unstored, pawn.Faction, out var storeCell, false)) return null;
 
