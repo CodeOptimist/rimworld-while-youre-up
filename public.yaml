@@ -85,6 +85,10 @@ features:
     settings:
       - name: haulBeforeSupply
 
+  - at: 1.5.1
+    desc: |-
+      • Compatibility with [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1233893175][i]KV's[/i] Infinite Storage[/url]: [i]Optimize hauling to construction[/i] should now work instead of looping on storage and retrieval.
+
   - at: 1.5.0
     desc: |-
       • New job descriptions:

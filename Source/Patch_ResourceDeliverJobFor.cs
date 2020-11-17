@@ -33,7 +33,9 @@ namespace JobsOfOpportunity
                     var supplyFromStoreDist = storeCell.DistanceTo(constructible.Position);
                     Debug.WriteLine($"Supply from here: {supplyFromHereDist}; supply from store: {supplyFromStoreDist}");
 
-                    if (supplyFromStoreDist < supplyFromHereDist) {
+                    // [KV] Infinite Storage https://steamcommunity.com/sharedfiles/filedetails/?id=1233893175
+                    // consider store an extra tile away because infinite storage has an interaction spot 1 tile away from itself
+                    if (supplyFromStoreDist + 1 < supplyFromHereDist) {
                         Debug.WriteLine($"'{pawn}' replaced supply job with haul job for '{th.Label}' because '{storeCell.GetSlotGroup(pawn.Map)}' is closer to '{constructible}'.");
                         return Hauling.PuahJob(pawn, constructible.Position, th, storeCell) ?? HaulAIUtility.HaulToCellStorageJob(pawn, th, storeCell, false);
                     }
