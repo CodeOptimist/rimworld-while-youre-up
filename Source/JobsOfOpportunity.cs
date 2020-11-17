@@ -21,9 +21,7 @@ namespace JobsOfOpportunity
         static SettingHandle<int> maxStartToThingRegionLookCount, maxStoreToJobRegionLookCount;
         static readonly SettingHandle.ShouldDisplay HavePuah = ModLister.HasActiveModWithName("Pick Up And Haul") ? new SettingHandle.ShouldDisplay(() => true) : () => false;
 
-        // Pick Up And Haul
-        static readonly List<Assembly> puahAssemblies = LoadedModManager.RunningMods.SingleOrDefault(x => x.PackageIdPlayerFacing == "Mehni.PickUpAndHaul")?.assemblies.loadedAssemblies;
-        static readonly Type PuahWorkGiver_HaulToInventory_Type = puahAssemblies?.Select(x => x.GetType("PickUpAndHaul.WorkGiver_HaulToInventory")).SingleOrDefault(x => x != null);
+        static readonly Type PuahWorkGiver_HaulToInventoryType = GenTypes.GetTypeInAnyAssembly("PickUpAndHaul.WorkGiver_HaulToInventory");
         static WorkGiver puahWorkGiver;
 
         public override void DefsLoaded() {

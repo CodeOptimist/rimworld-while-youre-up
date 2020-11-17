@@ -131,7 +131,7 @@ namespace JobsOfOpportunity
 
             public static Job PuahJob(Pawn pawn, IntVec3 jobCell, Thing thing, IntVec3 storeCell) {
                 if (haulToInventory.Value && puahWorkGiver != null) {
-                    if (AccessTools.Method(PuahWorkGiver_HaulToInventory_Type, "JobOnThing") is MethodInfo method) {
+                    if (AccessTools.Method(PuahWorkGiver_HaulToInventoryType, "JobOnThing") is MethodInfo method) {
                         Debug.WriteLine("Activating Pick Up And Haul.");
                         pawnPuah.SetOrAdd(pawn, new ForPuah {hauls = new List<(Thing thing, IntVec3 store)> {(thing, storeCell)}, startCell = pawn.Position, jobCell = jobCell});
                         return (Job) method.Invoke(puahWorkGiver, new object[] {pawn, thing, false});

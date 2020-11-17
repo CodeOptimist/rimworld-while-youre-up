@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Reflection.Emit;
 using HarmonyLib;
 using Verse;
 using Verse.AI;
+// ReSharper disable once RedundantUsingDirective
+using Debug = System.Diagnostics.Debug;
 
 namespace JobsOfOpportunity
 {

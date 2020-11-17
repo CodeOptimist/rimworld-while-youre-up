@@ -16,11 +16,11 @@ namespace JobsOfOpportunity
             static class WorkGiver_HaulToInventory_TryFindBestBetterStoreCellFor_Patch
             {
                 static bool Prepare() {
-                    return PuahWorkGiver_HaulToInventory_Type != null;
+                    return PuahWorkGiver_HaulToInventoryType != null;
                 }
 
                 static MethodBase TargetMethod() {
-                    return AccessTools.Method(PuahWorkGiver_HaulToInventory_Type, "TryFindBestBetterStoreCellFor");
+                    return AccessTools.Method(PuahWorkGiver_HaulToInventoryType, "TryFindBestBetterStoreCellFor");
                 }
 
                 // take advantage of our cache simply because we can
@@ -116,11 +116,11 @@ namespace JobsOfOpportunity
             static class WorkGiver_HaulToInventory_HasJobOnThing_Patch
             {
                 static bool Prepare() {
-                    return PuahWorkGiver_HaulToInventory_Type != null;
+                    return PuahWorkGiver_HaulToInventoryType != null;
                 }
 
                 static MethodBase TargetMethod() {
-                    return AccessTools.Method(PuahWorkGiver_HaulToInventory_Type, "HasJobOnThing");
+                    return AccessTools.Method(PuahWorkGiver_HaulToInventoryType, "HasJobOnThing");
                 }
 
                 [HarmonyPrefix]
@@ -152,11 +152,11 @@ namespace JobsOfOpportunity
             static class WorkGiver_HaulToInventory_JobOnThing_Patch
             {
                 static bool Prepare() {
-                    return PuahWorkGiver_HaulToInventory_Type != null;
+                    return PuahWorkGiver_HaulToInventoryType != null;
                 }
 
                 static MethodBase TargetMethod() {
-                    return AccessTools.Method(PuahWorkGiver_HaulToInventory_Type, "JobOnThing");
+                    return AccessTools.Method(PuahWorkGiver_HaulToInventoryType, "JobOnThing");
                 }
 
                 // why not take advantage of our cache here as well
