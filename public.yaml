@@ -3,6 +3,7 @@ name: Jobs of Opportunity (While You're Up)
 packageId: CodeOptimist.JobsOfOpportunity
 supportedVersions:
   - 1.1
+  - 1.2
 incompatibleWith:
   - hoodie.whileyoureup
   - kevlou127.WhileHYouOreHUpHQ1V0S
