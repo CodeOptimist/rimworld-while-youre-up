@@ -1,6 +1,8 @@
 ﻿---
 name: Jobs of Opportunity (While You're Up)
 packageId: CodeOptimist.JobsOfOpportunity
+repo: &repo https://github.com/CodeOptimist/rimworld-jobs-of-opportunity
+url: *repo
 supportedVersions:
   - 1.1
   - 1.2
@@ -8,12 +10,12 @@ incompatibleWith:
   - hoodie.whileyoureup
   - kevlou127.WhileHYouOreHUpHQ1V0S
 intro: |-
-  Vanilla's opportunistic hauling, only better. Although patched for compatibility, [i]While You're Up[/i] has not changed since 1.0 integrated it. This mod is a direct replacement and significant improvement. Compatible with existing saves. Any load order.
+  Vanilla's opportunistic hauling, only better. Although patched for compatibility, [i]While You're Up[/i] has not changed since 1.0 integrated it. This mod is a direct replacement. Compatible with existing saves. Any load order.
   
-  [img]https://i.imgur.com/d9bnEO5.gif[/img]
+  [img]https://i.imgur.com/tbpLbha.gif[/img]
   
 header: |+
-  A replacement for [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1544626521][i]kevlou's[/i] While You're Up[/url], which 1.0 integrated. This mod exposes vanilla's opportunistic hauling settings and improves upon them.
+  A replacement for [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1544626521][i]kevlou's[/i] While You're Up[/url]. Ludeon added opportunistic hauling in 1.0; this mod improves it.
 
   Vanilla requires a haulable be near your [b]start[/b] position, and its stockpile near your job. Too far and it won't be hauled, [i]even if it's directly in your path[/i]. We can do better.
   
@@ -21,7 +23,7 @@ footer: |+
 
 
   [h1]Background[/h1]
-  I began with the intention to fork While You're Up, until I saw 1.0 had integrated and improved it. Since it appears discontinued, and this in its spirit, I'm hoping to get away with carrying on the name ♥.
+  I began with the intention to fork While You're Up, until I saw the improved version Ludeon added to the core game. Since WYU appears discontinued, and this in its spirit, I hope to get away with carrying on the name ♥.
   
   These (now adjustable) settings show [url=https://steamuserimages-a.akamaihd.net/ugc/1000305627047582524/6DCE6BD8630614062AADAFAF2C441451BADCDFCF/]how vanilla does opportunistic hauling[/url].
   And for those curious, here are the [url=https://i.imgur.com/eRSl8t0.png]settings for the original While You're Up[/url] (not recommended).
@@ -44,6 +46,7 @@ features:
 
     settings:
       - name: haulToInventory
+        title: Haul to inventory (PUAH mod)
 
   - title: Skip when bleeding
     at: 1.1.0
@@ -55,7 +58,7 @@ features:
 
   - title: More hauling opportunities
     desc: |-
-      By default prefers the proximity requirements set by vanilla, but loosens them to find valid haulables. Adjustable for optimal performance.
+      By default prefers the proximity requirements set by vanilla, but relaxes them to find valid haulables. Adjustable for performance.
     at: 1.0.0
     settings:
     - name: haulProximities
@@ -68,13 +71,17 @@ features:
         If performance is an issue, set this stricter to reduce available hauls.
         If straight-line distance poorly represents your actual haul paths, set this stricter and adjust "max region look count"¹.
 
-  - title: Optimize hauling to construction
+  - title: &title Optimize hauling to construction
     at: 1.0.0
-    steam: |-
-      If you've ever seen your builder cross the map to retrieve a [i]single[/i] component.
-    desc: |-
+    desc: &desc |-
       If [i]and only if[/i] hauling a resource to storage would bring it closer to a blueprint, do that first.
       Haul jobs carry more materials, and with [i]Pick Up And Haul[/i], many more.
+    steam_raw: !join ["",
+      "[u]", *title, "[/u]\n",
+      "[i]If you've ever seen your builder cross the map to retrieve a [/i]single[i] component.[/i]\n",
+      *desc, "\n\n",
+      "[img]https://i.imgur.com/3QU30W3.png[/img]",
+    ]
     settings:
       - name: haulBeforeSupply
 
@@ -87,19 +94,19 @@ features:
 
   - at: 1.2.0
     desc: |-
-      Hauls are substantially improved on the default "recommended" setting. No longer should distant wood cut or metal mined be neglected.
-      
+      • Hauls are substantially improved on the default "recommended" setting. No longer should distant wood cut or metal mined be neglected.
       (I've integrated the very last vanilla pathing check into this mod's magic.)
-      Setting tooltips updated with detailed descriptions.
+
+      • Setting tooltips updated with detailed descriptions.
 
   - at: 1.1.0
     desc: |-
-      [b]Updated [i]Optimize hauling to construction[/i][/b]
+      • Updated [i]Optimize hauling to construction[/i]
       Now works as expected: instead of denying the inefficient supply job so [i]some[/i] hauler [i]eventually[/i] hauls, the builder themselves will.
 
   - at: 1.0.0
     desc: |-
-      Support for [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1279012058][i]Mehni's[/i] Pick Up And Haul[/url]!
+      • Support for [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1279012058][i]Mehni's[/i] Pick Up And Haul[/url]!
 
   - settings:
       - name: enabled
@@ -115,7 +122,7 @@ features:
           Paths are colored red, green, blue.
           start →ᴿ haulable →ᴳ storage →ᴮ job
   
-          (This is vanilla's [i]Development mode → inspector icon → Visibility → Draw Opportunistic Jobs)[/i]
+          (This is vanilla's [i]Development mode → inspector icon → Visibility → Draw Opportunistic Jobs, which is why it doesn't persist through restarts.)[/i]
 
       - name: haulProximities_Both
         title: Both required (vanilla)
@@ -134,7 +141,7 @@ features:
       - name: maxNewLegsPctOrigTrip
         title: ²Max new legs % of original trip
         _: &dist |-
-          This is straight-line distance ("as the crow flies"). Right click to reset.
+          This is straight-line distance ("as the crow flies").
         desc: !join ['\n',
           "Max start-to-haulable + storage-to-job % of original trip.",
           *dist
