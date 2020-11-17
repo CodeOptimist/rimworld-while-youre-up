@@ -1,10 +1,12 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using HarmonyLib;
 using RimWorld;
 using Verse;
+using Verse.AI;
 
 namespace JobsOfOpportunity
 {
@@ -12,6 +14,27 @@ namespace JobsOfOpportunity
     {
         static class Patch_PUAH
         {
+            static readonly Type PuahJobDriver_HaulToInventoryType = GenTypes.GetTypeInAnyAssembly("PickUpAndHaul.JobDriver_HaulToInventory");
+
+            [HarmonyPatch]
+            static class JobDriver_GetReport_Patch
+            {
+                static bool Prepare() {
+                    return PuahJobDriver_HaulToInventoryType != null;
+                }
+
+                static MethodBase TargetMethod() {
+                    return AccessTools.Method(PuahJobDriver_HaulToInventoryType, "GetReport");
+                }
+
+                [HarmonyPostfix]
+                static void GetJooPuahReportString(JobDriver __instance, ref string __result) {
+                    if (!PuahJobDriver_HaulToInventoryType.IsInstanceOfType(__instance)) return;
+                    if (!Hauling.pawnPuah.ContainsKey(__instance.pawn)) return;
+                    __result = $"Opportunistically {__result}";
+                }
+            }
+
             [HarmonyPatch]
             static class WorkGiver_HaulToInventory_TryFindBestBetterStoreCellFor_Patch
             {

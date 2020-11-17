@@ -15,6 +15,7 @@ namespace JobsOfOpportunity
             public enum HaulProximities { Both, Either, Ignored }
 
             public static readonly Dictionary<Pawn, ForPuah> pawnPuah = new Dictionary<Pawn, ForPuah>();
+            public static readonly Dictionary<Pawn, bool> pawnHaulToCell = new Dictionary<Pawn, bool>();
 
             static readonly Dictionary<Thing, ProximityStage> thingProximityStage = new Dictionary<Thing, ProximityStage>();
             public static readonly Dictionary<Thing, IntVec3> cachedStoreCell = new Dictionary<Thing, IntVec3>();
@@ -117,6 +118,7 @@ namespace JobsOfOpportunity
                         pawn.Map.debugDrawer.FlashLine(storeCell, jobCell, 600, SimpleColor.Blue);
                     }
 
+                    pawnHaulToCell.SetOrAdd(pawn, true);
                     return PuahJob(pawn, jobCell, thing, storeCell) ?? HaulAIUtility.HaulToCellStorageJob(pawn, thing, storeCell, false);
                 }
 

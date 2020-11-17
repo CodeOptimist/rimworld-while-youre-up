@@ -32,13 +32,16 @@ footer: |+
   (If you set [i]allowOpportunisticPrefix[/i] to [i]false[/i] for a JobDef, it won't allow opportunistic jobs. This is a vanilla feature.)
   
 features:
-  - title: Haul to inventory support
+  - title: Haul to inventory
     at: 1.4.0
     desc: |-
-      Advanced support for [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1279012058][i]Mehni's[/i] Pick Up And Haul[/url]!
-      
-      Only items qualifying as opportunistic will be hauled; solves issue with spread-out stockpiles and [url=https://youtu.be/97aNVniNlGE]unloading madness[/url].
+      Custom control of [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1279012058]Pick Up And Haul[/url] (installed separately)!
+
+      [1.2] Job description will be "Opportunistically gathering", otherwise it's normal PUAH or a different mod (e.g. Common Sense).
+
+      Only items qualifying as opportunistic will be hauled: solves issue with spread-out stockpiles and [url=https://youtu.be/97aNVniNlGE]unloading madness[/url].
       (Dedicated haul jobs behave as normal, gathering as much as they can.)
+
     settings:
       - name: haulToInventory
 
@@ -74,6 +77,13 @@ features:
       Haul jobs carry more materials, and with [i]Pick Up And Haul[/i], many more.
     settings:
       - name: haulBeforeSupply
+
+  - at: 1.5.0
+    desc: |-
+      • New job descriptions:
+      |img:jobReport|caption:If you don't see this, it's standard hauling or a different mod.|
+      • Added [i]Enabled[/i] setting for troubleshooting without restarts.
+      • Improved settings and descriptions.
 
   - at: 1.2.0
     desc: |-

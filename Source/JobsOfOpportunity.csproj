@@ -34,6 +34,7 @@
     <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Patch_HaulToCell.cs" />
     <Compile Include="Patch_PUAH.cs" />
     <Compile Include="Patch_ResourceDeliverJobFor.cs" />
     <Compile Include="Hauling.cs" />
