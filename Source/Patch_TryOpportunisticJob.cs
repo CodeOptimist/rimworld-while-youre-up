@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection.Emit;
 using HarmonyLib;
+using RimWorld;
 using Verse;
 using Verse.AI;
 // ReSharper disable once RedundantUsingDirective
@@ -18,6 +19,22 @@ namespace JobsOfOpportunity
                 Debug.WriteLine($"Opportunity checking {job}");
                 var pawn = Traverse.Create(__instance).Field("pawn").GetValue<Pawn>();
                 var jobCell = job.targetA.Cell;
+
+                if (haulBeforeBill.Value && haveCommonSense && (bool) CsHaulingOverBillsSetting.GetValue(csSettings)) {
+                    haulBeforeBill.Value = false;
+                    haulBeforeBill.ForceSaveChanges();
+                }
+
+                if (job.def == JobDefOf.DoBill && haulBeforeBill.Value && enabled.Value) {
+                    foreach (var localTargetInfo in job.targetQueueB) {
+                        if (localTargetInfo.Thing == null) continue;
+
+                        // permitted when bleeding because facilitates whatever bill is important enough to do while bleeding
+                        //  may save precious time going back for ingredients... unless we only want 1 medicine ASAP; it's a trade-off
+                        var storeJob = Hauling.HaulBeforeCarry(pawn, jobCell, localTargetInfo.Thing);
+                        if (storeJob != null) return storeJob;
+                    }
+                }
 
                 if (skipIfBleeding.Value && pawn.health.hediffSet.BleedRateTotal > 0.001f) return null;
                 return Hauling.TryHaul(pawn, jobCell); // ?? Cleaning.TryClean(pawn, jobCell);

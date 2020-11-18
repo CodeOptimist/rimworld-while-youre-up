@@ -7,6 +7,8 @@ using HugsLib;
 using HugsLib.Settings;
 using RimWorld;
 using Verse;
+// ReSharper disable once RedundantUsingDirective
+using Debug = System.Diagnostics.Debug;
 using Dialog_ModSettings = HugsLib.Settings.Dialog_ModSettings;
 
 namespace JobsOfOpportunity
@@ -15,17 +17,26 @@ namespace JobsOfOpportunity
     {
         static string modIdentifier;
 
-        static SettingHandle<bool> enabled, showVanillaParameters, haulToInventory, haulBeforeSupply, skipIfBleeding, drawOpportunisticJobs;
+        static SettingHandle<bool> enabled, showVanillaParameters, haulToInventory, haulBeforeSupply, haulBeforeBill, skipIfBleeding, drawOpportunisticJobs;
         static SettingHandle<Hauling.HaulProximities> haulProximities;
         static SettingHandle<float> maxStartToThing, maxStartToThingPctOrigTrip, maxStoreToJob, maxStoreToJobPctOrigTrip, maxTotalTripPctOrigTrip, maxNewLegsPctOrigTrip;
         static SettingHandle<int> maxStartToThingRegionLookCount, maxStoreToJobRegionLookCount;
         static readonly SettingHandle.ShouldDisplay HavePuah = ModLister.HasActiveModWithName("Pick Up And Haul") ? new SettingHandle.ShouldDisplay(() => true) : () => false;
 
         static readonly Type PuahWorkGiver_HaulToInventoryType = GenTypes.GetTypeInAnyAssembly("PickUpAndHaul.WorkGiver_HaulToInventory");
+        static readonly MethodInfo PuahJobOnThing = AccessTools.Method(PuahWorkGiver_HaulToInventoryType, "JobOnThing");
         static WorkGiver puahWorkGiver;
+
+        static readonly Type CsModType = GenTypes.GetTypeInAnyAssembly("CommonSense.CommonSense");
+        static readonly FieldInfo CsSettings = AccessTools.Field(CsModType, "Settings");
+        static readonly Type CsSettingsType = GenTypes.GetTypeInAnyAssembly("CommonSense.Settings");
+        static readonly FieldInfo CsHaulingOverBillsSetting = AccessTools.Field(CsSettingsType, "hauling_over_bills");
+        static readonly bool haveCommonSense = new List<object> {CsModType, CsSettings, CsSettingsType, CsHaulingOverBillsSetting}.All(x => x != null);
+        static ModSettings csSettings;
 
         public override void DefsLoaded() {
             puahWorkGiver = DefDatabase<WorkGiverDef>.GetNamedSilentFail("HaulToInventory")?.Worker;
+            csSettings = (ModSettings) CsSettings?.GetValue(LoadedModManager.GetMod(CsModType));
             modIdentifier = ModContentPack.PackageIdPlayerFacing;
 
             SettingHandle<T> GetSettingHandle<T>(string settingName, T defaultValue = default, SettingHandle.ValueIsValid validator = default,
@@ -39,6 +50,25 @@ namespace JobsOfOpportunity
             enabled = GetSettingHandle("enabled", true);
             haulToInventory = GetSettingHandle("haulToInventory", true, default, HavePuah);
             haulBeforeSupply = GetSettingHandle("haulBeforeSupply", true);
+
+            var haulBeforeBill_needsInitForCs = GetSettingHandle("haulBeforeBill_needsInitForCs", true, default, () => false);
+            haulBeforeBill = GetSettingHandle("haulBeforeBill", true);
+            if (haveCommonSense) {
+                if (haulBeforeBill_needsInitForCs.Value) {
+                    CsHaulingOverBillsSetting.SetValue(csSettings, false);
+                    haulBeforeBill.Value = true;
+                    haulBeforeBill_needsInitForCs.Value = false;
+                } else if ((bool) CsHaulingOverBillsSetting.GetValue(csSettings))
+                    haulBeforeBill.Value = false;
+
+                Settings.SaveChanges();
+
+                haulBeforeBill.OnValueChanged += value => {
+                    if (value)
+                        CsHaulingOverBillsSetting.SetValue(csSettings, false);
+                };
+            }
+
             skipIfBleeding = GetSettingHandle("skipIfBleeding", true);
 
             haulProximities = GetSettingHandle("haulProximities", Hauling.HaulProximities.Ignored, default, default, $"{modIdentifier}_SettingTitle_haulProximities_");
@@ -90,6 +120,8 @@ namespace JobsOfOpportunity
             [HarmonyPrefix]
             static void UpdateDynamicSettings() {
                 drawOpportunisticJobs.Value = DebugViewSettings.drawOpportunisticJobs;
+                if (haveCommonSense && (bool) CsHaulingOverBillsSetting.GetValue(csSettings))
+                    haulBeforeBill.Value = false; // will save on close
             }
         }
     }

@@ -39,7 +39,7 @@ features:
     desc: |-
       Custom control of [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1279012058]Pick Up And Haul[/url] (installed separately)!
 
-      [1.2] Job description will be "Opportunistically gathering", otherwise it's normal PUAH or a different mod (e.g. Common Sense).
+      [1.2] Job description will be "Opportunistically gathering", otherwise it's normal PUAH or a different mod.
 
       Only items qualifying as opportunistic will be hauled: solves issue with spread-out stockpiles and [url=https://youtu.be/97aNVniNlGE]unloading madness[/url].
       (Dedicated haul jobs behave as normal, gathering as much as they can.)
@@ -53,6 +53,7 @@ features:
     steam: (1.0 missed this feature when integrating the original [i]While You're Up[/i])
     desc: |-
       Don't take jobs of opportunity when bleeding.
+      "Optimize" settings still apply since they (hopefully) facilitate normal jobs.
     settings:
       - name: skipIfBleeding
 
@@ -71,11 +72,19 @@ features:
         If performance is an issue, set this stricter to reduce available hauls.
         If straight-line distance poorly represents your actual haul paths, set this stricter and adjust "max region look count"¹.
 
-  - title: &title Optimize hauling to construction
+  - title: Optimize hauling ingredients
+    at: 1.6.0
+    desc: |-
+      If hauling ingredients to storage would bring them closer to their workbench, do that first (grabbing extra).
+      
+      Disables similar setting in [i]Common Sense[/i] mod.
+    settings:
+      - name: haulBeforeBill
+
+  - title: &title Optimize hauling supplies
     at: 1.0.0
     desc: &desc |-
-      If [i]and only if[/i] hauling a resource to storage would bring it closer to a blueprint, do that first.
-      Haul jobs carry more materials, and with [i]Pick Up And Haul[/i], many more.
+      If hauling supplies to storage would bring them closer to their blueprint, do that first (grabbing extra).
     steam_raw: !join ["",
       "[u]", *title, "[/u]\n",
       "[i]If you've ever seen your builder cross the map to retrieve a [/i]single[i] component.[/i]\n",
@@ -87,7 +96,7 @@ features:
 
   - at: 1.5.1
     desc: |-
-      • Compatibility with [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1233893175][i]KV's[/i] Infinite Storage[/url]: [i]Optimize hauling to construction[/i] should now work instead of looping on storage and retrieval.
+      • Compatibility with [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1233893175][i]KV's[/i] Infinite Storage[/url]: [i]Optimize hauling supplies[/i] should now work instead of looping on storage and retrieval.
 
   - at: 1.5.0
     desc: |-
@@ -105,7 +114,7 @@ features:
 
   - at: 1.1.0
     desc: |-
-      • Updated [i]Optimize hauling to construction[/i]
+      • Updated [i]Optimize hauling supplies[/i]
       Now works as expected: instead of denying the inefficient supply job so [i]some[/i] hauler [i]eventually[/i] hauls, the builder themselves will.
 
   - at: 1.0.0

@@ -1,7 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics;
-using System.Reflection;
-using HarmonyLib;
 using RimWorld;
 using Verse;
 using Verse.AI;
@@ -125,16 +123,29 @@ namespace JobsOfOpportunity
                 return null;
             }
 
-            public static Job PuahJob(Pawn pawn, IntVec3 jobCell, Thing thing, IntVec3 storeCell) {
-                if (haulToInventory.Value && puahWorkGiver != null) {
-                    if (AccessTools.Method(PuahWorkGiver_HaulToInventoryType, "JobOnThing") is MethodInfo method) {
-                        Debug.WriteLine("Activating Pick Up And Haul.");
-                        pawnPuah.SetOrAdd(pawn, new ForPuah {hauls = new List<(Thing thing, IntVec3 store)> {(thing, storeCell)}, startCell = pawn.Position, jobCell = jobCell});
-                        return (Job) method.Invoke(puahWorkGiver, new object[] {pawn, thing, false});
-                    }
+            public static Job HaulBeforeCarry(Pawn pawn, IntVec3 dest, Thing th) {
+                if (th.IsInValidStorage()) return null;
+                if (!StoreUtility.TryFindBestBetterStoreCellFor(th, pawn, pawn.Map, StoragePriority.Unstored, pawn.Faction, out var storeCell, false)) return null;
+
+                var supplyFromHereDist = th.Position.DistanceTo(dest);
+                var supplyFromStoreDist = storeCell.DistanceTo(dest);
+                Debug.WriteLine($"Carry from here: {supplyFromHereDist}; carry from store: {supplyFromStoreDist}");
+
+                // [KV] Infinite Storage https://steamcommunity.com/sharedfiles/filedetails/?id=1233893175
+                // infinite storage has an interaction spot 1 tile away from itself
+                if (supplyFromStoreDist + 1 < supplyFromHereDist) {
+                    Debug.WriteLine($"'{pawn}' prefixed job with storage haul for '{th.Label}' because '{storeCell.GetSlotGroup(pawn.Map)}' is closer to original destination '{dest}'.");
+                    return PuahJob(pawn, dest, th, storeCell) ?? HaulAIUtility.HaulToCellStorageJob(pawn, th, storeCell, false);
                 }
 
                 return null;
+            }
+
+            public static Job PuahJob(Pawn pawn, IntVec3 jobCell, Thing thing, IntVec3 storeCell) {
+                if (!haulToInventory.Value || PuahJobOnThing == null) return null;
+                Debug.WriteLine("Activating Pick Up And Haul.");
+                pawnPuah.SetOrAdd(pawn, new ForPuah {hauls = new List<(Thing thing, IntVec3 store)> {(thing, storeCell)}, startCell = pawn.Position, jobCell = jobCell});
+                return (Job) PuahJobOnThing.Invoke(puahWorkGiver, new object[] {pawn, thing, false});
             }
 
             public class ForPuah
