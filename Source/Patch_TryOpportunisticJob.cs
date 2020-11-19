@@ -1,7 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
+using System.Reflection;
 using System.Reflection.Emit;
+using CodeOptimist;
 using HarmonyLib;
 using RimWorld;
 using Verse;
@@ -43,28 +43,18 @@ namespace JobsOfOpportunity
             [HarmonyPatch(typeof(Pawn_JobTracker), nameof(Pawn_JobTracker.TryOpportunisticJob))]
             static class Pawn_JobTracker_TryOpportunisticJob_Patch
             {
-                static List<CodeInstruction> codes, newCodes;
-                static int i;
-
-                static void InsertCode(int offset, Func<bool> when, Func<List<CodeInstruction>> what, bool bringLabels = false) {
-                    JobsOfOpportunity.InsertCode(ref i, ref codes, ref newCodes, offset, when, what, bringLabels);
-                }
-
                 [HarmonyTranspiler]
-                static IEnumerable<CodeInstruction> OpportunisticJobs(IEnumerable<CodeInstruction> instructions, ILGenerator generator) {
-                    codes = instructions.ToList();
-                    newCodes = new List<CodeInstruction>();
-                    i = 0;
+                static IEnumerable<CodeInstruction> OpportunisticJobs(IEnumerable<CodeInstruction> _codes, ILGenerator generator) {
+                    var t = new Transpiler(_codes, MethodBase.GetCurrentMethod());
+                    var listerHaulablesIdx = t.TryFindCodeIndex(code => code.LoadsField(AccessTools.Field(typeof(Map), nameof(Map.listerHaulables))));
+                    var skipMod = generator.DefineLabel();
 
-                    var listerHaulablesIdx = codes.FindIndex(code => code.LoadsField(AccessTools.Field(typeof(Map), nameof(Map.listerHaulables))));
-                    var skipModLabel = generator.DefineLabel();
-
-                    InsertCode(
+                    t.TryInsertCodes(
                         -3,
-                        () => i == listerHaulablesIdx,
-                        () => new List<CodeInstruction> {
+                        (i, codes) => i == listerHaulablesIdx,
+                        (i, codes) => new List<CodeInstruction> {
                             new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(Pawn_JobTracker_TryOpportunisticJob_Patch), nameof(IsEnabled))),
-                            new CodeInstruction(OpCodes.Brfalse_S, skipModLabel),
+                            new CodeInstruction(OpCodes.Brfalse_S, skipMod),
 
                             new CodeInstruction(OpCodes.Ldarg_0),
                             new CodeInstruction(OpCodes.Ldarg_1),
@@ -72,12 +62,8 @@ namespace JobsOfOpportunity
                             new CodeInstruction(OpCodes.Ret),
                         }, true);
 
-                    if (listerHaulablesIdx != -1)
-                        codes[i - 3].labels.Add(skipModLabel);
-
-                    for (; i < codes.Count; i++)
-                        newCodes.Add(codes[i]);
-                    return newCodes.AsEnumerable();
+                    t.codes[t.MatchIdx - 3].labels.Add(skipMod);
+                    return t.GetFinalCodes();
                 }
 
                 static bool IsEnabled() {

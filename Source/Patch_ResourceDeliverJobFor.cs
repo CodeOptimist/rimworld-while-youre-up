@@ -1,7 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
+using System.Reflection;
 using System.Reflection.Emit;
+using CodeOptimist;
 using HarmonyLib;
 using RimWorld;
 using Verse;
@@ -16,60 +16,43 @@ namespace JobsOfOpportunity
             [HarmonyPatch(typeof(WorkGiver_ConstructDeliverResources), "ResourceDeliverJobFor")]
             static class WorkGiver_ConstructDeliverResources_ResourceDeliverJobFor_Patch
             {
-                static List<CodeInstruction> codes, newCodes;
-                static int i;
-
-                static void InsertCode(int offset, Func<bool> when, Func<List<CodeInstruction>> what, bool bringLabels = false) {
-                    JobsOfOpportunity.InsertCode(ref i, ref codes, ref newCodes, offset, when, what, bringLabels);
-                }
-
                 static Job _HaulBeforeSupply(Pawn pawn, Thing constructible, Thing th) {
                     if (!haulBeforeSupply.Value || !enabled.Value) return null;
                     return Hauling.HaulBeforeCarry(pawn, constructible.Position, th);
                 }
 
                 [HarmonyTranspiler]
-                static IEnumerable<CodeInstruction> HaulBeforeSupply(IEnumerable<CodeInstruction> instructions, ILGenerator generator) {
-                    codes = instructions.ToList();
-                    newCodes = new List<CodeInstruction>();
-                    i = 0;
+                static IEnumerable<CodeInstruction> HaulBeforeSupply(IEnumerable<CodeInstruction> _codes, ILGenerator generator) {
+                    var t = new Transpiler(_codes, MethodBase.GetCurrentMethod());
 
-                    // locate patch
-                    var nearbyResourcesIdx = codes.FindIndex(code => code.Calls(AccessTools.Method(typeof(WorkGiver_ConstructDeliverResources), "FindAvailableNearbyResources")));
-                    var foundResIdx = nearbyResourcesIdx == -1 ? -1 : codes.FindLastIndex(nearbyResourcesIdx, code => code.opcode == OpCodes.Brfalse);
+                    var nearbyResourcesIdx = t.TryFindCodeIndex(code => code.Calls(AccessTools.Method(typeof(WorkGiver_ConstructDeliverResources), "FindAvailableNearbyResources")));
+                    var foundResIdx = t.TryFindCodeLastIndex(nearbyResourcesIdx, code => code.opcode == OpCodes.Brfalse) + 1;
+                    var foundRes = generator.DefineLabel();
+                    t.codes[foundResIdx].labels.Add(foundRes);
+                    var returnJobIdx = t.TryFindCodeIndex(foundResIdx, code => code.opcode == OpCodes.Ret);
+                    var jobVar = t.codes[returnJobIdx - 1].operand;
 
-                    // just to reuse the same local variable IL that's returned here
-                    var returnJobIdx = foundResIdx == -1 ? -1 : codes.FindIndex(foundResIdx, code => code.opcode == OpCodes.Ret);
-
-                    var resourceFoundLabel = generator.DefineLabel();
-                    InsertCode(
-                        1,
-                        () => i == foundResIdx,
-                        () => new List<CodeInstruction> {
-                            new CodeInstruction(OpCodes.Ldarg_1), // Pawn
-                            new CodeInstruction(OpCodes.Ldarg_2), // IConstructible
-                            new CodeInstruction(OpCodes.Castclass, typeof(Thing)),
-
-                            // Thing (foundRes)
-                            new CodeInstruction(codes[i - 2]),
-                            new CodeInstruction(codes[i - 1]),
-
+                    t.TryInsertCodes(
+                        0,
+                        (i, codes) => i == foundResIdx,
+                        (i, codes) => new List<CodeInstruction> {
+                            // job = _HaulBeforeSupply(pawn, (Thing) c, foundRes);
+                            new CodeInstruction(OpCodes.Ldarg_1), // Pawn pawn
+                            new CodeInstruction(OpCodes.Ldarg_2), // IConstructible c
+                            new CodeInstruction(OpCodes.Castclass, typeof(Thing)), // (Thing) c
+                            new CodeInstruction(codes[i + 1]), // Thing foundRes
+                            new CodeInstruction(codes[i + 2]), // Thing foundRes
                             new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(WorkGiver_ConstructDeliverResources_ResourceDeliverJobFor_Patch), nameof(_HaulBeforeSupply))),
-                            // return only if non-null
-                            new CodeInstruction(OpCodes.Stloc_S, codes[returnJobIdx - 1].operand),
-                            new CodeInstruction(codes[returnJobIdx - 1]),
-                            new CodeInstruction(OpCodes.Brfalse_S, resourceFoundLabel),
-                            new CodeInstruction(codes[returnJobIdx - 1]),
+                            new CodeInstruction(OpCodes.Stloc_S, jobVar),
+
+                            // if (job != null) return job;
+                            new CodeInstruction(OpCodes.Ldloc_S, jobVar),
+                            new CodeInstruction(OpCodes.Brfalse_S, foundRes),
+                            new CodeInstruction(OpCodes.Ldloc_S, jobVar),
                             new CodeInstruction(OpCodes.Ret),
-                        }, true);
+                        });
 
-                    // where we jump if our call returned null
-                    if (foundResIdx != -1)
-                        codes[foundResIdx + 1].labels.Add(resourceFoundLabel);
-
-                    for (; i < codes.Count; i++)
-                        newCodes.Add(codes[i]);
-                    return newCodes.AsEnumerable();
+                    return t.GetFinalCodes();
                 }
             }
         }
