@@ -22,6 +22,14 @@ header: |+
 footer: |+
 
 
+  [h1]Report Bugs[/h1]
+  1. Please save a game when it occurs, then reload to verify it reoccurs (if not you may need to save seconds [i]before[/i] it happens).
+  2. Test with JoO disabled from options. Also try disabling the PUAH mod (requires restart).
+  3. Send me this save game ([i]Files -> Open save folder[/i] from Debug log), with a download link or through [url={global_discord}]Discord[/url].
+  
+  It's okay if you have a ton of mods, though the fewer the better.
+  This method will save me hours upon hours of setup and get issues fixed quickly.
+
   [h1]Background[/h1]
   I began with the intention to fork While You're Up, until I saw the improved version Ludeon added to the core game. Since WYU appears discontinued, and this in its spirit, I hope to get away with carrying on the name ♥.
   
@@ -93,6 +101,10 @@ features:
     ]
     settings:
       - name: haulBeforeSupply
+
+  - at: 1.6.1
+    desc: |-
+      • Fixed "Optimize hauling ingredients" to no longer cause pawn "Standing". Thanks helpers ♥.
 
   - at: 1.5.1
     desc: |-

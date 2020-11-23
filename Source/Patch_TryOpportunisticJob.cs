@@ -29,10 +29,12 @@ namespace JobsOfOpportunity
                     foreach (var localTargetInfo in job.targetQueueB) {
                         if (localTargetInfo.Thing == null) continue;
 
-                        // permitted when bleeding because facilitates whatever bill is important enough to do while bleeding
-                        //  may save precious time going back for ingredients... unless we only want 1 medicine ASAP; it's a trade-off
-                        var storeJob = Hauling.HaulBeforeCarry(pawn, jobCell, localTargetInfo.Thing);
-                        if (storeJob != null) return storeJob;
+                        if (HaulAIUtility.PawnCanAutomaticallyHaulFast(pawn, localTargetInfo.Thing, false)) {
+                            // permitted when bleeding because facilitates whatever bill is important enough to do while bleeding
+                            //  may save precious time going back for ingredients... unless we only want 1 medicine ASAP; it's a trade-off
+                            var storeJob = Hauling.HaulBeforeCarry(pawn, jobCell, localTargetInfo.Thing);
+                            if (storeJob != null) return storeJob;
+                        }
                     }
                 }
 
