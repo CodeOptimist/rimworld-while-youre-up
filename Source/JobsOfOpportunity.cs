@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using CodeOptimist;
 using HarmonyLib;
 using HugsLib;
 using HugsLib.Settings;
@@ -37,20 +38,13 @@ namespace JobsOfOpportunity
             csSettings = (ModSettings) CsSettings?.GetValue(LoadedModManager.GetMod(CsModType));
             var modIdentifier = ModContentPack.PackageIdPlayerFacing;
 
-            SettingHandle<T> GetSettingHandle<T>(string settingName, T defaultValue = default, SettingHandle.ValueIsValid validator = default,
-                SettingHandle.ShouldDisplay shouldDisplay = default, string enumPrefix = default) {
-                var settingHandle = Settings.GetHandle(
-                    settingName, $"{modIdentifier}_SettingTitle_{settingName}".Translate(), $"{modIdentifier}_SettingDesc_{settingName}".Translate(), defaultValue, validator, enumPrefix);
-                settingHandle.VisibilityPredicate = shouldDisplay;
-                return settingHandle;
-            }
+            var s = new SettingsHelper(Settings, modIdentifier);
+            enabled = s.GetSettingHandle("enabled", true);
+            haulToInventory = s.GetSettingHandle("haulToInventory", true, default, HavePuah);
+            haulBeforeSupply = s.GetSettingHandle("haulBeforeSupply", true);
 
-            enabled = GetSettingHandle("enabled", true);
-            haulToInventory = GetSettingHandle("haulToInventory", true, default, HavePuah);
-            haulBeforeSupply = GetSettingHandle("haulBeforeSupply", true);
-
-            var haulBeforeBill_needsInitForCs = GetSettingHandle("haulBeforeBill_needsInitForCs", true, default, () => false);
-            haulBeforeBill = GetSettingHandle("haulBeforeBill", true);
+            var haulBeforeBill_needsInitForCs = s.GetSettingHandle("haulBeforeBill_needsInitForCs", true, default, () => false);
+            haulBeforeBill = s.GetSettingHandle("haulBeforeBill", true);
             if (haveCommonSense) {
                 if (haulBeforeBill_needsInitForCs.Value) {
                     CsHaulingOverBillsSetting.SetValue(csSettings, false);
@@ -67,27 +61,27 @@ namespace JobsOfOpportunity
                 };
             }
 
-            skipIfBleeding = GetSettingHandle("skipIfBleeding", true);
+            skipIfBleeding = s.GetSettingHandle("skipIfBleeding", true);
 
-            haulProximities = GetSettingHandle("haulProximities", Hauling.HaulProximities.Ignored, default, default, $"{modIdentifier}_SettingTitle_haulProximities_");
+            haulProximities = s.GetSettingHandle("haulProximities", Hauling.HaulProximities.Ignored, default, default, $"{modIdentifier}_SettingTitle_haulProximities_");
 
-            drawOpportunisticJobs = GetSettingHandle("drawOpportunisticJobs", DebugViewSettings.drawOpportunisticJobs);
+            drawOpportunisticJobs = s.GetSettingHandle("drawOpportunisticJobs", DebugViewSettings.drawOpportunisticJobs);
             drawOpportunisticJobs.Unsaved = true;
             drawOpportunisticJobs.OnValueChanged += value => DebugViewSettings.drawOpportunisticJobs = value;
 
-            showVanillaParameters = GetSettingHandle("showVanillaParameters", false);
+            showVanillaParameters = s.GetSettingHandle("showVanillaParameters", false);
             var ShowVanillaParameters = new SettingHandle.ShouldDisplay(() => showVanillaParameters.Value);
 
             var floatRangeValidator = Validators.FloatRangeValidator(0f, 999f);
-            maxNewLegsPctOrigTrip = GetSettingHandle("maxNewLegsPctOrigTrip", 1.0f, floatRangeValidator, ShowVanillaParameters);
-            maxTotalTripPctOrigTrip = GetSettingHandle("maxTotalTripPctOrigTrip", 1.7f, floatRangeValidator, ShowVanillaParameters);
+            maxNewLegsPctOrigTrip = s.GetSettingHandle("maxNewLegsPctOrigTrip", 1.0f, floatRangeValidator, ShowVanillaParameters);
+            maxTotalTripPctOrigTrip = s.GetSettingHandle("maxTotalTripPctOrigTrip", 1.7f, floatRangeValidator, ShowVanillaParameters);
 
-            maxStartToThing = GetSettingHandle("maxStartToThing", 30f, floatRangeValidator, ShowVanillaParameters);
-            maxStartToThingPctOrigTrip = GetSettingHandle("maxStartToThingPctOrigTrip", 0.5f, floatRangeValidator, ShowVanillaParameters);
-            maxStartToThingRegionLookCount = GetSettingHandle("maxStartToThingRegionLookCount", 25, Validators.IntRangeValidator(0, 999), ShowVanillaParameters);
-            maxStoreToJob = GetSettingHandle("maxStoreToJob", 50f, floatRangeValidator, ShowVanillaParameters);
-            maxStoreToJobPctOrigTrip = GetSettingHandle("maxStoreToJobPctOrigTrip", 0.6f, floatRangeValidator, ShowVanillaParameters);
-            maxStoreToJobRegionLookCount = GetSettingHandle("maxStoreToJobRegionLookCount", 25, Validators.IntRangeValidator(0, 999), ShowVanillaParameters);
+            maxStartToThing = s.GetSettingHandle("maxStartToThing", 30f, floatRangeValidator, ShowVanillaParameters);
+            maxStartToThingPctOrigTrip = s.GetSettingHandle("maxStartToThingPctOrigTrip", 0.5f, floatRangeValidator, ShowVanillaParameters);
+            maxStartToThingRegionLookCount = s.GetSettingHandle("maxStartToThingRegionLookCount", 25, Validators.IntRangeValidator(0, 999), ShowVanillaParameters);
+            maxStoreToJob = s.GetSettingHandle("maxStoreToJob", 50f, floatRangeValidator, ShowVanillaParameters);
+            maxStoreToJobPctOrigTrip = s.GetSettingHandle("maxStoreToJobPctOrigTrip", 0.6f, floatRangeValidator, ShowVanillaParameters);
+            maxStoreToJobRegionLookCount = s.GetSettingHandle("maxStoreToJobRegionLookCount", 25, Validators.IntRangeValidator(0, 999), ShowVanillaParameters);
         }
 
         [HarmonyPatch(typeof(Dialog_ModSettings), "PopulateControlInfo")]
