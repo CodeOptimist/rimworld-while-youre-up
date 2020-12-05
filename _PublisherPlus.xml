@@ -2,6 +2,7 @@
 <Configuration>
   <Excluded>
     <exclude>C:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods\JobsOfOpportunity\.hg</exclude>
+    <exclude>C:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods\JobsOfOpportunity\1.2\Assemblies\CodeOptimist.pdb</exclude>
     <exclude>C:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods\JobsOfOpportunity\1.2\Assemblies\JobsOfOpportunity.pdb</exclude>
     <exclude>C:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods\JobsOfOpportunity\public.yaml</exclude>
     <exclude>C:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods\JobsOfOpportunity\Source</exclude>

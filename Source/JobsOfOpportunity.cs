@@ -15,8 +15,6 @@ namespace JobsOfOpportunity
 {
     partial class JobsOfOpportunity : ModBase
     {
-        static string modIdentifier;
-
         static SettingHandle<bool> enabled, showVanillaParameters, haulToInventory, haulBeforeSupply, haulBeforeBill, skipIfBleeding, drawOpportunisticJobs;
         static SettingHandle<Hauling.HaulProximities> haulProximities;
         static SettingHandle<float> maxStartToThing, maxStartToThingPctOrigTrip, maxStoreToJob, maxStoreToJobPctOrigTrip, maxTotalTripPctOrigTrip, maxNewLegsPctOrigTrip;
@@ -37,7 +35,7 @@ namespace JobsOfOpportunity
         public override void DefsLoaded() {
             puahWorkGiver = DefDatabase<WorkGiverDef>.GetNamedSilentFail("HaulToInventory")?.Worker;
             csSettings = (ModSettings) CsSettings?.GetValue(LoadedModManager.GetMod(CsModType));
-            modIdentifier = ModContentPack.PackageIdPlayerFacing;
+            var modIdentifier = ModContentPack.PackageIdPlayerFacing;
 
             SettingHandle<T> GetSettingHandle<T>(string settingName, T defaultValue = default, SettingHandle.ValueIsValid validator = default,
                 SettingHandle.ShouldDisplay shouldDisplay = default, string enumPrefix = default) {

@@ -15,9 +15,9 @@ namespace JobsOfOpportunity
     {
         static class Patch_TryOpportunisticJob
         {
-            static Job TryOpportunisticJob(Pawn_JobTracker __instance, Job job) {
+            static Job TryOpportunisticJob(Pawn_JobTracker jobTracker, Job job) {
                 Debug.WriteLine($"Opportunity checking {job}");
-                var pawn = Traverse.Create(__instance).Field("pawn").GetValue<Pawn>();
+                var pawn = Traverse.Create(jobTracker).Field("pawn").GetValue<Pawn>();
                 var jobCell = job.targetA.Cell;
 
                 if (haulBeforeBill.Value && haveCommonSense && (bool) CsHaulingOverBillsSetting.GetValue(csSettings)) {
