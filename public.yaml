@@ -14,78 +14,67 @@ intro: |-
   
   [img]https://i.imgur.com/tbpLbha.gif[/img]
   
-header: |+
-  A replacement for [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1544626521][i]kevlou's[/i] While You're Up[/url]. Ludeon added opportunistic hauling in 1.0; this mod improves it.
-
-  Vanilla requires a haulable be near your [b]start[/b] position, and its stockpile near your job. Too far and it won't be hauled, [i]even if it's directly in your path[/i]. We can do better.
+header: |-
+  [b]A pawn's job will say "Opportunistically ", otherwise it's a different mod[/b] (e.g. normal hauling; normal hauling with [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1279012058]Pick Up And Haul[/url], or triggered by [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1561769193]Common Sense[/url]).
   
-footer: |+
+  [i]@Modders:[/i] if you set [i]allowOpportunisticPrefix[/i] to [i]false[/i] for a JobDef, it won't allow opportunistic jobs. This is a vanilla feature.
+
+footer: |-
 
 
   [h1]Report Bugs[/h1]
   1. Please save a game when it occurs, then reload to verify it reoccurs (if not you may need to save seconds [i]before[/i] it happens).
-  2. Test with JoO disabled from options. Also try disabling the PUAH mod (requires restart).
-  3. Send me this save game ([i]Files -> Open save folder[/i] from Debug log), with a download link or through [url={global_discord}]Discord[/url].
+  2. Disable JoO from options (no restart). Perhaps disable PUAH (requires restart). Reload game.
+  3. If the bug doesn't reoccur, send me this save game ([i]Files -> Open save folder[/i] from [url=https://rimworldwiki.com/wiki/Modding_Tutorials/Testing_mods#Development_mode]Debug log[/url]), via a link or through [url={global_discord}]Discord[/url].
   
   It's okay if you have a ton of mods, though the fewer the better.
   This method will save me hours upon hours of setup and get issues fixed quickly.
 
   [h1]Background[/h1]
-  I began with the intention to fork While You're Up, until I saw the improved version Ludeon added to the core game. Since WYU appears discontinued, and this in its spirit, I hope to get away with carrying on the name ♥.
+  I began with the intention to [url=https://gist.github.com/CodeOptimist/5a740dd803fc370ec43f22ffa8bc953d]fork[/url] [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1544626521][i]kevlou's[/i] While You're Up[/url], until I saw the [url=https://github.com/CodeOptimist/rimworld-jobs-of-opportunity/blob/29391b0a075a1dd77d4788777b0137e26390328c/Source/Patch_TryOpportunisticJob.cs]improved version Ludeon added[/url] to the core game. Since WYU appears discontinued, and this in its spirit, I hope to get away with carrying on the name ♥.
   
   These (now adjustable) settings show [url=https://steamuserimages-a.akamaihd.net/ugc/1000305627047582524/6DCE6BD8630614062AADAFAF2C441451BADCDFCF/]how vanilla does opportunistic hauling[/url].
   And for those curious, here are the [url=https://i.imgur.com/eRSl8t0.png]settings for the original While You're Up[/url] (not recommended).
   
   Although tighter than vanilla's, these fewer checks gave his mod extra hauling opportunities even on 1.0, though it triggered on a shorter hardcoded list of jobs.
   Now that these checks are merely [i]preferred[/i], and we trigger for all jobs, it's the best of both worlds!
-  
-  (If you set [i]allowOpportunisticPrefix[/i] to [i]false[/i] for a JobDef, it won't allow opportunistic jobs. This is a vanilla feature.)
-  
+
 features:
+  - title: More hauling opportunities
+    desc: |-
+      Vanilla requires a haulable be near your [b]start[/b] position, and its stockpile near your job. Too far and it won't be hauled, [i]even if it's directly in your path[/i]. We can do better.
+      
+      We prefer the proximity requirements set by vanilla, but relax them to find valid haulables. Adjustable for performance.
+    at: 1.0.0
+    settings:
+      - name: haulProximities
+        title: Haulable & storage initial closeness
+        desc: |-
+          For performance reasons vanilla doesn't calculate and sort all haul paths, instead it settles for the first found with a haulable near our starting position, and its storage near our job destination. I've made these parameters configurable (marked with ¹).
+      
+          Since other parameters do well in limiting travel distance (marked with ²) we can change this from a requirement to simply a preference for closer hauls.
+      
+          If performance is an issue, set this stricter to reduce available hauls.
+          If straight-line distance poorly represents your actual haul paths, set this stricter and adjust "max region look count"¹.
+  
   - title: Haul to inventory
     at: 1.4.0
     desc: |-
-      Custom control of [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1279012058]Pick Up And Haul[/url] (installed separately)!
+      Custom use of [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1279012058]Pick Up And Haul[/url]! (Installed separately.)
 
-      [1.2] Job description will be "Opportunistically gathering", otherwise it's normal PUAH or a different mod.
-
-      Only items qualifying as opportunistic will be hauled: solves issue with spread-out stockpiles and [url=https://youtu.be/97aNVniNlGE]unloading madness[/url].
+      The way we control PUAH, only items qualifying as opportunistic will be gathered: solves issue with spread-out stockpiles and [url=https://youtu.be/97aNVniNlGE]unloading madness[/url].
       (Dedicated haul jobs behave as normal, gathering as much as they can.)
 
     settings:
       - name: haulToInventory
         title: Haul to inventory (PUAH mod)
 
-  - title: Skip when bleeding
-    at: 1.1.0
-    steam: (1.0 missed this feature when integrating the original [i]While You're Up[/i])
-    desc: |-
-      Don't take jobs of opportunity when bleeding.
-      "Optimize" settings still apply since they (hopefully) facilitate normal jobs.
-    settings:
-      - name: skipIfBleeding
-
-  - title: More hauling opportunities
-    desc: |-
-      By default prefers the proximity requirements set by vanilla, but relaxes them to find valid haulables. Adjustable for performance.
-    at: 1.0.0
-    settings:
-    - name: haulProximities
-      title: Haulable & storage initial closeness
-      desc: |-
-        For performance reasons vanilla doesn't calculate and sort all haul paths, instead it settles for the first found with a haulable near our starting position, and its storage near our job destination. I've made these parameters configurable (marked with ¹).
-
-        Since other parameters do well in limiting travel distance (marked with ²) we can change this from a requirement to simply a preference for closer hauls.
-
-        If performance is an issue, set this stricter to reduce available hauls.
-        If straight-line distance poorly represents your actual haul paths, set this stricter and adjust "max region look count"¹.
-
   - title: Optimize hauling ingredients
     at: 1.6.0
     desc: |-
       If hauling ingredients to storage would bring them closer to their workbench, do that first (grabbing extra).
       
-      Disables similar setting in [i]Common Sense[/i] mod.
+      Disables similar setting in [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1561769193]Common Sense[/url] mod.
     settings:
       - name: haulBeforeBill
 
@@ -94,44 +83,22 @@ features:
     desc: &desc |-
       If hauling supplies to storage would bring them closer to their blueprint, do that first (grabbing extra).
     steam_raw: !join ["",
-      "[u]", *title, "[/u]\n",
-      "[i]If you've ever seen your builder cross the map to retrieve a [/i]single[i] component.[/i]\n",
-      *desc, "\n\n",
-      "[img]https://i.imgur.com/3QU30W3.png[/img]",
+                      "[u]", *title, "[/u]\n",
+                      "[i]If you've ever seen your builder cross the map to retrieve a [b]single[/b] component.[/i]\n",
+                      *desc, "\n",
+                      "\n",
+                      "[img]https://i.imgur.com/G2oh7Mm.png[/img]",
     ]
     settings:
       - name: haulBeforeSupply
 
-  - at: 1.6.1
+  - title: Skip when bleeding
+    at: 1.1.0
     desc: |-
-      • Fixed "Optimize hauling ingredients" to no longer cause pawn "Standing". Thanks helpers ♥.
-
-  - at: 1.5.1
-    desc: |-
-      • Compatibility with [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1233893175][i]KV's[/i] Infinite Storage[/url]: [i]Optimize hauling supplies[/i] should now work instead of looping on storage and retrieval.
-
-  - at: 1.5.0
-    desc: |-
-      • New job descriptions:
-      |img:jobReport|caption:If you don't see this, it's standard hauling or a different mod.|
-      • Added [i]Enabled[/i] setting for troubleshooting without restarts.
-      • Improved settings and descriptions.
-
-  - at: 1.2.0
-    desc: |-
-      • Hauls are substantially improved on the default "recommended" setting. No longer should distant wood cut or metal mined be neglected.
-      (I've integrated the very last vanilla pathing check into this mod's magic.)
-
-      • Setting tooltips updated with detailed descriptions.
-
-  - at: 1.1.0
-    desc: |-
-      • Updated [i]Optimize hauling supplies[/i]
-      Now works as expected: instead of denying the inefficient supply job so [i]some[/i] hauler [i]eventually[/i] hauls, the builder themselves will.
-
-  - at: 1.0.0
-    desc: |-
-      • Support for [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1279012058][i]Mehni's[/i] Pick Up And Haul[/url]!
+      Don't take jobs of opportunity when bleeding.
+      "Optimize hauling" features still apply since they (hopefully) expedite a job.
+    settings:
+      - name: skipIfBleeding
 
   - settings:
       - name: enabled
@@ -167,10 +134,10 @@ features:
         title: ²Max new legs % of original trip
         _: &dist |-
           This is straight-line distance ("as the crow flies").
-        desc: !join ['\n',
-          "Max start-to-haulable + storage-to-job % of original trip.",
-          *dist
-        ]
+        desc: !join
+          - \n
+          - Max start-to-haulable + storage-to-job % of original trip.
+          - *dist
       - name: maxTotalTripPctOrigTrip
         title: ²Max total trip % of original trip
         desc: *dist
@@ -200,3 +167,34 @@ features:
       - name: maxStoreToJobRegionLookCount
         title: ¹Max storage-to-job region look count
         desc: *region_look_count
+
+  - at: 1.0.0
+    desc: |-
+      • Support for [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1279012058][i]Mehni's[/i] Pick Up And Haul[/url]!
+
+  - at: 1.1.0
+    desc: |-
+      • Updated [i]Optimize hauling supplies[/i]
+      Now works as expected: instead of denying the inefficient supply job so [i]some[/i] hauler [i]eventually[/i] hauls, the builder themselves will.
+
+  - at: 1.2.0
+    desc: |-
+      • Hauls are substantially improved on the default "recommended" setting. No longer should distant wood cut or metal mined be neglected.
+      (I've integrated the very last vanilla pathing check into this mod's magic.)
+
+      • Setting tooltips updated with detailed descriptions.
+
+  - at: 1.5.0
+    desc: |-
+      • New job descriptions:
+      |img:jobReport|caption:If you don't see this, it's standard hauling or a different mod.|
+      • Added [i]Enabled[/i] setting for troubleshooting without restarts.
+      • Improved settings and descriptions.
+
+  - at: 1.5.1
+    desc: |-
+      • Compatibility with [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1233893175][i]KV's[/i] Infinite Storage[/url]: [i]Optimize hauling supplies[/i] should now work instead of looping on storage and retrieval.
+
+  - at: 1.6.1
+    desc: |-
+      • Fixed "Optimize hauling ingredients" to no longer cause "Standing" loop when incapable. (Missed a basic check vanilla already did in the "Optimize hauling supplies" scenario.)
