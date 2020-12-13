@@ -124,6 +124,7 @@ namespace JobsOfOpportunity
             }
 
             public static Job HaulBeforeCarry(Pawn pawn, IntVec3 dest, Thing th) {
+                if (th.ParentHolder is Pawn_InventoryTracker) return null;
                 if (th.IsInValidStorage()) return null;
                 if (!StoreUtility.TryFindBestBetterStoreCellFor(th, pawn, pawn.Map, StoragePriority.Unstored, pawn.Faction, out var storeCell, false)) return null;
 

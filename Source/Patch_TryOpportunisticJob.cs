@@ -26,6 +26,8 @@ namespace JobsOfOpportunity
                 }
 
                 if (job.def == JobDefOf.DoBill && haulBeforeBill.Value && enabled.Value) {
+                    Debug.WriteLine($"Bill: '{job.bill}' label: '{job.bill.Label}'");
+                    Debug.WriteLine($"Recipe: '{job.bill.recipe}' workerClass: '{job.bill.recipe.workerClass}'");
                     foreach (var localTargetInfo in job.targetQueueB) {
                         if (localTargetInfo.Thing == null) continue;
 

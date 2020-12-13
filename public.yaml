@@ -198,3 +198,7 @@ features:
   - at: 1.6.1
     desc: |-
       • Fixed "Optimize hauling ingredients" to no longer cause "Standing" loop when incapable. (Missed a basic check vanilla already did in the "Optimize hauling supplies" scenario.)
+
+  - at: 1.6.2
+    desc: |-
+      • Fixed "Optimize hauling ingredients/supplies" to no longer cause "Standing" loop when ingredient is in a pawn inventory. Fixes surgery with [i]Smart Medicine[/i], compatibility with [i]Build From Inventory[/i], and others.
