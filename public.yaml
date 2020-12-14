@@ -192,13 +192,16 @@ features:
       • Improved settings and descriptions.
 
   - at: 1.5.1
+    credit: '@"Saken"SakenW'
     desc: |-
       • Compatibility with [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1233893175][i]KV's[/i] Infinite Storage[/url]: [i]Optimize hauling supplies[/i] should now work instead of looping on storage and retrieval.
 
   - at: 1.6.1
+    credit: '@Gwyndolin-chan#8975'
     desc: |-
       • Fixed "Optimize hauling ingredients" to no longer cause "Standing" loop when incapable. (Missed a basic check vanilla already did in the "Optimize hauling supplies" scenario.)
 
   - at: 1.6.2
+    credit: '@Just#1021'
     desc: |-
       • Fixed "Optimize hauling ingredients/supplies" to no longer cause "Standing" loop when ingredient is in a pawn inventory. Fixes surgery with [i]Smart Medicine[/i], compatibility with [i]Build From Inventory[/i], and others.
