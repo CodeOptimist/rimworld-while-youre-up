@@ -31,12 +31,12 @@ footer: |-
   This method will save me hours upon hours of setup and get issues fixed quickly.
 
   [h1]Background[/h1]
-  I began with the intention to [url=https://gist.github.com/CodeOptimist/5a740dd803fc370ec43f22ffa8bc953d]fork[/url] [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1544626521][i]kevlou's[/i] While You're Up[/url], until I saw the [url=https://github.com/CodeOptimist/rimworld-jobs-of-opportunity/blob/29391b0a075a1dd77d4788777b0137e26390328c/Source/Patch_TryOpportunisticJob.cs]improved version Ludeon added[/url] to the core game. Since WYU appears discontinued, and this in its spirit, I hope to get away with carrying on the name ♥.
+  I began with the intention to [url=https://gist.github.com/CodeOptimist/5a740dd803fc370ec43f22ffa8bc953d#file-utils-cs-L48]fork[/url] [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1544626521][i]kevlou's[/i] While You're Up[/url], until I saw the [url=https://github.com/CodeOptimist/rimworld-jobs-of-opportunity/blob/29391b0a075a1dd77d4788777b0137e26390328c/Source/Patch_TryOpportunisticJob.cs]improved version Ludeon added[/url] to the core game. Since WYU appears discontinued, and this in its spirit, I hope to get away with carrying on the name ♥.
   
   These (now adjustable) settings show [url=https://steamuserimages-a.akamaihd.net/ugc/1000305627047582524/6DCE6BD8630614062AADAFAF2C441451BADCDFCF/]how vanilla does opportunistic hauling[/url].
   And for those curious, here are the [url=https://i.imgur.com/eRSl8t0.png]settings for the original While You're Up[/url] (not recommended).
   
-  Although tighter than vanilla's, these fewer checks gave his mod extra hauling opportunities even on 1.0, though it triggered on a shorter hardcoded list of jobs.
+  Although tighter than vanilla's, these fewer checks gave his mod extra hauling opportunities even on 1.0, though it triggered on a [url=https://gist.github.com/CodeOptimist/5a740dd803fc370ec43f22ffa8bc953d#file-hauladder-cs-L44]hardcoded list of jobs[/url].
   Now that these checks are merely [i]preferred[/i], and we trigger for all jobs, it's the best of both worlds!
 
 features:
