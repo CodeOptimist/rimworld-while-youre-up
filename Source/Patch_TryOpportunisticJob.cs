@@ -43,8 +43,8 @@ namespace JobsOfOpportunity
             static class Pawn_JobTracker_TryOpportunisticJob_Patch
             {
                 [HarmonyTranspiler]
-                static IEnumerable<CodeInstruction> OpportunisticJobs(IEnumerable<CodeInstruction> _codes, ILGenerator generator) {
-                    var t = new Transpiler(_codes, MethodBase.GetCurrentMethod());
+                static IEnumerable<CodeInstruction> OpportunisticJobs(IEnumerable<CodeInstruction> _codes, ILGenerator generator, MethodBase __originalMethod) {
+                    var t = new Transpiler(_codes, __originalMethod);
                     var listerHaulablesIdx = t.TryFindCodeIndex(code => code.LoadsField(AccessTools.Field(typeof(Map), nameof(Map.listerHaulables))));
                     var skipMod = generator.DefineLabel();
 

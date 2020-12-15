@@ -22,8 +22,8 @@ namespace JobsOfOpportunity
                 }
 
                 [HarmonyTranspiler]
-                static IEnumerable<CodeInstruction> _HaulBeforeSupply(IEnumerable<CodeInstruction> _codes, ILGenerator generator) {
-                    var t = new Transpiler(_codes, MethodBase.GetCurrentMethod());
+                static IEnumerable<CodeInstruction> _HaulBeforeSupply(IEnumerable<CodeInstruction> _codes, ILGenerator generator, MethodBase __originalMethod) {
+                    var t = new Transpiler(_codes, __originalMethod);
 
                     var nearbyResourcesIdx = t.TryFindCodeIndex(code => code.Calls(AccessTools.Method(typeof(WorkGiver_ConstructDeliverResources), "FindAvailableNearbyResources")));
                     var foundResIdx = t.TryFindCodeLastIndex(nearbyResourcesIdx, code => code.opcode == OpCodes.Brfalse) + 1;
@@ -40,8 +40,8 @@ namespace JobsOfOpportunity
                             new CodeInstruction(OpCodes.Ldarg_1), // Pawn pawn
                             new CodeInstruction(OpCodes.Ldarg_2), // IConstructible c
                             new CodeInstruction(OpCodes.Castclass, typeof(Thing)), // (Thing) c
-                            new CodeInstruction(codes[i + 1]), // Thing foundRes
-                            new CodeInstruction(codes[i + 2]), // Thing foundRes
+                            codes[i + 1].Clone(), // Thing foundRes
+                            codes[i + 2].Clone(), // Thing foundRes
                             new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(WorkGiver_ConstructDeliverResources_ResourceDeliverJobFor_Patch), nameof(HaulBeforeSupply))),
                             new CodeInstruction(OpCodes.Stloc_S, jobVar),
 
