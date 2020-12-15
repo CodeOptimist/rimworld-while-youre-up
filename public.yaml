@@ -74,7 +74,7 @@ features:
     desc: |-
       If hauling ingredients to storage would bring them closer to their workbench, do that first (grabbing extra).
       
-      Disables similar setting in [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1561769193]Common Sense[/url] mod.
+      Unticks similar setting in [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1561769193]Common Sense[/url] mod.
     settings:
       - name: haulBeforeBill
 

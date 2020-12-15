@@ -33,6 +33,8 @@ namespace JobsOfOpportunity
         static readonly bool haveCommonSense = new List<object> {CsModType, CsSettings, CsSettingsType, CsHaulingOverBillsSetting}.All(x => x != null);
         static ModSettings csSettings;
 
+        static Dictionary<SettingHandle, object> settingHandleControlInfo;
+
         public override void DefsLoaded() {
             puahWorkGiver = DefDatabase<WorkGiverDef>.GetNamedSilentFail("HaulToInventory")?.Worker;
             csSettings = (ModSettings) CsSettings?.GetValue(LoadedModManager.GetMod(CsModType));
@@ -56,8 +58,10 @@ namespace JobsOfOpportunity
                 Settings.SaveChanges();
 
                 haulBeforeBill.OnValueChanged += value => {
-                    if (value)
+                    if (value && (bool) CsHaulingOverBillsSetting.GetValue(csSettings)) {
                         CsHaulingOverBillsSetting.SetValue(csSettings, false);
+                        Messages.Message("[Jobs of Opportunity] Unticked setting in CommonSense: \"haul ingredients for a bill\". (Can't use both.)", MessageTypeDefOf.SilentInput, false);
+                    }
                 };
             }
 
@@ -88,10 +92,25 @@ namespace JobsOfOpportunity
         static class Dialog_ModSettings_PopulateControlInfo_Patch
         {
             [HarmonyPrefix]
-            static void UpdateDynamicSettings() {
+            static void DynamicSettings(Dictionary<SettingHandle, object> ___handleControlInfo) {
+                settingHandleControlInfo = ___handleControlInfo;
+
                 drawOpportunisticJobs.Value = DebugViewSettings.drawOpportunisticJobs;
-                if (haveCommonSense && (bool) CsHaulingOverBillsSetting.GetValue(csSettings))
-                    haulBeforeBill.Value = false; // will save on close
+            }
+        }
+
+        // Patching virtual methods crashes on Linux with Harmony 2.0.2 (e.g. Window.PostClose, Window.PreClose)
+        // https://discord.com/channels/131466550938042369/674571535570305060/790008125150330880
+        [HarmonyPatch(typeof(Dialog_VanillaModSettings), nameof(Dialog_VanillaModSettings.PreClose))]
+        static class Dialog_VanillaModSettings_PreClose_Patch
+        {
+            [HarmonyPostfix]
+            static void CheckCommonSenseSetting(Dialog_VanillaModSettings __instance) {
+                if (haulBeforeBill.Value && haveCommonSense && (bool) CsHaulingOverBillsSetting.GetValue(csSettings)) {
+                    haulBeforeBill.Value = false;
+                    Traverse.Create(settingHandleControlInfo[haulBeforeBill]).Field<string>("inputValue").Value = "False";
+                    Messages.Message("[Jobs of Opportunity] Unticked setting \"Optimize hauling ingredients\". (Can't use both.)", MessageTypeDefOf.SilentInput, false);
+                }
             }
         }
     }

@@ -20,11 +20,6 @@ namespace JobsOfOpportunity
                 var pawn = Traverse.Create(jobTracker).Field("pawn").GetValue<Pawn>();
                 var jobCell = job.targetA.Cell;
 
-                if (haulBeforeBill.Value && haveCommonSense && (bool) CsHaulingOverBillsSetting.GetValue(csSettings)) {
-                    haulBeforeBill.Value = false;
-                    haulBeforeBill.ForceSaveChanges();
-                }
-
                 if (job.def == JobDefOf.DoBill && haulBeforeBill.Value && enabled.Value) {
                     Debug.WriteLine($"Bill: '{job.bill}' label: '{job.bill.Label}'");
                     Debug.WriteLine($"Recipe: '{job.bill.recipe}' workerClass: '{job.bill.recipe.workerClass}'");
