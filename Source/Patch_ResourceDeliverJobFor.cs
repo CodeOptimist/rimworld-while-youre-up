@@ -18,7 +18,7 @@ namespace JobsOfOpportunity
             {
                 static Job HaulBeforeSupply(Pawn pawn, Thing constructible, Thing th) {
                     if (!haulBeforeSupply.Value || !enabled.Value) return null;
-                    return Hauling.HaulBeforeCarry(pawn, constructible.Position, th);
+                    return Helper.CatchStanding(pawn, Hauling.HaulBeforeCarry(pawn, constructible.Position, th));
                 }
 
                 [HarmonyTranspiler]

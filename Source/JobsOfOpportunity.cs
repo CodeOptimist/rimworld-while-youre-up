@@ -14,6 +14,7 @@ using Dialog_ModSettings = HugsLib.Settings.Dialog_ModSettings;
 
 namespace JobsOfOpportunity
 {
+    [StaticConstructorOnStartup]
     partial class JobsOfOpportunity : ModBase
     {
         static SettingHandle<bool> enabled, showVanillaParameters, haulToInventory, haulBeforeSupply, haulBeforeBill, skipIfBleeding, drawOpportunisticJobs;
@@ -34,6 +35,10 @@ namespace JobsOfOpportunity
         static ModSettings csSettings;
 
         static Dictionary<SettingHandle, object> settingHandleControlInfo;
+
+        static JobsOfOpportunity() {
+            Helper.CatchStanding_Initialize(typeof(JobsOfOpportunity), new Harmony("CodeOptimist"));
+        }
 
         public override void DefsLoaded() {
             puahWorkGiver = DefDatabase<WorkGiverDef>.GetNamedSilentFail("HaulToInventory")?.Worker;
