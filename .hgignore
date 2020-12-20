@@ -1,4 +1,5 @@
 Source/obj/
+Source/bin/
 Source/.vs/
 Assemblies/
 AssemblyInfo.cs

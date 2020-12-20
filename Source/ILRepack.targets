@@ -1,0 +1,26 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Target Name="ILRepacker" AfterTargets="Build">
+
+    <ItemGroup>
+      <!-- all but first assembly will be internalized -->
+      <InputAssemblies Include="$(OutputPath)\$(AssemblyName).dll" />
+      <InputAssemblies Include="$(OutputPath)\CodeOptimist.dll" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <LibraryPath Include="$(SolutionDir)\packages\Lib.Harmony.2.0.4\lib\net472\" />
+      <LibraryPath Include="$(ProgramFiles)\Steam\steamapps\common\RimWorld\RimWorldWin64_Data\Managed\" />
+    </ItemGroup>
+
+    <ILRepack
+        Parallel="true"
+        Internalize="true"
+        LibraryPath="@(LibraryPath)"
+        InputAssemblies="@(InputAssemblies)"
+        TargetKind="Dll"
+        OutputFile="$(ProjectDir)\..\1.2\Assemblies\$(AssemblyName).dll"
+    />
+
+  </Target>
+</Project>
