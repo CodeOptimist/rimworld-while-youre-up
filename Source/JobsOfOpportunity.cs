@@ -21,7 +21,11 @@ namespace JobsOfOpportunity
         static SettingHandle<Hauling.HaulProximities> haulProximities;
         static SettingHandle<float> maxStartToThing, maxStartToThingPctOrigTrip, maxStoreToJob, maxStoreToJobPctOrigTrip, maxTotalTripPctOrigTrip, maxNewLegsPctOrigTrip;
         static SettingHandle<int> maxStartToThingRegionLookCount, maxStoreToJobRegionLookCount;
-        static readonly SettingHandle.ShouldDisplay HavePuah = ModLister.HasActiveModWithName("Pick Up And Haul") ? new SettingHandle.ShouldDisplay(() => true) : () => false;
+
+        static readonly SettingHandle.ShouldDisplay HavePuah = ModLister.HasActiveModWithName("Pick Up And Haul") ||
+                                                               ModLister.HasActiveModWithName("Pick Up And Haul (Continued)")
+            ? new SettingHandle.ShouldDisplay(() => true)
+            : () => false;
 
         static readonly Type PuahWorkGiver_HaulToInventoryType = GenTypes.GetTypeInAnyAssembly("PickUpAndHaul.WorkGiver_HaulToInventory");
         static readonly MethodInfo PuahJobOnThing = AccessTools.Method(PuahWorkGiver_HaulToInventoryType, "JobOnThing");
