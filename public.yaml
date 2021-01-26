@@ -15,7 +15,7 @@ intro: |-
   [img]https://i.imgur.com/tbpLbha.gif[/img]
   
 header: |-
-  [b]A pawn's job will say "Opportunistically ", otherwise it's a different mod[/b] (e.g. normal hauling; normal hauling with [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1279012058]Pick Up And Haul[/url], or triggered by [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1561769193]Common Sense[/url]).
+  [b]A pawn's job will say "Opportunistically ", otherwise it's a different mod[/b] (e.g. normal hauling; normal hauling with [url=https://steamcommunity.com/sharedfiles/filedetails/?id=2277459062]Pick Up And Haul[/url], or triggered by [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1561769193]Common Sense[/url]).
   
   [i]@Modders:[/i] if you set [i]allowOpportunisticPrefix[/i] to [i]false[/i] for a JobDef, it won't allow opportunistic jobs. This is a vanilla feature.
 
@@ -60,7 +60,7 @@ features:
   - title: Haul to inventory
     at: 1.4.0
     desc: |-
-      Custom use of [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1279012058]Pick Up And Haul[/url]! (Installed separately.)
+      Custom use of [url=https://steamcommunity.com/sharedfiles/filedetails/?id=2277459062]Pick Up And Haul[/url]! (Optional. Installed separately.)
 
       The way we control PUAH, only items qualifying as opportunistic will be gathered: solves issue with spread-out stockpiles and [url=https://youtu.be/97aNVniNlGE]unloading madness[/url].
       (Dedicated haul jobs behave as normal, gathering as much as they can.)
@@ -170,7 +170,7 @@ features:
 
   - at: 1.0.0
     desc: |-
-      • Support for [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1279012058][i]Mehni's[/i] Pick Up And Haul[/url]!
+      • Support for [url=https://steamcommunity.com/sharedfiles/filedetails/?id=2277459062][i]Mehni's[/i] Pick Up And Haul[/url]!
 
   - at: 1.1.0
     desc: |-
