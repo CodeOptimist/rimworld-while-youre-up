@@ -46,10 +46,11 @@ namespace JobsOfOpportunity
 
         public override void DefsLoaded() {
             puahWorkGiver = DefDatabase<WorkGiverDef>.GetNamedSilentFail("HaulToInventory")?.Worker;
-            csSettings = (ModSettings) CsSettings?.GetValue(LoadedModManager.GetMod(CsModType));
-            var modIdentifier = ModContentPack.PackageIdPlayerFacing;
+            csSettings = (ModSettings)CsSettings?.GetValue(LoadedModManager.GetMod(CsModType));
+            // don't use ModContentPack.PackageId(PlayerFacing) because it can be changed e.g. "_copy_" suffix
+            const string settingIdentifier = "CodeOptimist.JobsOfOpportunity";
 
-            var s = new SettingsHelper(Settings, modIdentifier);
+            var s = new SettingsHelper(Settings, settingIdentifier);
             enabled = s.GetSettingHandle("enabled", true);
             haulToInventory = s.GetSettingHandle("haulToInventory", true, default, HavePuah);
             haulBeforeSupply = s.GetSettingHandle("haulBeforeSupply", true);
@@ -76,7 +77,7 @@ namespace JobsOfOpportunity
 
             skipIfBleeding = s.GetSettingHandle("skipIfBleeding", true);
 
-            haulProximities = s.GetSettingHandle("haulProximities", Hauling.HaulProximities.Ignored, default, default, $"{modIdentifier}_SettingTitle_haulProximities_");
+            haulProximities = s.GetSettingHandle("haulProximities", Hauling.HaulProximities.Ignored, default, default, $"{settingIdentifier}_SettingTitle_haulProximities_");
 
             drawOpportunisticJobs = s.GetSettingHandle("drawOpportunisticJobs", DebugViewSettings.drawOpportunisticJobs);
             drawOpportunisticJobs.Unsaved = true;
