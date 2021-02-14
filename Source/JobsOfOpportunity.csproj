@@ -38,6 +38,7 @@
     <Compile Include="Patch_PUAH.cs" />
     <Compile Include="Patch_ResourceDeliverJobFor.cs" />
     <Compile Include="Hauling.cs" />
+    <Compile Include="ReversePatch_StoreUtility.cs" />
     <Compile Include="Patch_TryOpportunisticJob.cs" />
     <Compile Include="JobsOfOpportunity.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">

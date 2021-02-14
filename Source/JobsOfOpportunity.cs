@@ -17,7 +17,7 @@ namespace JobsOfOpportunity
     [StaticConstructorOnStartup]
     partial class JobsOfOpportunity : ModBase
     {
-        static SettingHandle<bool> enabled, showVanillaParameters, haulToInventory, haulBeforeSupply, haulBeforeBill, skipIfBleeding, drawOpportunisticJobs;
+        static SettingHandle<bool> enabled, showVanillaParameters, haulToInventory, haulBeforeSupply, haulBeforeBill, haulToEqualPriority, skipIfBleeding, drawOpportunisticJobs;
         static SettingHandle<Hauling.HaulProximities> haulProximities;
         static SettingHandle<float> maxStartToThing, maxStartToThingPctOrigTrip, maxStoreToJob, maxStoreToJobPctOrigTrip, maxTotalTripPctOrigTrip, maxNewLegsPctOrigTrip;
         static SettingHandle<int> maxStartToThingRegionLookCount, maxStoreToJobRegionLookCount;
@@ -74,6 +74,8 @@ namespace JobsOfOpportunity
                     }
                 };
             }
+
+            haulToEqualPriority = s.GetSettingHandle("haulToEqualPriority", true);
 
             skipIfBleeding = s.GetSettingHandle("skipIfBleeding", true);
 

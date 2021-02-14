@@ -125,8 +125,7 @@ namespace JobsOfOpportunity
 
             public static Job HaulBeforeCarry(Pawn pawn, IntVec3 dest, Thing th) {
                 if (th.ParentHolder is Pawn_InventoryTracker) return null;
-                if (th.IsInValidStorage()) return null;
-                if (!StoreUtility.TryFindBestBetterStoreCellFor(th, pawn, pawn.Map, StoragePriority.Unstored, pawn.Faction, out var storeCell, false)) return null;
+                if (!ReversePatch.ClosestStoreCellToDest(th, pawn, pawn.Map, StoreUtility.CurrentStoragePriorityOf(th), pawn.Faction, out var storeCell, false, dest, haulToEqualPriority.Value)) return null;
 
                 var supplyFromHereDist = th.Position.DistanceTo(dest);
                 var supplyFromStoreDist = storeCell.DistanceTo(dest);
@@ -135,7 +134,7 @@ namespace JobsOfOpportunity
                 // [KV] Infinite Storage https://steamcommunity.com/sharedfiles/filedetails/?id=1233893175
                 // infinite storage has an interaction spot 1 tile away from itself
                 if (supplyFromStoreDist + 1 < supplyFromHereDist) {
-                    Debug.WriteLine($"'{pawn}' prefixed job with storage haul for '{th.Label}' because '{storeCell.GetSlotGroup(pawn.Map)}' is closer to original destination '{dest}'.");
+                    Debug.WriteLine($"'{pawn}' prefixed job with haul for '{th.Label}' because '{storeCell.GetSlotGroup(pawn.Map)}' is closer to original destination '{dest}'.");
                     return PuahJob(pawn, dest, th, storeCell) ?? HaulAIUtility.HaulToCellStorageJob(pawn, th, storeCell, false);
                 }
 

@@ -108,6 +108,11 @@ features:
 
           Off is equivalent to disabling all features, resetting each vanilla parameter, and "initial closeness" set to "(vanilla)".
 
+      - name: haulToEqualPriority
+        title: &haulToEqualPriority Allow "Optimize hauling" to same-priority
+        desc: |-
+          This modifies "Optimize hauling" to include delivery to same-priority storage.
+
       - name: drawOpportunisticJobs
         title: Draw opportunistic jobs
         desc: |-
@@ -205,3 +210,14 @@ features:
     credit: '@Just#1021'
     desc: |-
       • Fixed "Optimize hauling ingredients/supplies" to no longer cause "Standing" loop when ingredient is in a pawn inventory. Fixes surgery with [i]Smart Medicine[/i], compatibility with [i]Build From Inventory[/i], and others.
+
+  - at: 1.7.0
+    credit: 'Kellogg''s#0574'
+    desc: !join
+      - ""
+      - "• [i]Optimize hauling ingredients/supplies[/i] will trigger more often:\n"
+      - "     - Fixed hauling from existing storage, not just un-stored.\n"
+      - "     - New [i]"
+      - *haulToEqualPriority
+      - "[/i] setting (defaults on).\n"
+      - "     - Checks closest storage (to destination, not item) for closeness to destination.\n"
