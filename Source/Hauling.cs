@@ -1,8 +1,9 @@
 ﻿using System.Collections.Generic;
-using System.Diagnostics;
 using RimWorld;
 using Verse;
 using Verse.AI;
+// ReSharper disable once RedundantUsingDirective
+using Debug = System.Diagnostics.Debug;
 
 namespace JobsOfOpportunity
 {
@@ -62,7 +63,9 @@ namespace JobsOfOpportunity
                 // we need storeCell everywhere, so cache it
                 if (!cachedOpportunityStoreCell.TryGetValue(thing, out storeCell)) {
                     var currentPriority = StoreUtility.CurrentStoragePriorityOf(thing);
-                    if (!StoreUtility.TryFindBestBetterStoreCellFor(thing, pawn, pawn.Map, currentPriority, pawn.Faction, out storeCell)) return ProximityStage.Fail;
+                    if (!JooStoreUtility.TryFindBestBetterStoreCellFor_ClosestToDestCell(
+                        thing, IntVec3.Invalid, pawn, pawn.Map, currentPriority, pawn.Faction, out storeCell, true))
+                        return ProximityStage.Fail;
                 }
 
                 cachedOpportunityStoreCell.SetOrAdd(thing, storeCell);
@@ -148,9 +151,9 @@ namespace JobsOfOpportunity
 
             public static Job PuahJob(Pawn pawn, IntVec3 jobCell, Thing thing, IntVec3 storeCell) {
                 if (!havePuah || !haulToInventory.Value) return null;
-                Debug.WriteLine("Activating Pick Up And Haul.");
-                haulTrackers.SetOrAdd(
-                    pawn, new PuahHaulTracker {hauls = new List<(Thing thing, IntVec3 store)> {(thing, storeCell)}, startCell = pawn.Position, jobCell = jobCell});
+                var haulTracker = new PuahHaulTracker(pawn, jobCell);
+                haulTracker.Add(thing, storeCell);
+                haulTrackers.SetOrAdd(pawn, haulTracker);
                 return (Job) PuahJobOnThing.Invoke(puahWorkGiver, new object[] {pawn, thing, false});
             }
 

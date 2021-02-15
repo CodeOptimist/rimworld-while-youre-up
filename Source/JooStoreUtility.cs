@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using HarmonyLib;
 using RimWorld;
 using Verse;
@@ -15,17 +16,57 @@ namespace JobsOfOpportunity
 
         public class PuahHaulTracker
         {
-            public List<(Thing thing, IntVec3 storeCell)> hauls;
-            public IntVec3                                startCell;
-            public IntVec3                                jobCell;
+            // reminder that storeCell is just *some* cell in our stockpile, actual unload cell is determined at unload
+            public List<(Thing thing, IntVec3 storeCell)> hauls;    // for opportune checking (with jobCell)
+            public Dictionary<ThingDef, IntVec3>          defHauls; // for unload ordering
+
+            public IntVec3 startCell;
+            public IntVec3 jobCell; // when our haul is an opportunity on the way to a job
+
+            public PuahHaulTracker(Pawn pawn, IntVec3 jobCell) {
+                hauls = new List<(Thing thing, IntVec3 storeCell)>();
+                defHauls = new Dictionary<ThingDef, IntVec3>();
+
+                startCell = pawn.Position;
+                this.jobCell = jobCell;
+            }
+
+            // I don't like this pattern, but it's simpler for now
+            public static PuahHaulTracker GetOrCreate(Pawn pawn) {
+                // may already be set by opportunity with valid jobCell
+                if (haulTrackers.TryGetValue(pawn, out var haulTracker)) return haulTracker;
+                haulTracker = new PuahHaulTracker(pawn, IntVec3.Invalid);
+                haulTrackers.SetOrAdd(pawn, haulTracker);
+                return haulTracker;
+            }
+
+            public void Add(Thing thing, IntVec3 storeCell, bool toEnd = true, [CallerMemberName] string callerName = "") {
+#if DEBUG
+                // make deterministic, but merges and initial hauls will still fluctuate
+                storeCell = storeCell.GetSlotGroup(thing.Map).CellsList[0];
+#endif
+                if (callerName != "AddOpportuneHaulToTracker")
+                    Debug.WriteLine($"{RealTime.frameCount} {callerName}() {thing} -> {storeCell} " + (toEnd ? "Added to tracker." : "PREPENDED to tracker."));
+
+                var idx = toEnd ? hauls.Count : 0;
+                hauls.Insert(idx, (thing, storeCell));
+                defHauls.SetOrAdd(thing.def, storeCell);
+            }
         }
 
         static class JooStoreUtility
         {
-            static bool AddOpportuneHaulToTracker(PuahHaulTracker haulTracker, Thing thing, Pawn pawn, ref IntVec3 foundCell) {
+            static bool AddOpportuneHaulToTracker(PuahHaulTracker haulTracker, Thing thing, Pawn pawn, ref IntVec3 foundCell, [CallerMemberName] string callerName = "") {
                 var hauls = new List<(Thing thing, IntVec3 storeCell)>(haulTracker.hauls);
-                if (hauls.Last().thing != thing)
+                var defHauls = new Dictionary<ThingDef, IntVec3>(haulTracker.defHauls);
+
+                Debug.WriteLine(
+                    $"{RealTime.frameCount} {callerName}() {thing} -> {foundCell} " + (hauls.LastOrDefault().thing != thing ? "Added to tracker." : "UPDATED on tracker."));
+
+                if (hauls.LastOrDefault().thing != thing) {
                     hauls.Add((thing, storeCell: foundCell));
+                    defHauls.SetOrAdd(thing.def, foundCell);
+                }
 
                 var startToLastThing = 0f;
                 var curPos = haulTracker.startCell;
@@ -34,23 +75,32 @@ namespace JobsOfOpportunity
                     curPos = thing_.Position;
                 }
 
-                // actual unloading cells are determined on-the-fly, but these will represent the parent stockpiles with equal correctness
-                // may also be extras if don't all fit in one cell, etc.
-                List<(Thing thing, IntVec3 storeCell)> haulsByUnloadOrder;
+                List<(Thing thing, IntVec3 storeCell)> GetHaulsByUnloadOrder() {
+                    List<(Thing thing, IntVec3 storeCell)> haulsUnordered, haulsByUnloadOrder_;
+                    if (pawn.carryTracker?.CarriedThing == hauls.Last().thing) {
+                        haulsUnordered = new List<(Thing thing, IntVec3 storeCell)>(hauls.GetRange(0, hauls.Count - 1));
+                        haulsByUnloadOrder_ = new List<(Thing thing, IntVec3 storeCell)> {hauls.Last()};
+                    } else {
+                        haulsByUnloadOrder_ = new List<(Thing thing, IntVec3 storeCell)> {hauls.First()};
+                        haulsUnordered = new List<(Thing thing, IntVec3 storeCell)>(hauls.GetRange(1, hauls.Count - 1));
+                    }
 
-                ushort? PuahFirstUnloadableThing((Thing thing, IntVec3 storeCell) haul) {
-                    return haul.thing.def.FirstThingCategory?.index;
+                    var curPos_ = haulsByUnloadOrder_.First().storeCell;
+                    while (haulsUnordered.Count > 0) {
+                        // actual unloading cells are determined on-the-fly, but these will represent the parent stockpiles with equal correctness
+                        //  may also be extras if don't all fit in one cell, etc.
+                        var closestUnload = haulsUnordered.OrderBy(h => defHauls[h.thing.def].DistanceTo(curPos_)).First();
+                        haulsUnordered.Remove(closestUnload);
+                        haulsByUnloadOrder_.Add(closestUnload);
+                        curPos_ = closestUnload.storeCell;
+                    }
+
+                    return haulsByUnloadOrder_;
                 }
 
-                if (pawn.carryTracker?.CarriedThing == hauls.Last().thing) {
-                    haulsByUnloadOrder = hauls.GetRange(0, hauls.Count - 1).OrderBy(PuahFirstUnloadableThing).ToList();
-                    haulsByUnloadOrder.Insert(0, hauls.Last());
-                } else {
-                    haulsByUnloadOrder = hauls.OrderBy(PuahFirstUnloadableThing).ToList();
-                    var mandatoryFirstStoreIsFirstUnload = hauls.First().storeCell.GetSlotGroup(pawn.Map) == haulsByUnloadOrder.First().storeCell.GetSlotGroup(pawn.Map);
-                    if (!mandatoryFirstStoreIsFirstUnload)
-                        haulsByUnloadOrder.Insert(0, (thing: null, hauls.First().storeCell));
-                }
+                // note our thing navigation is recorded with hauls, and our store navigation is calculated by haulsByUnloadOrder
+
+                var haulsByUnloadOrder = GetHaulsByUnloadOrder();
 
                 var storeToLastStore = 0f;
                 curPos = hauls.Last().storeCell;
@@ -85,8 +135,24 @@ namespace JobsOfOpportunity
 //                    Debug.WriteLine("");
                 }
 
-                if (isRejected) return false;
+                if (isRejected) {
+                    foundCell = IntVec3.Invalid;
+                    return false;
+                }
+
+                Debug.WriteLine("Hauls:");
+                foreach (var haul in hauls)
+                    Debug.WriteLine($"{haul}");
+
+                Debug.WriteLine("Unloads:");
+                // we just order by store with no secondary ordering of thing, so just print store
+                foreach (var haul in haulsByUnloadOrder)
+                    Debug.WriteLine($"{haul.storeCell.GetSlotGroup(pawn.Map)}"); // thing may not have Map
+
+                Debug.WriteLine("");
+
                 haulTracker.hauls = hauls;
+                haulTracker.defHauls = defHauls;
                 return true;
             }
 
@@ -127,44 +193,71 @@ namespace JobsOfOpportunity
 
             public static bool PuahHasJobOnThing_HasStore(Thing thing, Pawn pawn, Map map, StoragePriority currentPriority, Faction faction, out IntVec3 foundCell,
                 bool needAccurateResult) {
-                if (Hauling.cachedOpportunityStoreCell.TryGetValue(thing, out foundCell)) {
-                    if (haulTrackers.TryGetValue(pawn, out var haulTracker))
-                        return AddOpportuneHaulToTracker(haulTracker, thing, pawn, ref foundCell);
-                }
-
-                return StoreUtility.TryFindBestBetterStoreCellFor(thing, pawn, map, currentPriority, faction, out foundCell, needAccurateResult);
+                var isFound = Hauling.cachedOpportunityStoreCell.TryGetValue(thing, out foundCell)
+                              || StoreUtility.TryFindBestBetterStoreCellFor(thing, pawn, map, currentPriority, faction, out foundCell, false);
+                haulTrackers.TryGetValue(pawn, out var haulTracker);
+                // we need to reject inopportune hauls here in HasJobOnThing - used by the haulMoreWork toil
+                // here we only need to accept/reject so adding to tracker is a little early, but that's okay, we check for existing later
+                return isFound && (haulTracker == default || AddOpportuneHaulToTracker(haulTracker, thing, pawn, ref foundCell));
             }
 
             public static bool PuahAllocateThingAtCell_GetStore(Thing thing, Pawn pawn, Map map, StoragePriority currentPriority, Faction faction, out IntVec3 foundCell) {
                 var skipCells = (HashSet<IntVec3>) AccessTools.DeclaredField(PuahWorkGiver_HaulToInventoryType, "skipCells").GetValue(null);
+                foundCell = IntVec3.Invalid;
 
                 // take advantage of our cache because we can
-                if (Hauling.cachedOpportunityStoreCell.TryGetValue(thing, out var cachedCell)) {
-                    if (!skipCells.Contains(cachedCell)) {
-                        foundCell = cachedCell;
-                        skipCells.Add(cachedCell);
-                        return true;
+                if (Hauling.cachedOpportunityStoreCell.TryGetValue(thing, out var cachedCell) && !skipCells.Contains(cachedCell))
+                    foundCell = cachedCell;
+                else {
+                    foreach (var slotGroup in map.haulDestinationManager.AllGroupsListInPriorityOrder
+                        .Where(s => s.Settings.Priority > currentPriority && s.parent.Accepts(thing))) {
+                        if (slotGroup.CellsList.Except(skipCells).FirstOrDefault(c => StoreUtility.IsGoodStoreCell(c, map, thing, pawn, faction)) is IntVec3 cell
+                            && cell != default)
+                            foundCell = cell;
                     }
                 }
 
-                var groupsList = map.haulDestinationManager.AllGroupsListInPriorityOrder;
-                foreach (var slotGroup in groupsList.Where(s => s.Settings.Priority > currentPriority && s.parent.Accepts(thing))) {
-                    if (slotGroup.CellsList.Except(skipCells).FirstOrDefault(c => StoreUtility.IsGoodStoreCell(c, map, thing, pawn, faction)) is IntVec3 cell
-                        && cell != default) {
-                        foundCell = cell;
-                        skipCells.Add(cell);
+                if (!foundCell.IsValid) return false;
+                skipCells.Add(foundCell);
 
-                        if (haulTrackers.TryGetValue(pawn, out var haulTracker)) {
-                            if (!AddOpportuneHaulToTracker(haulTracker, thing, pawn, ref foundCell))
-                                break;
-                        }
+                var haulTracker = PuahHaulTracker.GetOrCreate(pawn);
+                if (haulTracker.jobCell.IsValid) return AddOpportuneHaulToTracker(haulTracker, thing, pawn, ref foundCell);
+                haulTracker.Add(thing, foundCell);
+                return true;
+            }
 
-                        return true;
-                    }
+            public static ThingCount PuahFirstUnloadableThing(Pawn pawn) {
+                var hauledToInventoryComp =
+                    (ThingComp) AccessTools.DeclaredMethod(typeof(ThingWithComps), "GetComp").MakeGenericMethod(PuahCompHauledToInventoryType).Invoke(pawn, null);
+                var thingsHauled = (HashSet<Thing>) AccessTools.DeclaredMethod(PuahCompHauledToInventoryType, "GetHashSet").Invoke(hauledToInventoryComp, null);
+
+                // should only be necessary because haulTrackers aren't currently saved in file like CompHauledToInventory
+                IntVec3 GetStoreCell(PuahHaulTracker haulTracker_, Thing thing) {
+                    if (haulTracker_.defHauls.TryGetValue(thing.def, out var storeCell))
+                        return storeCell;
+                    if (TryFindBestBetterStoreCellFor_ClosestToDestCell(
+                        thing, IntVec3.Invalid, pawn, pawn.Map, StoreUtility.CurrentStoragePriorityOf(thing), pawn.Faction, out storeCell, false))
+                        haulTracker_.defHauls.Add(thing.def, storeCell);
+                    return storeCell; // IntVec3.Invalid is okay here
                 }
 
-                foundCell = IntVec3.Invalid;
-                return false;
+                var firstThingToUnload = thingsHauled.FirstOrDefault();
+                if (haulTrackers.TryGetValue(pawn, out var haulTracker))
+                    firstThingToUnload = thingsHauled.OrderBy(t => GetStoreCell(haulTracker, t).DistanceTo(pawn.Position)).FirstOrDefault();
+                if (firstThingToUnload == default) return default;
+
+                var thingsFound = pawn.inventory.innerContainer.Where(t => thingsHauled.Contains(t));
+                if (!thingsFound.Contains(firstThingToUnload)) {
+                    // can't be removed from dropping / delivering, so remove now
+                    thingsHauled.Remove(firstThingToUnload);
+
+                    // because of merges
+                    var thingFoundByDef = pawn.inventory.innerContainer.FirstOrDefault(t => t.def == firstThingToUnload.def);
+                    if (thingFoundByDef != default)
+                        return new ThingCount(thingFoundByDef, thingFoundByDef.stackCount);
+                }
+
+                return new ThingCount(firstThingToUnload, firstThingToUnload.stackCount);
             }
         }
     }

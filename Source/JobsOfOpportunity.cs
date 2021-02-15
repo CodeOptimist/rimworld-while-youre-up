@@ -31,11 +31,16 @@ namespace JobsOfOpportunity
             ? new SettingHandle.ShouldDisplay(() => true)
             : () => false;
 
+        static readonly Type       PuahCompHauledToInventoryType               = GenTypes.GetTypeInAnyAssembly("PickUpAndHaul.CompHauledToInventory");
         static readonly Type       PuahWorkGiver_HaulToInventoryType           = GenTypes.GetTypeInAnyAssembly("PickUpAndHaul.WorkGiver_HaulToInventory");
         static readonly Type       PuahJobDriver_HaulToInventoryType           = GenTypes.GetTypeInAnyAssembly("PickUpAndHaul.JobDriver_HaulToInventory");
+        static readonly Type       PuahJobDriver_UnloadYourHauledInventoryType = GenTypes.GetTypeInAnyAssembly("PickUpAndHaul.JobDriver_UnloadYourHauledInventory");
         static readonly MethodInfo PuahJobOnThing                              = AccessTools.DeclaredMethod(PuahWorkGiver_HaulToInventoryType, "JobOnThing");
         static          WorkGiver  puahWorkGiver;
-        static readonly bool havePuah = new List<object> {PuahWorkGiver_HaulToInventoryType, PuahJobDriver_HaulToInventoryType, PuahJobOnThing}.All(x => x != null);
+
+        static readonly bool havePuah = new List<object>
+                {PuahCompHauledToInventoryType, PuahWorkGiver_HaulToInventoryType, PuahJobDriver_HaulToInventoryType, PuahJobDriver_UnloadYourHauledInventoryType, PuahJobOnThing}
+            .All(x => x != null);
 
         static readonly Type        CsModType                 = GenTypes.GetTypeInAnyAssembly("CommonSense.CommonSense");
         static readonly Type        CsSettingsType            = GenTypes.GetTypeInAnyAssembly("CommonSense.Settings");
