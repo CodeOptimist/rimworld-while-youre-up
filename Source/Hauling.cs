@@ -125,7 +125,8 @@ namespace JobsOfOpportunity
 
             public static Job HaulBeforeCarry(Pawn pawn, IntVec3 dest, Thing th) {
                 if (th.ParentHolder is Pawn_InventoryTracker) return null;
-                if (!ReversePatch.ClosestStoreCellToDest(th, pawn, pawn.Map, StoreUtility.CurrentStoragePriorityOf(th), pawn.Faction, out var storeCell, false, dest, haulToEqualPriority.Value)) return null;
+                if (!JooStoreUtility.TryFindBestBetterStoreCellFor_ClosestToDestCell(
+                    th, dest, pawn, pawn.Map, StoreUtility.CurrentStoragePriorityOf(th), pawn.Faction, out var storeCell, true)) return null;
 
                 var supplyFromHereDist = th.Position.DistanceTo(dest);
                 var supplyFromStoreDist = storeCell.DistanceTo(dest);
