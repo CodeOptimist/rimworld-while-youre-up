@@ -6,8 +6,8 @@
     <AssemblyTitle>JobsOfOpportunity</AssemblyTitle>
     <Product>JobsOfOpportunity</Product>
     <Copyright>Copyright © 2020-$([System.DateTime]::Now.Year) Christopher Galpin</Copyright>
-    <SecondsSinceEpoch>$([System.DateTime]::UtcNow.Subtract($([System.DateTime]::MinValue)).TotalMinutes)</SecondsSinceEpoch>
-    <Revision>$([System.Math]::Truncate($([System.Decimal]::Remainder($(SecondsSinceEpoch), 1000))))</Revision>
+    <MinutesSinceEpoch>$([System.DateTime]::UtcNow.Subtract($([System.DateTime]::MinValue)).TotalMinutes)</MinutesSinceEpoch>
+    <Revision>$([System.Math]::Truncate($([System.Decimal]::Remainder($(MinutesSinceEpoch), 10000))))</Revision>
     <Version>1.7.0.$(Revision)</Version>
     <AssemblyVersion>$(Version)</AssemblyVersion>
     <FileVersion>$(Version)</FileVersion>
@@ -46,6 +46,6 @@
     <ILRepack Parallel="true" Internalize="true" LibraryPath="@(LibraryPath)" InputAssemblies="@(InputAssemblies)" TargetKind="Dll" OutputFile="$(ProjectDir)..\1.2\Assemblies\$(AssemblyName).dll" />
   </Target>
   <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
-    <Exec Command="type nul&gt;$(Temp)rw_build" />
+    <Exec Command="type nul&gt;$(Temp)\rw_build" />
   </Target>
 </Project>
