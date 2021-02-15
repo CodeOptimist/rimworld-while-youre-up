@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using HarmonyLib;
@@ -79,6 +80,38 @@ namespace JobsOfOpportunity
                 if (isRejected) return true;
                 forPuah.hauls = hauls;
                 return false;
+            }
+
+            public static bool VanillaTryFindBestBetterStoreCellFor(Thing thing, Pawn pawn, Map map, StoragePriority currentPriority,
+                Faction faction, out IntVec3 foundCell, bool needAccurateResult = true) {
+                var closestSlot = IntVec3.Invalid;
+                var closestDistSquared = (float) int.MaxValue;
+                var foundPriority = currentPriority;
+
+                foreach (var slotGroup in map.haulDestinationManager.AllGroupsListInPriorityOrder) {
+                    if (slotGroup.Settings.Priority < foundPriority) break;
+                    if (slotGroup.Settings.Priority <= currentPriority) break;
+
+                    if (!slotGroup.parent.Accepts(thing)) continue;
+
+                    var thingPosition = thing.SpawnedOrAnyParentSpawned ? thing.PositionHeld : pawn.PositionHeld;
+                    var maxCheckedCells = needAccurateResult ? (int) Math.Floor((double) slotGroup.CellsList.Count * Rand.Range(0.005f, 0.018f)) : 0;
+                    for (var i = 0; i < slotGroup.CellsList.Count; i++) {
+                        var cell = slotGroup.CellsList[i];
+                        var distSquared = (float) (thingPosition - cell).LengthHorizontalSquared;
+                        if (distSquared > closestDistSquared) continue;
+                        if (!StoreUtility.IsGoodStoreCell(cell, map, thing, pawn, faction)) continue;
+
+                        closestSlot = cell;
+                        closestDistSquared = distSquared;
+                        foundPriority = slotGroup.Settings.Priority;
+
+                        if (i >= maxCheckedCells) break;
+                    }
+                }
+
+                foundCell = closestSlot;
+                return foundCell.IsValid;
             }
 
             public static bool PuahHasJobOnThing_HasStore(Thing thing, Pawn pawn, Map map, StoragePriority currentPriority, Faction faction, out IntVec3 foundCell,
