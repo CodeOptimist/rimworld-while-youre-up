@@ -21,21 +21,22 @@ namespace JobsOfOpportunity
             public Dictionary<ThingDef, IntVec3>          defHauls; // for unload ordering
 
             public IntVec3 startCell;
-            public IntVec3 jobCell; // when our haul is an opportunity on the way to a job
+            public IntVec3 jobCell;  // when our haul is an opportunity on the way to a job
+            public IntVec3 destCell; // when store isn't the destination (e.g. bill ingredients, blueprint supplies)
 
-            public PuahHaulTracker(Pawn pawn, IntVec3 jobCell) {
+            public PuahHaulTracker(Pawn pawn, IntVec3 jobCell, IntVec3 destCell) {
                 hauls = new List<(Thing thing, IntVec3 storeCell)>();
                 defHauls = new Dictionary<ThingDef, IntVec3>();
 
                 startCell = pawn.Position;
                 this.jobCell = jobCell;
+                this.destCell = destCell;
             }
 
             // I don't like this pattern, but it's simpler for now
             public static PuahHaulTracker GetOrCreate(Pawn pawn) {
-                // may already be set by opportunity with valid jobCell
                 if (haulTrackers.TryGetValue(pawn, out var haulTracker)) return haulTracker;
-                haulTracker = new PuahHaulTracker(pawn, IntVec3.Invalid);
+                haulTracker = new PuahHaulTracker(pawn, IntVec3.Invalid, IntVec3.Invalid);
                 haulTrackers.SetOrAdd(pawn, haulTracker);
                 return haulTracker;
             }
@@ -157,7 +158,10 @@ namespace JobsOfOpportunity
             }
 
             public static bool TryFindBestBetterStoreCellFor_ClosestToDestCell(Thing thing, IntVec3 destCell, Pawn pawn, Map map, StoragePriority currentPriority,
-                Faction faction, out IntVec3 foundCell, bool needAccurateResult) {
+                Faction faction, out IntVec3 foundCell, bool needAccurateResult, HashSet<IntVec3> skipCells = null) {
+                if (!destCell.IsValid && Hauling.cachedOpportunityStoreCell.TryGetValue(thing, out foundCell))
+                    return true;
+
                 var allowEqualPriority = destCell.IsValid && haulToEqualPriority.Value;
                 var closestSlot = IntVec3.Invalid;
                 var closestDistSquared = (float) int.MaxValue;
@@ -177,6 +181,7 @@ namespace JobsOfOpportunity
                         var cell = slotGroup.CellsList[i];
                         var distSquared = (float) (position - cell).LengthHorizontalSquared;
                         if (distSquared > closestDistSquared) continue;
+                        if (skipCells != null && skipCells.Contains(cell)) continue;
                         if (!StoreUtility.IsGoodStoreCell(cell, map, thing, pawn, faction)) continue;
 
                         closestSlot = cell;
@@ -193,34 +198,18 @@ namespace JobsOfOpportunity
 
             public static bool PuahHasJobOnThing_HasStore(Thing thing, Pawn pawn, Map map, StoragePriority currentPriority, Faction faction, out IntVec3 foundCell,
                 bool needAccurateResult) {
-                var isFound = Hauling.cachedOpportunityStoreCell.TryGetValue(thing, out foundCell)
-                              || StoreUtility.TryFindBestBetterStoreCellFor(thing, pawn, map, currentPriority, faction, out foundCell, false);
-                haulTrackers.TryGetValue(pawn, out var haulTracker);
-                // we need to reject inopportune hauls here in HasJobOnThing - used by the haulMoreWork toil
-                // here we only need to accept/reject so adding to tracker is a little early, but that's okay, we check for existing later
-                return isFound && (haulTracker == default || AddOpportuneHaulToTracker(haulTracker, thing, pawn, ref foundCell));
+                var haulTracker = PuahHaulTracker.GetOrCreate(pawn);
+                if (!TryFindBestBetterStoreCellFor_ClosestToDestCell(thing, haulTracker.destCell, pawn, map, currentPriority, faction, out foundCell, false)) return false;
+                return !haulTracker.jobCell.IsValid || AddOpportuneHaulToTracker(haulTracker, thing, pawn, ref foundCell);
             }
 
             public static bool PuahAllocateThingAtCell_GetStore(Thing thing, Pawn pawn, Map map, StoragePriority currentPriority, Faction faction, out IntVec3 foundCell) {
                 var skipCells = (HashSet<IntVec3>) AccessTools.DeclaredField(PuahWorkGiver_HaulToInventoryType, "skipCells").GetValue(null);
-                foundCell = IntVec3.Invalid;
-
-                // take advantage of our cache because we can
-                if (Hauling.cachedOpportunityStoreCell.TryGetValue(thing, out var cachedCell) && !skipCells.Contains(cachedCell))
-                    foundCell = cachedCell;
-                else {
-                    foreach (var slotGroup in map.haulDestinationManager.AllGroupsListInPriorityOrder
-                        .Where(s => s.Settings.Priority > currentPriority && s.parent.Accepts(thing))) {
-                        if (slotGroup.CellsList.Except(skipCells).FirstOrDefault(c => StoreUtility.IsGoodStoreCell(c, map, thing, pawn, faction)) is IntVec3 cell
-                            && cell != default)
-                            foundCell = cell;
-                    }
-                }
-
-                if (!foundCell.IsValid) return false;
-                skipCells.Add(foundCell);
-
                 var haulTracker = PuahHaulTracker.GetOrCreate(pawn);
+                if (!TryFindBestBetterStoreCellFor_ClosestToDestCell(
+                    thing, haulTracker.destCell, pawn, map, currentPriority, faction, out foundCell, haulTracker.destCell.IsValid, skipCells)) return false;
+
+                skipCells.Add(foundCell);
                 if (haulTracker.jobCell.IsValid) return AddOpportuneHaulToTracker(haulTracker, thing, pawn, ref foundCell);
                 haulTracker.Add(thing, foundCell);
                 return true;
@@ -236,7 +225,7 @@ namespace JobsOfOpportunity
                     if (haulTracker_.defHauls.TryGetValue(thing.def, out var storeCell))
                         return storeCell;
                     if (TryFindBestBetterStoreCellFor_ClosestToDestCell(
-                        thing, IntVec3.Invalid, pawn, pawn.Map, StoreUtility.CurrentStoragePriorityOf(thing), pawn.Faction, out storeCell, false))
+                        thing, haulTracker_.destCell, pawn, pawn.Map, StoreUtility.CurrentStoragePriorityOf(thing), pawn.Faction, out storeCell, false))
                         haulTracker_.defHauls.Add(thing.def, storeCell);
                     return storeCell; // IntVec3.Invalid is okay here
                 }

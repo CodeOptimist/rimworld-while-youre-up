@@ -23,7 +23,7 @@ namespace JobsOfOpportunity
                 static void GetPuahOpportunityJobString(JobDriver __instance, ref string __result) {
                     if (!PuahJobDriver_HaulToInventoryType.IsInstanceOfType(__instance)) return;
                     if (!haulTrackers.TryGetValue(__instance.pawn, out var haulTracker)) return;
-                    if (haulTracker.jobCell.IsValid)
+                    if (haulTracker.jobCell.IsValid || haulTracker.destCell.IsValid)
                         __result = $"Opportunistically {__result}";
                 }
             }
@@ -72,9 +72,9 @@ namespace JobsOfOpportunity
                 static bool UseTryFindBestBetterStoreCellFor_ClosestToDestCell(Thing t, Pawn carrier, Map map, StoragePriority currentPriority, Faction faction,
                     out IntVec3 foundCell,
                     bool needAccurateResult) {
-                    // why not take advantage of our cache here as well
-                    return Hauling.cachedOpportunityStoreCell.TryGetValue(t, out foundCell) || JooStoreUtility.TryFindBestBetterStoreCellFor_ClosestToDestCell(
-                               t, IntVec3.Invalid, carrier, map, currentPriority, faction, out foundCell, false);
+                    var haulTracker = PuahHaulTracker.GetOrCreate(carrier);
+                    return JooStoreUtility.TryFindBestBetterStoreCellFor_ClosestToDestCell(
+                        t, haulTracker.destCell, carrier, map, currentPriority, faction, out foundCell, haulTracker.destCell.IsValid);
                 }
 
                 [HarmonyTranspiler]
@@ -84,11 +84,32 @@ namespace JobsOfOpportunity
                         AccessTools.DeclaredMethod(typeof(WorkGiver_HaulToInventory_JobOnThing_Patch), nameof(UseTryFindBestBetterStoreCellFor_ClosestToDestCell)));
                 }
 
+                [HarmonyPrefix]
+                static void TempReduceStoragePriorityForHaulBeforeCarry(WorkGiver_Scanner __instance, ref bool __state, Pawn pawn, Thing thing) {
+                    if (!haulToEqualPriority.Value) return;
+
+                    var haulTracker = PuahHaulTracker.GetOrCreate(pawn);
+                    if (!haulTracker.destCell.IsValid) return;
+
+                    var currentHaulDestination = StoreUtility.CurrentHaulDestinationOf(thing);
+                    if (currentHaulDestination == null) return;
+
+                    var storeSettings = currentHaulDestination.GetStoreSettings();
+                    if (storeSettings.Priority > StoragePriority.Unstored) {
+                        storeSettings.Priority -= 1;
+                        __state = true;
+                    }
+                }
+
                 [HarmonyPostfix]
-                static void AddFirstRegularHaulToTracker(WorkGiver_Scanner __instance, Job __result, Pawn pawn, Thing thing) {
+                static void AddFirstRegularHaulToTracker(WorkGiver_Scanner __instance, bool __state, Job __result, Pawn pawn, Thing thing) {
+                    // restore storage priority
+                    if (__state)
+                        StoreUtility.CurrentHaulDestinationOf(thing).GetStoreSettings().Priority += 1;
+
                     if (__result == null) return;
 
-                    // JobOnThing() can run additional times (e.g. haulMoreWork toil) so don't assume this is already added if there's a jobCell
+                    // JobOnThing() can run additional times (e.g. haulMoreWork toil) so don't assume this is already added if there's a jobCell or destCell
                     var haulTracker = PuahHaulTracker.GetOrCreate(pawn);
                     // thing from parameter because targetA is null because things are in queues instead
                     //  https://github.com/Mehni/PickUpAndHaul/blob/af50a05a8ae5ca64d9b95fee8f593cf91f13be3d/Source/PickUpAndHaul/WorkGiver_HaulToInventory.cs#L98

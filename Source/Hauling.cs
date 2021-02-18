@@ -60,14 +60,11 @@ namespace JobsOfOpportunity
                     if (!HaulAIUtility.PawnCanAutomaticallyHaulFast(pawn, thing, false)) return ProximityStage.Fail;
                 }
 
-                // we need storeCell everywhere, so cache it
-                if (!cachedOpportunityStoreCell.TryGetValue(thing, out storeCell)) {
-                    var currentPriority = StoreUtility.CurrentStoragePriorityOf(thing);
-                    if (!JooStoreUtility.TryFindBestBetterStoreCellFor_ClosestToDestCell(
-                        thing, IntVec3.Invalid, pawn, pawn.Map, currentPriority, pawn.Faction, out storeCell, true))
-                        return ProximityStage.Fail;
-                }
+                var currentPriority = StoreUtility.CurrentStoragePriorityOf(thing);
+                if (!JooStoreUtility.TryFindBestBetterStoreCellFor_ClosestToDestCell(thing, IntVec3.Invalid, pawn, pawn.Map, currentPriority, pawn.Faction, out storeCell, true))
+                    return ProximityStage.Fail;
 
+                // we need storeCell everywhere, so cache it
                 cachedOpportunityStoreCell.SetOrAdd(thing, storeCell);
 
                 var storeToJob = storeCell.DistanceTo(jobCell);
@@ -121,7 +118,7 @@ namespace JobsOfOpportunity
                     }
 
                     pawnHaulToCell.SetOrAdd(pawn, true);
-                    return PuahJob(pawn, jobCell, thing, storeCell) ?? HaulAIUtility.HaulToCellStorageJob(pawn, thing, storeCell, false);
+                    return PuahJob(pawn, jobCell, thing, storeCell, IntVec3.Invalid) ?? HaulAIUtility.HaulToCellStorageJob(pawn, thing, storeCell, false);
                 }
 
                 return null;
@@ -143,15 +140,15 @@ namespace JobsOfOpportunity
 //                    Debug.WriteLine(
 //                        $"'{pawn}' prefixed job with haul for '{thing.Label}' because '{storeCell.GetSlotGroup(pawn.Map)}' is closer to original destination '{destCell}'.");
                     pawnHaulToCell.SetOrAdd(pawn, true);
-                    return PuahJob(pawn, destCell, thing, storeCell) ?? HaulAIUtility.HaulToCellStorageJob(pawn, thing, storeCell, false);
+                    return PuahJob(pawn, IntVec3.Invalid, thing, storeCell, destCell) ?? HaulAIUtility.HaulToCellStorageJob(pawn, thing, storeCell, false);
                 }
 
                 return null;
             }
 
-            public static Job PuahJob(Pawn pawn, IntVec3 jobCell, Thing thing, IntVec3 storeCell) {
+            public static Job PuahJob(Pawn pawn, IntVec3 jobCell, Thing thing, IntVec3 storeCell, IntVec3 destCell) {
                 if (!havePuah || !haulToInventory.Value) return null;
-                var haulTracker = new PuahHaulTracker(pawn, jobCell);
+                var haulTracker = new PuahHaulTracker(pawn, jobCell, destCell);
                 haulTracker.Add(thing, storeCell);
                 haulTrackers.SetOrAdd(pawn, haulTracker);
                 return (Job) PuahJobOnThing.Invoke(puahWorkGiver, new object[] {pawn, thing, false});
