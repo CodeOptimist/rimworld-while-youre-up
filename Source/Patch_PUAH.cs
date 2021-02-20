@@ -72,9 +72,9 @@ namespace JobsOfOpportunity
                 static bool UseTryFindBestBetterStoreCellFor_ClosestToDestCell(Thing t, Pawn carrier, Map map, StoragePriority currentPriority, Faction faction,
                     out IntVec3 foundCell,
                     bool needAccurateResult) {
-                    var haulTracker = PuahHaulTracker.GetOrCreate(carrier);
+                    var haulTracker = haulTrackers.GetValueSafe(carrier);
                     return JooStoreUtility.TryFindBestBetterStoreCellFor_ClosestToDestCell(
-                        t, haulTracker.destCell, carrier, map, currentPriority, faction, out foundCell, haulTracker.destCell.IsValid);
+                        t, haulTracker?.destCell ?? IntVec3.Invalid, carrier, map, currentPriority, faction, out foundCell, haulTracker?.destCell.IsValid ?? false);
                 }
 
                 [HarmonyTranspiler]
@@ -88,8 +88,8 @@ namespace JobsOfOpportunity
                 static void TempReduceStoragePriorityForHaulBeforeCarry(WorkGiver_Scanner __instance, ref bool __state, Pawn pawn, Thing thing) {
                     if (!haulToEqualPriority.Value) return;
 
-                    var haulTracker = PuahHaulTracker.GetOrCreate(pawn);
-                    if (!haulTracker.destCell.IsValid) return;
+                    var haulTracker = haulTrackers.GetValueSafe(pawn);
+                    if (haulTracker == null || !haulTracker.destCell.IsValid) return;
 
                     var currentHaulDestination = StoreUtility.CurrentHaulDestinationOf(thing);
                     if (currentHaulDestination == null) return;

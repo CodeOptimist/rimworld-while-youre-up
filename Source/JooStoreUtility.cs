@@ -33,7 +33,7 @@ namespace JobsOfOpportunity
                 this.destCell = destCell;
             }
 
-            // I don't like this pattern, but it's simpler for now
+            // use sparingly!
             public static PuahHaulTracker GetOrCreate(Pawn pawn) {
                 if (haulTrackers.TryGetValue(pawn, out var haulTracker)) return haulTracker;
                 haulTracker = new PuahHaulTracker(pawn, IntVec3.Invalid, IntVec3.Invalid);
@@ -201,9 +201,11 @@ namespace JobsOfOpportunity
 
             public static bool PuahHasJobOnThing_HasStore(Thing thing, Pawn pawn, Map map, StoragePriority currentPriority, Faction faction, out IntVec3 foundCell,
                 bool needAccurateResult) {
-                var haulTracker = PuahHaulTracker.GetOrCreate(pawn);
-                if (!TryFindBestBetterStoreCellFor_ClosestToDestCell(thing, haulTracker.destCell, pawn, map, currentPriority, faction, out foundCell, false)) return false;
-                return !haulTracker.jobCell.IsValid || AddOpportuneHaulToTracker(haulTracker, thing, pawn, ref foundCell);
+                var haulTracker = haulTrackers.GetValueSafe(pawn);
+                // use our version for the haul to equal priority setting
+                if (!TryFindBestBetterStoreCellFor_ClosestToDestCell(
+                    thing, haulTracker?.destCell ?? IntVec3.Invalid, pawn, map, currentPriority, faction, out foundCell, false)) return false;
+                return haulTracker == null || !haulTracker.jobCell.IsValid || AddOpportuneHaulToTracker(haulTracker, thing, pawn, ref foundCell);
             }
 
             public static bool PuahAllocateThingAtCell_GetStore(Thing thing, Pawn pawn, Map map, StoragePriority currentPriority, Faction faction, out IntVec3 foundCell) {
