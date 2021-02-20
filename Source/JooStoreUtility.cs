@@ -58,8 +58,8 @@ namespace JobsOfOpportunity
         static class JooStoreUtility
         {
             static bool AddOpportuneHaulToTracker(PuahHaulTracker haulTracker, Thing thing, Pawn pawn, ref IntVec3 foundCell, [CallerMemberName] string callerName = "") {
-                var hauls = new List<(Thing thing, IntVec3 storeCell)>(haulTracker.hauls);
-                var defHauls = new Dictionary<ThingDef, IntVec3>(haulTracker.defHauls);
+                var hauls = haulTracker.hauls;
+                var defHauls = haulTracker.defHauls;
 
                 Debug.WriteLine(
                     $"{RealTime.frameCount} {callerName}() {thing} -> {foundCell} " + (hauls.LastOrDefault().thing != thing ? "Added to tracker." : "UPDATED on tracker."));
@@ -69,8 +69,8 @@ namespace JobsOfOpportunity
                 if (hauls.LastOrDefault().thing == thing)
                     hauls.Pop();
 
-                hauls.Add((thing, storeCell: foundCell));
-                defHauls.SetOrAdd(thing.def, foundCell);
+                var prevDefHaulIfRejected = defHauls.GetValueSafe(thing.def);
+                haulTracker.Add(thing, foundCell);
 
                 var startToLastThing = 0f;
                 var curPos = haulTracker.startCell;
@@ -141,6 +141,12 @@ namespace JobsOfOpportunity
 
                 if (isRejected) {
                     foundCell = IntVec3.Invalid;
+                    var (rejectedThing, _) = hauls.Pop();
+                    Debug.Assert(rejectedThing == thing);
+                    if (prevDefHaulIfRejected == default)
+                        defHauls.Remove(rejectedThing.def);
+                    else
+                        defHauls[rejectedThing.def] = prevDefHaulIfRejected;
                     return false;
                 }
 
@@ -154,9 +160,6 @@ namespace JobsOfOpportunity
                     Debug.WriteLine($"{haul.storeCell.GetSlotGroup(pawn.Map)}"); // thing may not have Map
 
                 Debug.WriteLine("");
-
-                haulTracker.hauls = hauls;
-                haulTracker.defHauls = defHauls;
                 return true;
             }
 
