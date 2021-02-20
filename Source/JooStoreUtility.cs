@@ -64,10 +64,13 @@ namespace JobsOfOpportunity
                 Debug.WriteLine(
                     $"{RealTime.frameCount} {callerName}() {thing} -> {foundCell} " + (hauls.LastOrDefault().thing != thing ? "Added to tracker." : "UPDATED on tracker."));
 
-                if (hauls.LastOrDefault().thing != thing) {
-                    hauls.Add((thing, storeCell: foundCell));
-                    defHauls.SetOrAdd(thing.def, foundCell);
-                }
+                // already here because a thing merged into it (or presumably from HasJobOnThing()?)
+                // we want to recalculate with the newer store cell since some time has passed
+                if (hauls.LastOrDefault().thing == thing)
+                    hauls.Pop();
+
+                hauls.Add((thing, storeCell: foundCell));
+                defHauls.SetOrAdd(thing.def, foundCell);
 
                 var startToLastThing = 0f;
                 var curPos = haulTracker.startCell;
