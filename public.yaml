@@ -40,12 +40,28 @@ footer: |-
   Now that these checks are merely [i]preferred[/i], and we trigger for all jobs, it's the best of both worlds!
 
 features:
+  - title: Efficient unloading
+    at: 2.0.0
+    desc: |-
+      Custom modification of [url=https://steamcommunity.com/sharedfiles/filedetails/?id=2277459062]Pick Up And Haul[/url]. (Optional mod. Installed separately.)
+      
+      We now control PUAH to eliminate chaotic unloading between stockpiles.
+      This also means more hauling opportunities on the way to a separate job.
+    
+  - title: Haul to inventory
+    at: 1.4.0
+    desc: |-
+      Custom use of [url=https://steamcommunity.com/sharedfiles/filedetails/?id=2277459062]Pick Up And Haul[/url]! (Optional mod. Installed separately.)
+  
+      PUAH is carefully controlled so only items qualifying as opportunistic will be gathered.
+      (Dedicated haul jobs behave as normal, gathering as much as they can.)
+
   - title: More hauling opportunities
+    at: 1.0.0
     desc: |-
       Vanilla requires a haulable be near your [b]start[/b] position, and its stockpile near your job. Too far and it won't be hauled, [i]even if it's directly in your path[/i]. We can do better.
       
-      We prefer the proximity requirements set by vanilla, but relax them to find valid haulables. Adjustable for performance.
-    at: 1.0.0
+      We prefer the proximity requirements set by vanilla, but relax them to find valid haulables. Adjustable for performance (see tooltips).
     settings:
       - name: haulProximities
         title: Haulable & storage initial closeness
@@ -57,18 +73,6 @@ features:
           If performance is an issue, set this stricter to reduce available hauls.
           If straight-line distance poorly represents your actual haul paths, set this stricter and adjust "max region look count"¹.
   
-  - title: Haul to inventory
-    at: 1.4.0
-    desc: |-
-      Custom use of [url=https://steamcommunity.com/sharedfiles/filedetails/?id=2277459062]Pick Up And Haul[/url]! (Optional. Installed separately.)
-
-      The way we control PUAH, only items qualifying as opportunistic will be gathered: solves issue with spread-out stockpiles and [url=https://youtu.be/97aNVniNlGE]unloading madness[/url].
-      (Dedicated haul jobs behave as normal, gathering as much as they can.)
-
-    settings:
-      - name: haulToInventory
-        title: Haul to inventory (PUAH mod)
-
   - title: Optimize hauling ingredients
     at: 1.6.0
     desc: |-
@@ -108,6 +112,11 @@ features:
 
           Off is equivalent to disabling all features, resetting each vanilla parameter, and "initial closeness" set to "(vanilla)".
 
+      - name: haulToInventory
+        title: Use & improve Pick Up And Haul
+        desc: |-
+          Controls both efficient unloading and using inventory for opportunistic hauls.
+        
       - name: haulToEqualPriority
         title: &haulToEqualPriority Allow "Optimize hauling" to same-priority
         desc: |-
@@ -211,13 +220,15 @@ features:
     desc: |-
       • Fixed "Optimize hauling ingredients/supplies" to no longer cause "Standing" loop when ingredient is in a pawn inventory. Fixes surgery with [i]Smart Medicine[/i], compatibility with [i]Build From Inventory[/i], and others.
 
-  - at: 1.7.0
+  - at: 2.0.0
     credit: 'Kellogg''s#0574'
     desc: !join
       - ""
+      - "\n"
       - "• [i]Optimize hauling ingredients/supplies[/i] will trigger more often:\n"
       - "     - Fixed hauling from existing storage, not just un-stored.\n"
       - "     - New [i]"
       - *haulToEqualPriority
       - "[/i] setting (defaults on).\n"
       - "     - Checks closest storage (to destination, not item) for closeness to destination.\n"
+  
