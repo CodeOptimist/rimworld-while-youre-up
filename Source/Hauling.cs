@@ -12,11 +12,10 @@ namespace JobsOfOpportunity
         {
             public enum HaulProximities { Both, Either, Ignored }
 
-            public static readonly Dictionary<Pawn, ForPuah> pawnPuah       = new Dictionary<Pawn, ForPuah>();
-            public static readonly Dictionary<Pawn, bool>    pawnHaulToCell = new Dictionary<Pawn, bool>();
+            public static readonly Dictionary<Pawn, bool> pawnHaulToCell = new Dictionary<Pawn, bool>();
 
-            static readonly        Dictionary<Thing, ProximityStage> thingProximityStage = new Dictionary<Thing, ProximityStage>();
-            public static readonly Dictionary<Thing, IntVec3>        cachedStoreCell     = new Dictionary<Thing, IntVec3>();
+            static readonly        Dictionary<Thing, ProximityStage> thingProximityStage        = new Dictionary<Thing, ProximityStage>();
+            public static readonly Dictionary<Thing, IntVec3>        cachedOpportunityStoreCell = new Dictionary<Thing, IntVec3>();
 
             public static Job TryHaul(Pawn pawn, IntVec3 jobCell) {
                 Job _TryHaul() {
@@ -35,7 +34,7 @@ namespace JobsOfOpportunity
 
                 var result = _TryHaul();
                 thingProximityStage.Clear();
-                cachedStoreCell.Clear();
+                cachedOpportunityStoreCell.Clear();
                 return result;
             }
 
@@ -61,12 +60,12 @@ namespace JobsOfOpportunity
                 }
 
                 // we need storeCell everywhere, so cache it
-                if (!cachedStoreCell.TryGetValue(thing, out storeCell)) {
+                if (!cachedOpportunityStoreCell.TryGetValue(thing, out storeCell)) {
                     var currentPriority = StoreUtility.CurrentStoragePriorityOf(thing);
                     if (!StoreUtility.TryFindBestBetterStoreCellFor(thing, pawn, pawn.Map, currentPriority, pawn.Faction, out storeCell)) return ProximityStage.Fail;
                 }
 
-                cachedStoreCell.SetOrAdd(thing, storeCell);
+                cachedOpportunityStoreCell.SetOrAdd(thing, storeCell);
 
                 var storeToJob = storeCell.DistanceTo(jobCell);
                 if (proximityStage < ProximityStage.PawnToThingRegion) {
@@ -107,7 +106,7 @@ namespace JobsOfOpportunity
                         continue;
 
                     var newProximityStage = CanHaul(proximityStage, pawn, thing, jobCell, proximityCheck, out var storeCell);
-                    Debug.WriteLine($"{pawn} for {thing} proximity stage: {proximityStage} -> {newProximityStage}");
+//                    Debug.WriteLine($"{pawn} for {thing} proximity stage: {proximityStage} -> {newProximityStage}");
                     thingProximityStage.SetOrAdd(thing, newProximityStage);
                     if (newProximityStage != ProximityStage.Success) continue;
 
@@ -125,38 +124,34 @@ namespace JobsOfOpportunity
                 return null;
             }
 
-            public static Job HaulBeforeCarry(Pawn pawn, IntVec3 dest, Thing th) {
-                if (th.ParentHolder is Pawn_InventoryTracker) return null;
+            // "Optimize hauling"
+            public static Job HaulBeforeCarry(Pawn pawn, IntVec3 destCell, Thing thing) {
+                if (thing.ParentHolder is Pawn_InventoryTracker) return null;
                 if (!JooStoreUtility.TryFindBestBetterStoreCellFor_ClosestToDestCell(
-                    th, dest, pawn, pawn.Map, StoreUtility.CurrentStoragePriorityOf(th), pawn.Faction, out var storeCell, true)) return null;
+                    thing, destCell, pawn, pawn.Map, StoreUtility.CurrentStoragePriorityOf(thing), pawn.Faction, out var storeCell, true)) return null;
 
-                var supplyFromHereDist = th.Position.DistanceTo(dest);
-                var supplyFromStoreDist = storeCell.DistanceTo(dest);
-                Debug.WriteLine($"Carry from here: {supplyFromHereDist}; carry from store: {supplyFromStoreDist}");
+                var supplyFromHereDist = thing.Position.DistanceTo(destCell);
+                var supplyFromStoreDist = storeCell.DistanceTo(destCell);
+//                Debug.WriteLine($"Carry from here: {supplyFromHereDist}; carry from store: {supplyFromStoreDist}");
 
                 // [KV] Infinite Storage https://steamcommunity.com/sharedfiles/filedetails/?id=1233893175
                 // infinite storage has an interaction spot 1 tile away from itself
                 if (supplyFromStoreDist + 1 < supplyFromHereDist) {
-                    Debug.WriteLine($"'{pawn}' prefixed job with haul for '{th.Label}' because '{storeCell.GetSlotGroup(pawn.Map)}' is closer to original destination '{dest}'.");
+//                    Debug.WriteLine(
+//                        $"'{pawn}' prefixed job with haul for '{thing.Label}' because '{storeCell.GetSlotGroup(pawn.Map)}' is closer to original destination '{destCell}'.");
                     pawnHaulToCell.SetOrAdd(pawn, true);
-                    return PuahJob(pawn, dest, th, storeCell) ?? HaulAIUtility.HaulToCellStorageJob(pawn, th, storeCell, false);
+                    return PuahJob(pawn, destCell, thing, storeCell) ?? HaulAIUtility.HaulToCellStorageJob(pawn, thing, storeCell, false);
                 }
 
                 return null;
             }
 
             public static Job PuahJob(Pawn pawn, IntVec3 jobCell, Thing thing, IntVec3 storeCell) {
-                if (!haulToInventory.Value || PuahJobOnThing == null) return null;
+                if (!havePuah || !haulToInventory.Value) return null;
                 Debug.WriteLine("Activating Pick Up And Haul.");
-                pawnPuah.SetOrAdd(pawn, new ForPuah {hauls = new List<(Thing thing, IntVec3 store)> {(thing, storeCell)}, startCell = pawn.Position, jobCell = jobCell});
+                haulTrackers.SetOrAdd(
+                    pawn, new PuahHaulTracker {hauls = new List<(Thing thing, IntVec3 store)> {(thing, storeCell)}, startCell = pawn.Position, jobCell = jobCell});
                 return (Job) PuahJobOnThing.Invoke(puahWorkGiver, new object[] {pawn, thing, false});
-            }
-
-            public class ForPuah
-            {
-                public List<(Thing thing, IntVec3 store)> hauls;
-                public IntVec3                            jobCell;
-                public IntVec3                            startCell;
             }
 
             enum ProximityCheck { Both, Either, Ignored }

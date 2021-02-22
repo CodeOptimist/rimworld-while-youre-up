@@ -26,7 +26,7 @@ namespace JobsOfOpportunity
                     var t = new Transpiler(_codes, __originalMethod);
 
                     var nearbyResourcesIdx =
-                        t.TryFindCodeIndex(code => code.Calls(AccessTools.Method(typeof(WorkGiver_ConstructDeliverResources), "FindAvailableNearbyResources")));
+                        t.TryFindCodeIndex(code => code.Calls(AccessTools.DeclaredMethod(typeof(WorkGiver_ConstructDeliverResources), "FindAvailableNearbyResources")));
                     var foundResIdx = t.TryFindCodeLastIndex(nearbyResourcesIdx, code => code.opcode == OpCodes.Brfalse) + 1;
                     var foundRes = generator.DefineLabel();
                     t.codes[foundResIdx].labels.Add(foundRes);
@@ -44,7 +44,7 @@ namespace JobsOfOpportunity
                             codes[i + 1].Clone(),                                  // Thing foundRes
                             codes[i + 2].Clone(),                                  // Thing foundRes
                             new CodeInstruction(
-                                OpCodes.Call, AccessTools.Method(typeof(WorkGiver_ConstructDeliverResources_ResourceDeliverJobFor_Patch), nameof(HaulBeforeSupply))),
+                                OpCodes.Call, AccessTools.DeclaredMethod(typeof(WorkGiver_ConstructDeliverResources_ResourceDeliverJobFor_Patch), nameof(HaulBeforeSupply))),
                             new CodeInstruction(OpCodes.Stloc_S, jobVar),
 
                             // if (job != null) return job;

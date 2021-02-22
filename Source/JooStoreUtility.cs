@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using HarmonyLib;
 using RimWorld;
 using Verse;
@@ -12,75 +11,83 @@ namespace JobsOfOpportunity
 {
     partial class JobsOfOpportunity
     {
+        public static readonly Dictionary<Pawn, PuahHaulTracker> haulTrackers = new Dictionary<Pawn, PuahHaulTracker>();
+
+        public class PuahHaulTracker
+        {
+            public List<(Thing thing, IntVec3 storeCell)> hauls;
+            public IntVec3                                startCell;
+            public IntVec3                                jobCell;
+        }
+
         static class JooStoreUtility
         {
-            static readonly FieldInfo SkipCellsField = AccessTools.DeclaredField(PuahWorkGiver_HaulToInventoryType, "skipCells");
+            static bool AddOpportuneHaulToTracker(PuahHaulTracker haulTracker, Thing thing, Pawn pawn, ref IntVec3 foundCell) {
+                var hauls = new List<(Thing thing, IntVec3 storeCell)>(haulTracker.hauls);
+                if (hauls.Last().thing != thing)
+                    hauls.Add((thing, storeCell: foundCell));
 
-            static bool RejectTooFar(Hauling.ForPuah forPuah, Thing thing, Pawn carrier, ref IntVec3 foundCell) {
-                var hauls = new List<(Thing thing, IntVec3 store)>(forPuah.hauls);
-                var latestHaul = (thing, store: foundCell);
-                if (hauls.Last().thing != latestHaul.thing)
-                    hauls.Add(latestHaul);
-
-                var startToLatestThing = 0f;
-                var curPos = forPuah.startCell;
+                var startToLastThing = 0f;
+                var curPos = haulTracker.startCell;
                 foreach (var (thing_, _) in hauls) {
-                    startToLatestThing += curPos.DistanceTo(thing_.Position);
+                    startToLastThing += curPos.DistanceTo(thing_.Position);
                     curPos = thing_.Position;
                 }
 
                 // actual unloading cells are determined on-the-fly, but these will represent the parent stockpiles with equal correctness
                 // may also be extras if don't all fit in one cell, etc.
-                List<(Thing thing, IntVec3 store)> haulsByUnloadOrder;
+                List<(Thing thing, IntVec3 storeCell)> haulsByUnloadOrder;
 
-                ushort? PuahFirstUnloadableThing((Thing thing, IntVec3 store) haul) {
+                ushort? PuahFirstUnloadableThing((Thing thing, IntVec3 storeCell) haul) {
                     return haul.thing.def.FirstThingCategory?.index;
                 }
 
-                if (carrier.carryTracker?.CarriedThing == latestHaul.thing) {
+                if (pawn.carryTracker?.CarriedThing == hauls.Last().thing) {
                     haulsByUnloadOrder = hauls.GetRange(0, hauls.Count - 1).OrderBy(PuahFirstUnloadableThing).ToList();
-                    haulsByUnloadOrder.Insert(0, latestHaul);
+                    haulsByUnloadOrder.Insert(0, hauls.Last());
                 } else {
                     haulsByUnloadOrder = hauls.OrderBy(PuahFirstUnloadableThing).ToList();
-                    var mandatoryFirstStoreIsFirstUnload = hauls.First().store.GetSlotGroup(carrier.Map) == haulsByUnloadOrder.First().store.GetSlotGroup(carrier.Map);
+                    var mandatoryFirstStoreIsFirstUnload = hauls.First().storeCell.GetSlotGroup(pawn.Map) == haulsByUnloadOrder.First().storeCell.GetSlotGroup(pawn.Map);
                     if (!mandatoryFirstStoreIsFirstUnload)
-                        haulsByUnloadOrder.Insert(0, (thing: null, hauls.First().store));
+                        haulsByUnloadOrder.Insert(0, (thing: null, hauls.First().storeCell));
                 }
 
                 var storeToLastStore = 0f;
-                var curPos_ = latestHaul.store;
-                foreach (var (_, store) in haulsByUnloadOrder) {
-                    storeToLastStore += curPos_.DistanceTo(store);
-                    curPos_ = store;
+                curPos = hauls.Last().storeCell;
+                foreach (var (_, storeCell) in haulsByUnloadOrder) {
+                    storeToLastStore += curPos.DistanceTo(storeCell);
+                    curPos = storeCell;
                 }
 
-                var latestThingToStore = latestHaul.thing.Position.DistanceTo(latestHaul.store);
-                var lastStoreToJob = haulsByUnloadOrder.Last().store.DistanceTo(forPuah.jobCell);
-                var origTrip = forPuah.startCell.DistanceTo(forPuah.jobCell);
-                var totalTrip = startToLatestThing + latestThingToStore + storeToLastStore + lastStoreToJob;
+                var lastThingToStore = hauls.Last().thing.Position.DistanceTo(hauls.Last().storeCell);
+                var lastStoreToJob = haulsByUnloadOrder.Last().storeCell.DistanceTo(haulTracker.jobCell);
+                var origTrip = haulTracker.startCell.DistanceTo(haulTracker.jobCell);
+                var totalTrip = startToLastThing + lastThingToStore + storeToLastStore + lastStoreToJob;
                 var maxTotalTrip = origTrip * maxTotalTripPctOrigTrip.Value;
-                var newLegs = startToLatestThing + storeToLastStore + lastStoreToJob;
+                var newLegs = startToLastThing + storeToLastStore + lastStoreToJob;
                 var maxNewLegs = origTrip * maxNewLegsPctOrigTrip.Value;
                 var exceedsMaxTrip = maxTotalTripPctOrigTrip.Value > 0 && totalTrip > maxTotalTrip;
                 var exceedsMaxNewLegs = maxNewLegsPctOrigTrip.Value > 0 && newLegs > maxNewLegs;
                 var isRejected = exceedsMaxTrip || exceedsMaxNewLegs;
 
-                Debug.WriteLine($"{(isRejected ? "REJECTED" : "APPROVED")} {latestHaul} for {carrier}");
-                Debug.WriteLine(
-                    $"\tstartToLatestThing: {carrier}{forPuah.startCell} -> {string.Join(" -> ", hauls.Select(x => $"{x.thing}{x.thing.Position}"))} = {startToLatestThing}");
-                Debug.WriteLine($"\tlatestThingToStore: {latestHaul.thing}{latestHaul.thing.Position} -> {latestHaul} = {latestThingToStore}");
-                Debug.WriteLine($"\tstoreToLastStore: {string.Join(" -> ", haulsByUnloadOrder)} = {storeToLastStore}");
-                Debug.WriteLine($"\tlastStoreToJob: {haulsByUnloadOrder.Last()} -> {forPuah.jobCell} = {lastStoreToJob}");
-                Debug.WriteLine($"\torigTrip: {carrier}{forPuah.startCell} -> {forPuah.jobCell} = {origTrip}");
-                Debug.WriteLine($"\ttotalTrip: {startToLatestThing} + {latestThingToStore} + {storeToLastStore} + {lastStoreToJob}  = {totalTrip}");
-                Debug.WriteLine($"\tmaxTotalTrip: {origTrip} * {maxTotalTripPctOrigTrip.Value} = {maxTotalTrip}");
-                Debug.WriteLine($"\tnewLegs: {startToLatestThing} + {storeToLastStore} + {lastStoreToJob} = {newLegs}");
-                Debug.WriteLine($"\tmaxNewLegs: {origTrip} * {maxNewLegsPctOrigTrip.Value} = {maxNewLegs}");
-                Debug.WriteLine("");
+                if (!isRejected) {
+                    Debug.WriteLine($"{(isRejected ? "REJECTED" : "APPROVED")} {hauls.Last()} for {pawn}");
+//                    Debug.WriteLine(
+//                        $"\tstartToLastThing: {pawn}{haulTracker.startCell} -> {string.Join(" -> ", hauls.Select(x => $"{x.thing}{x.thing.Position}"))} = {startToLastThing}");
+//                    Debug.WriteLine($"\tlastThingToStore: {hauls.Last().thing}{hauls.Last().thing.Position} -> {hauls.Last()} = {lastThingToStore}");
+//                    Debug.WriteLine($"\tstoreToLastStore: {string.Join(" -> ", haulsByUnloadOrder)} = {storeToLastStore}");
+//                    Debug.WriteLine($"\tlastStoreToJob: {haulsByUnloadOrder.Last()} -> {haulTracker.jobCell} = {lastStoreToJob}");
+//                    Debug.WriteLine($"\torigTrip: {pawn}{haulTracker.startCell} -> {haulTracker.jobCell} = {origTrip}");
+//                    Debug.WriteLine($"\ttotalTrip: {startToLastThing} + {lastThingToStore} + {storeToLastStore} + {lastStoreToJob}  = {totalTrip}");
+//                    Debug.WriteLine($"\tmaxTotalTrip: {origTrip} * {maxTotalTripPctOrigTrip.Value} = {maxTotalTrip}");
+//                    Debug.WriteLine($"\tnewLegs: {startToLastThing} + {storeToLastStore} + {lastStoreToJob} = {newLegs}");
+//                    Debug.WriteLine($"\tmaxNewLegs: {origTrip} * {maxNewLegsPctOrigTrip.Value} = {maxNewLegs}");
+//                    Debug.WriteLine("");
+                }
 
-                if (isRejected) return true;
-                forPuah.hauls = hauls;
-                return false;
+                if (isRejected) return false;
+                haulTracker.hauls = hauls;
+                return true;
             }
 
             public static bool TryFindBestBetterStoreCellFor_ClosestToDestCell(Thing thing, IntVec3 destCell, Pawn pawn, Map map, StoragePriority currentPriority,
@@ -120,19 +127,19 @@ namespace JobsOfOpportunity
 
             public static bool PuahHasJobOnThing_HasStore(Thing thing, Pawn pawn, Map map, StoragePriority currentPriority, Faction faction, out IntVec3 foundCell,
                 bool needAccurateResult) {
-                if (Hauling.cachedStoreCell.TryGetValue(thing, out foundCell)) {
-                    if (Hauling.pawnPuah.TryGetValue(pawn, out var forPuah))
-                        return !RejectTooFar(forPuah, thing, pawn, ref foundCell);
+                if (Hauling.cachedOpportunityStoreCell.TryGetValue(thing, out foundCell)) {
+                    if (haulTrackers.TryGetValue(pawn, out var haulTracker))
+                        return AddOpportuneHaulToTracker(haulTracker, thing, pawn, ref foundCell);
                 }
 
                 return StoreUtility.TryFindBestBetterStoreCellFor(thing, pawn, map, currentPriority, faction, out foundCell, needAccurateResult);
             }
 
             public static bool PuahAllocateThingAtCell_GetStore(Thing thing, Pawn pawn, Map map, StoragePriority currentPriority, Faction faction, out IntVec3 foundCell) {
-                var skipCells = (HashSet<IntVec3>) SkipCellsField.GetValue(null);
+                var skipCells = (HashSet<IntVec3>) AccessTools.DeclaredField(PuahWorkGiver_HaulToInventoryType, "skipCells").GetValue(null);
 
                 // take advantage of our cache because we can
-                if (Hauling.cachedStoreCell.TryGetValue(thing, out var cachedCell)) {
+                if (Hauling.cachedOpportunityStoreCell.TryGetValue(thing, out var cachedCell)) {
                     if (!skipCells.Contains(cachedCell)) {
                         foundCell = cachedCell;
                         skipCells.Add(cachedCell);
@@ -142,12 +149,13 @@ namespace JobsOfOpportunity
 
                 var groupsList = map.haulDestinationManager.AllGroupsListInPriorityOrder;
                 foreach (var slotGroup in groupsList.Where(s => s.Settings.Priority > currentPriority && s.parent.Accepts(thing))) {
-                    if (slotGroup.CellsList.Except(skipCells).FirstOrDefault(c => StoreUtility.IsGoodStoreCell(c, map, thing, pawn, faction)) is IntVec3 cell && cell != default) {
+                    if (slotGroup.CellsList.Except(skipCells).FirstOrDefault(c => StoreUtility.IsGoodStoreCell(c, map, thing, pawn, faction)) is IntVec3 cell
+                        && cell != default) {
                         foundCell = cell;
                         skipCells.Add(cell);
 
-                        if (Hauling.pawnPuah.TryGetValue(pawn, out var forPuah)) {
-                            if (RejectTooFar(forPuah, thing, pawn, ref foundCell))
+                        if (haulTrackers.TryGetValue(pawn, out var haulTracker)) {
+                            if (!AddOpportuneHaulToTracker(haulTracker, thing, pawn, ref foundCell))
                                 break;
                         }
 

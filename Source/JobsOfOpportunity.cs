@@ -17,31 +17,32 @@ namespace JobsOfOpportunity
     [StaticConstructorOnStartup]
     partial class JobsOfOpportunity : ModBase
     {
-        static SettingHandle<bool> enabled, showVanillaParameters, haulToInventory, haulBeforeSupply, haulBeforeBill, haulToEqualPriority, skipIfBleeding,
-            drawOpportunisticJobs;
-
-        static SettingHandle<Hauling.HaulProximities> haulProximities;
+        static SettingHandle<bool> enabled,        showVanillaParameters, haulToInventory, haulBeforeSupply, haulBeforeBill,
+            haulToEqualPriority,   skipIfBleeding, drawOpportunisticJobs;
 
         static SettingHandle<float> maxStartToThing, maxStartToThingPctOrigTrip, maxStoreToJob, maxStoreToJobPctOrigTrip, maxTotalTripPctOrigTrip,
             maxNewLegsPctOrigTrip;
 
         static SettingHandle<int> maxStartToThingRegionLookCount, maxStoreToJobRegionLookCount;
 
-        static readonly SettingHandle.ShouldDisplay HavePuah = ModLister.HasActiveModWithName("Pick Up And Haul") ||
-                                                               ModLister.HasActiveModWithName("Pick Up And Haul (Continued)")
+        static SettingHandle<Hauling.HaulProximities> haulProximities;
+
+        static readonly SettingHandle.ShouldDisplay HavePuah = ModLister.HasActiveModWithName("Pick Up And Haul") || ModLister.HasActiveModWithName("Pick Up And Haul (Continued)")
             ? new SettingHandle.ShouldDisplay(() => true)
             : () => false;
 
-        static readonly Type       PuahWorkGiver_HaulToInventoryType = GenTypes.GetTypeInAnyAssembly("PickUpAndHaul.WorkGiver_HaulToInventory");
-        static readonly MethodInfo PuahJobOnThing                    = AccessTools.Method(PuahWorkGiver_HaulToInventoryType, "JobOnThing");
+        static readonly Type       PuahWorkGiver_HaulToInventoryType           = GenTypes.GetTypeInAnyAssembly("PickUpAndHaul.WorkGiver_HaulToInventory");
+        static readonly Type       PuahJobDriver_HaulToInventoryType           = GenTypes.GetTypeInAnyAssembly("PickUpAndHaul.JobDriver_HaulToInventory");
+        static readonly MethodInfo PuahJobOnThing                              = AccessTools.DeclaredMethod(PuahWorkGiver_HaulToInventoryType, "JobOnThing");
         static          WorkGiver  puahWorkGiver;
+        static readonly bool havePuah = new List<object> {PuahWorkGiver_HaulToInventoryType, PuahJobDriver_HaulToInventoryType, PuahJobOnThing}.All(x => x != null);
 
         static readonly Type        CsModType                 = GenTypes.GetTypeInAnyAssembly("CommonSense.CommonSense");
-        static readonly FieldInfo   CsSettings                = AccessTools.Field(CsModType, "Settings");
         static readonly Type        CsSettingsType            = GenTypes.GetTypeInAnyAssembly("CommonSense.Settings");
-        static readonly FieldInfo   CsHaulingOverBillsSetting = AccessTools.Field(CsSettingsType, "hauling_over_bills");
-        static readonly bool        haveCommonSense           = new List<object> {CsModType, CsSettings, CsSettingsType, CsHaulingOverBillsSetting}.All(x => x != null);
+        static readonly FieldInfo   CsSettings                = AccessTools.DeclaredField(CsModType,      "Settings");
+        static readonly FieldInfo   CsHaulingOverBillsSetting = AccessTools.DeclaredField(CsSettingsType, "hauling_over_bills");
         static          ModSettings csSettings;
+        static readonly bool        haveCommonSense = new List<object> {CsModType, CsSettingsType, CsSettings, CsHaulingOverBillsSetting}.All(x => x != null);
 
         static Dictionary<SettingHandle, object> settingHandleControlInfo;
 
@@ -82,10 +83,9 @@ namespace JobsOfOpportunity
             }
 
             haulToEqualPriority = s.GetSettingHandle("haulToEqualPriority", true);
-
-            skipIfBleeding = s.GetSettingHandle("skipIfBleeding", true);
-
-            haulProximities = s.GetSettingHandle("haulProximities", Hauling.HaulProximities.Ignored, default, default, $"{settingIdentifier}_SettingTitle_haulProximities_");
+            skipIfBleeding = s.GetSettingHandle("skipIfBleeding",           true);
+            haulProximities = s.GetSettingHandle(
+                "haulProximities", Hauling.HaulProximities.Ignored, default, default, $"{settingIdentifier}_SettingTitle_haulProximities_");
 
             drawOpportunisticJobs = s.GetSettingHandle("drawOpportunisticJobs", DebugViewSettings.drawOpportunisticJobs);
             drawOpportunisticJobs.Unsaved = true;
