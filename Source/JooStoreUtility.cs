@@ -66,7 +66,8 @@ namespace JobsOfOpportunity
                 var isRejected = exceedsMaxTrip || exceedsMaxNewLegs;
 
                 Debug.WriteLine($"{(isRejected ? "REJECTED" : "APPROVED")} {latestHaul} for {carrier}");
-                Debug.WriteLine($"\tstartToLatestThing: {carrier}{forPuah.startCell} -> {string.Join(" -> ", hauls.Select(x => $"{x.thing}{x.thing.Position}"))} = {startToLatestThing}");
+                Debug.WriteLine(
+                    $"\tstartToLatestThing: {carrier}{forPuah.startCell} -> {string.Join(" -> ", hauls.Select(x => $"{x.thing}{x.thing.Position}"))} = {startToLatestThing}");
                 Debug.WriteLine($"\tlatestThingToStore: {latestHaul.thing}{latestHaul.thing.Position} -> {latestHaul} = {latestThingToStore}");
                 Debug.WriteLine($"\tstoreToLastStore: {string.Join(" -> ", haulsByUnloadOrder)} = {storeToLastStore}");
                 Debug.WriteLine($"\tlastStoreToJob: {haulsByUnloadOrder.Last()} -> {forPuah.jobCell} = {lastStoreToJob}");
@@ -82,7 +83,7 @@ namespace JobsOfOpportunity
                 return false;
             }
 
-            public static bool TryFindBestBetterStoreCellFor_ClosestToDestCell(Thing thing, IntVec3 destCell, Pawn pawn, Map map, StoragePriority currentPriority, 
+            public static bool TryFindBestBetterStoreCellFor_ClosestToDestCell(Thing thing, IntVec3 destCell, Pawn pawn, Map map, StoragePriority currentPriority,
                 Faction faction, out IntVec3 foundCell, bool needAccurateResult) {
                 var allowEqualPriority = destCell.IsValid && haulToEqualPriority.Value;
                 var closestSlot = IntVec3.Invalid;

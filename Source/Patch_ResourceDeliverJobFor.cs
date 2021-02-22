@@ -25,7 +25,8 @@ namespace JobsOfOpportunity
                 static IEnumerable<CodeInstruction> _HaulBeforeSupply(IEnumerable<CodeInstruction> _codes, ILGenerator generator, MethodBase __originalMethod) {
                     var t = new Transpiler(_codes, __originalMethod);
 
-                    var nearbyResourcesIdx = t.TryFindCodeIndex(code => code.Calls(AccessTools.Method(typeof(WorkGiver_ConstructDeliverResources), "FindAvailableNearbyResources")));
+                    var nearbyResourcesIdx =
+                        t.TryFindCodeIndex(code => code.Calls(AccessTools.Method(typeof(WorkGiver_ConstructDeliverResources), "FindAvailableNearbyResources")));
                     var foundResIdx = t.TryFindCodeLastIndex(nearbyResourcesIdx, code => code.opcode == OpCodes.Brfalse) + 1;
                     var foundRes = generator.DefineLabel();
                     t.codes[foundResIdx].labels.Add(foundRes);
@@ -37,18 +38,19 @@ namespace JobsOfOpportunity
                         (i, codes) => i == foundResIdx,
                         (i, codes) => new List<CodeInstruction> {
                             // job = _HaulBeforeSupply(pawn, (Thing) c, foundRes);
-                            new CodeInstruction(OpCodes.Ldarg_1), // Pawn pawn
-                            new CodeInstruction(OpCodes.Ldarg_2), // IConstructible c
+                            new CodeInstruction(OpCodes.Ldarg_1),                  // Pawn pawn
+                            new CodeInstruction(OpCodes.Ldarg_2),                  // IConstructible c
                             new CodeInstruction(OpCodes.Castclass, typeof(Thing)), // (Thing) c
-                            codes[i + 1].Clone(), // Thing foundRes
-                            codes[i + 2].Clone(), // Thing foundRes
-                            new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(WorkGiver_ConstructDeliverResources_ResourceDeliverJobFor_Patch), nameof(HaulBeforeSupply))),
+                            codes[i + 1].Clone(),                                  // Thing foundRes
+                            codes[i + 2].Clone(),                                  // Thing foundRes
+                            new CodeInstruction(
+                                OpCodes.Call, AccessTools.Method(typeof(WorkGiver_ConstructDeliverResources_ResourceDeliverJobFor_Patch), nameof(HaulBeforeSupply))),
                             new CodeInstruction(OpCodes.Stloc_S, jobVar),
 
                             // if (job != null) return job;
-                            new CodeInstruction(OpCodes.Ldloc_S, jobVar),
+                            new CodeInstruction(OpCodes.Ldloc_S,   jobVar),
                             new CodeInstruction(OpCodes.Brfalse_S, foundRes),
-                            new CodeInstruction(OpCodes.Ldloc_S, jobVar),
+                            new CodeInstruction(OpCodes.Ldloc_S,   jobVar),
                             new CodeInstruction(OpCodes.Ret),
                         });
 

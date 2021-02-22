@@ -12,11 +12,11 @@ namespace JobsOfOpportunity
         {
             public enum HaulProximities { Both, Either, Ignored }
 
-            public static readonly Dictionary<Pawn, ForPuah> pawnPuah = new Dictionary<Pawn, ForPuah>();
-            public static readonly Dictionary<Pawn, bool> pawnHaulToCell = new Dictionary<Pawn, bool>();
+            public static readonly Dictionary<Pawn, ForPuah> pawnPuah       = new Dictionary<Pawn, ForPuah>();
+            public static readonly Dictionary<Pawn, bool>    pawnHaulToCell = new Dictionary<Pawn, bool>();
 
-            static readonly Dictionary<Thing, ProximityStage> thingProximityStage = new Dictionary<Thing, ProximityStage>();
-            public static readonly Dictionary<Thing, IntVec3> cachedStoreCell = new Dictionary<Thing, IntVec3>();
+            static readonly        Dictionary<Thing, ProximityStage> thingProximityStage = new Dictionary<Thing, ProximityStage>();
+            public static readonly Dictionary<Thing, IntVec3>        cachedStoreCell     = new Dictionary<Thing, IntVec3>();
 
             public static Job TryHaul(Pawn pawn, IntVec3 jobCell) {
                 Job _TryHaul() {
@@ -26,7 +26,8 @@ namespace JobsOfOpportunity
                         case HaulProximities.Either:
                             return TryHaulStage(pawn, jobCell, ProximityCheck.Both) ?? TryHaulStage(pawn, jobCell, ProximityCheck.Either);
                         case HaulProximities.Ignored:
-                            return TryHaulStage(pawn, jobCell, ProximityCheck.Both) ?? TryHaulStage(pawn, jobCell, ProximityCheck.Either) ?? TryHaulStage(pawn, jobCell, ProximityCheck.Ignored);
+                            return TryHaulStage(pawn, jobCell, ProximityCheck.Both)
+                                   ?? TryHaulStage(pawn, jobCell, ProximityCheck.Either) ?? TryHaulStage(pawn, jobCell, ProximityCheck.Ignored);
                         default:
                             return null;
                     }
@@ -73,7 +74,7 @@ namespace JobsOfOpportunity
                     var atMaxPct2 = maxStoreToJobPctOrigTrip.Value > 0 && storeToJob > pawnToJob * maxStoreToJobPctOrigTrip.Value;
                     var storeToJobFail = atMax2 || atMaxPct2;
                     switch (proximityCheck) {
-                        case ProximityCheck.Both when storeToJobFail: return ProximityStage.StoreToJob;
+                        case ProximityCheck.Both when storeToJobFail:                                                   return ProximityStage.StoreToJob;
                         case ProximityCheck.Either when proximityStage == ProximityStage.PawnToThing && storeToJobFail: return ProximityStage.StoreToJob;
                     }
 
@@ -83,7 +84,8 @@ namespace JobsOfOpportunity
                 }
 
                 bool PawnToThingRegionFail() {
-                    return maxStartToThingRegionLookCount.Value > 0 && !pawn.Position.WithinRegions(thing.Position, pawn.Map, maxStartToThingRegionLookCount.Value, TraverseParms.For(pawn));
+                    return maxStartToThingRegionLookCount.Value > 0 && !pawn.Position.WithinRegions(
+                               thing.Position, pawn.Map, maxStartToThingRegionLookCount.Value, TraverseParms.For(pawn));
                 }
 
                 bool StoreToJobRegionFail(IntVec3 _storeCell) {
@@ -91,8 +93,8 @@ namespace JobsOfOpportunity
                 }
 
                 switch (proximityCheck) {
-                    case ProximityCheck.Both when PawnToThingRegionFail(): return ProximityStage.PawnToThingRegion;
-                    case ProximityCheck.Both when StoreToJobRegionFail(storeCell): return ProximityStage.Fail;
+                    case ProximityCheck.Both when PawnToThingRegionFail():                                                                 return ProximityStage.PawnToThingRegion;
+                    case ProximityCheck.Both when StoreToJobRegionFail(storeCell):                                                         return ProximityStage.Fail;
                     case ProximityCheck.Either when proximityStage == ProximityStage.PawnToThingRegion && StoreToJobRegionFail(storeCell): return ProximityStage.Fail;
                 }
 
@@ -111,9 +113,9 @@ namespace JobsOfOpportunity
 
                     if (DebugViewSettings.drawOpportunisticJobs) {
                         Log.Message("Opportunistic job spawned");
-                        pawn.Map.debugDrawer.FlashLine(pawn.Position, thing.Position, 600, SimpleColor.Red);
-                        pawn.Map.debugDrawer.FlashLine(thing.Position, storeCell, 600, SimpleColor.Green);
-                        pawn.Map.debugDrawer.FlashLine(storeCell, jobCell, 600, SimpleColor.Blue);
+                        pawn.Map.debugDrawer.FlashLine(pawn.Position,  thing.Position, 600, SimpleColor.Red);
+                        pawn.Map.debugDrawer.FlashLine(thing.Position, storeCell,      600, SimpleColor.Green);
+                        pawn.Map.debugDrawer.FlashLine(storeCell,      jobCell,        600, SimpleColor.Blue);
                     }
 
                     pawnHaulToCell.SetOrAdd(pawn, true);
@@ -153,8 +155,8 @@ namespace JobsOfOpportunity
             public class ForPuah
             {
                 public List<(Thing thing, IntVec3 store)> hauls;
-                public IntVec3 jobCell;
-                public IntVec3 startCell;
+                public IntVec3                            jobCell;
+                public IntVec3                            startCell;
             }
 
             enum ProximityCheck { Both, Either, Ignored }

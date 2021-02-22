@@ -53,7 +53,7 @@ namespace JobsOfOpportunity
                         -3,
                         (i, codes) => i == listerHaulablesIdx,
                         (i, codes) => new List<CodeInstruction> {
-                            new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(Pawn_JobTracker_TryOpportunisticJob_Patch), nameof(IsEnabled))),
+                            new CodeInstruction(OpCodes.Call,      AccessTools.Method(typeof(Pawn_JobTracker_TryOpportunisticJob_Patch), nameof(IsEnabled))),
                             new CodeInstruction(OpCodes.Brfalse_S, skipMod),
 
                             new CodeInstruction(OpCodes.Ldarg_0),

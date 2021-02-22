@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
 using System.Reflection;
 using HarmonyLib;
 using RimWorld;
@@ -19,13 +17,8 @@ namespace JobsOfOpportunity
             [HarmonyPatch]
             static class JobDriver_GetReport_Patch
             {
-                static bool Prepare() {
-                    return PuahJobDriver_HaulToInventoryType != null;
-                }
-
-                static MethodBase TargetMethod() {
-                    return AccessTools.Method(PuahJobDriver_HaulToInventoryType, "GetReport");
-                }
+                static bool       Prepare()      => PuahJobDriver_HaulToInventoryType != null;
+                static MethodBase TargetMethod() => AccessTools.Method(PuahJobDriver_HaulToInventoryType, "GetReport");
 
                 [HarmonyPostfix]
                 static void GetJooPuahReportString(JobDriver __instance, ref string __result) {
@@ -38,16 +31,12 @@ namespace JobsOfOpportunity
             [HarmonyPatch]
             static class WorkGiver_HaulToInventory_TryFindBestBetterStoreCellFor_Patch
             {
-                static bool Prepare() {
-                    return PuahWorkGiver_HaulToInventoryType != null;
-                }
-
-                static MethodBase TargetMethod() {
-                    return AccessTools.Method(PuahWorkGiver_HaulToInventoryType, "TryFindBestBetterStoreCellFor");
-                }
+                static bool       Prepare()      => PuahWorkGiver_HaulToInventoryType != null;
+                static MethodBase TargetMethod() => AccessTools.Method(PuahWorkGiver_HaulToInventoryType, "TryFindBestBetterStoreCellFor");
 
                 [HarmonyPrefix]
-                static bool UsePuahAllocateThingAtCell_GetStore(ref bool __result, Thing thing, Pawn carrier, Map map, StoragePriority currentPriority, Faction faction, out IntVec3 foundCell) {
+                static bool UsePuahAllocateThingAtCell_GetStore(ref bool __result, Thing thing, Pawn carrier, Map map, StoragePriority currentPriority, Faction faction,
+                    out IntVec3 foundCell) {
                     __result = JooStoreUtility.PuahAllocateThingAtCell_GetStore(thing, carrier, map, currentPriority, faction, out foundCell);
                     return false;
                 }
@@ -56,13 +45,8 @@ namespace JobsOfOpportunity
             [HarmonyPatch]
             static class WorkGiver_HaulToInventory_HasJobOnThing_Patch
             {
-                static bool Prepare() {
-                    return PuahWorkGiver_HaulToInventoryType != null;
-                }
-
-                static MethodBase TargetMethod() {
-                    return AccessTools.Method(PuahWorkGiver_HaulToInventoryType, "HasJobOnThing");
-                }
+                static bool       Prepare()      => PuahWorkGiver_HaulToInventoryType != null;
+                static MethodBase TargetMethod() => AccessTools.Method(PuahWorkGiver_HaulToInventoryType, "HasJobOnThing");
 
                 [HarmonyPrefix]
                 static void ClearJooDataForNewHaul(Pawn pawn) {
@@ -74,7 +58,7 @@ namespace JobsOfOpportunity
                 [HarmonyTranspiler]
                 static IEnumerable<CodeInstruction> UsePuahHasJobOnThing_HasStore(IEnumerable<CodeInstruction> instructions) {
                     return instructions.MethodReplacer(
-                        AccessTools.Method(typeof(StoreUtility), nameof(StoreUtility.TryFindBestBetterStoreCellFor)),
+                        AccessTools.Method(typeof(StoreUtility),    nameof(StoreUtility.TryFindBestBetterStoreCellFor)),
                         AccessTools.Method(typeof(JooStoreUtility), nameof(JooStoreUtility.PuahHasJobOnThing_HasStore)));
                 }
             }
@@ -82,16 +66,12 @@ namespace JobsOfOpportunity
             [HarmonyPatch]
             static class WorkGiver_HaulToInventory_JobOnThing_Patch
             {
-                static bool Prepare() {
-                    return PuahWorkGiver_HaulToInventoryType != null;
-                }
-
-                static MethodBase TargetMethod() {
-                    return AccessTools.Method(PuahWorkGiver_HaulToInventoryType, "JobOnThing");
-                }
+                static bool       Prepare()      => PuahWorkGiver_HaulToInventoryType != null;
+                static MethodBase TargetMethod() => AccessTools.Method(PuahWorkGiver_HaulToInventoryType, "JobOnThing");
 
                 // why not take advantage of our cache here as well
-                static bool UseJooCachedStoreCell(Thing t, Pawn carrier, Map map, StoragePriority currentPriority, Faction faction, out IntVec3 foundCell, bool needAccurateResult = true) {
+                static bool UseJooCachedStoreCell(Thing t, Pawn carrier, Map map, StoragePriority currentPriority, Faction faction, out IntVec3 foundCell,
+                    bool needAccurateResult = true) {
                     return Hauling.cachedStoreCell.TryGetValue(t, out foundCell)
                            || StoreUtility.TryFindBestBetterStoreCellFor(t, carrier, map, currentPriority, faction, out foundCell, needAccurateResult);
                 }
@@ -99,7 +79,7 @@ namespace JobsOfOpportunity
                 [HarmonyTranspiler]
                 static IEnumerable<CodeInstruction> _UseJooCachedStoreCell(IEnumerable<CodeInstruction> instructions) {
                     return instructions.MethodReplacer(
-                        AccessTools.Method(typeof(StoreUtility), nameof(StoreUtility.TryFindBestBetterStoreCellFor)),
+                        AccessTools.Method(typeof(StoreUtility),                               nameof(StoreUtility.TryFindBestBetterStoreCellFor)),
                         AccessTools.Method(typeof(WorkGiver_HaulToInventory_JobOnThing_Patch), nameof(UseJooCachedStoreCell)));
                 }
             }
