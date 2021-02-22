@@ -135,6 +135,7 @@ namespace JobsOfOpportunity
                 // infinite storage has an interaction spot 1 tile away from itself
                 if (supplyFromStoreDist + 1 < supplyFromHereDist) {
                     Debug.WriteLine($"'{pawn}' prefixed job with haul for '{th.Label}' because '{storeCell.GetSlotGroup(pawn.Map)}' is closer to original destination '{dest}'.");
+                    pawnHaulToCell.SetOrAdd(pawn, true);
                     return PuahJob(pawn, dest, th, storeCell) ?? HaulAIUtility.HaulToCellStorageJob(pawn, th, storeCell, false);
                 }
 
