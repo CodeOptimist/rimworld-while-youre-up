@@ -147,7 +147,7 @@ namespace JobsOfOpportunity
             }
 
             public static Job PuahJob(Pawn pawn, IntVec3 jobCell, Thing thing, IntVec3 storeCell, IntVec3 destCell) {
-                if (!havePuah || !haulToInventory.Value) return null;
+                if (!havePuah || !haulToInventory.Value || !enabled.Value) return null;
                 var haulTracker = new PuahHaulTracker(pawn, jobCell, destCell);
                 haulTracker.Add(thing, storeCell);
                 haulTrackers.SetOrAdd(pawn, haulTracker);

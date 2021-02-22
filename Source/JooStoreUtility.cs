@@ -204,6 +204,9 @@ namespace JobsOfOpportunity
 
             public static bool PuahHasJobOnThing_HasStore(Thing thing, Pawn pawn, Map map, StoragePriority currentPriority, Faction faction, out IntVec3 foundCell,
                 bool needAccurateResult) {
+                if (!haulToInventory.Value || !enabled.Value)
+                    return StoreUtility.TryFindBestBetterStoreCellFor(thing, pawn, map, currentPriority, faction, out foundCell, needAccurateResult);
+
                 var haulTracker = haulTrackers.GetValueSafe(pawn);
                 // use our version for the haul to equal priority setting
                 if (!TryFindBestBetterStoreCellFor_ClosestToDestCell(

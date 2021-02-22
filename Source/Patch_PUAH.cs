@@ -22,6 +22,7 @@ namespace JobsOfOpportunity
                 [HarmonyPostfix]
                 static void GetPuahOpportunityJobString(JobDriver __instance, ref string __result) {
                     if (!PuahJobDriver_HaulToInventoryType.IsInstanceOfType(__instance)) return;
+                    if (!haulToInventory.Value || !enabled.Value) return;
                     if (!haulTrackers.TryGetValue(__instance.pawn, out var haulTracker)) return;
                     if (haulTracker.jobCell.IsValid || haulTracker.destCell.IsValid)
                         __result = $"Opportunistically {__result}";
@@ -36,7 +37,8 @@ namespace JobsOfOpportunity
 
                 [HarmonyPrefix]
                 static bool UsePuahAllocateThingAtCell_GetStore(ref bool __result, Thing thing, Pawn carrier, Map map, StoragePriority currentPriority, Faction faction,
-                    out IntVec3 foundCell) {
+                    ref IntVec3 foundCell) {
+                    if (!haulToInventory.Value || !enabled.Value) return true;
                     __result = JooStoreUtility.PuahAllocateThingAtCell_GetStore(thing, carrier, map, currentPriority, faction, out foundCell);
                     return false;
                 }
@@ -72,6 +74,9 @@ namespace JobsOfOpportunity
                 static bool UseTryFindBestBetterStoreCellFor_ClosestToDestCell(Thing t, Pawn carrier, Map map, StoragePriority currentPriority, Faction faction,
                     out IntVec3 foundCell,
                     bool needAccurateResult) {
+                    if (!haulToInventory.Value || !enabled.Value)
+                        return StoreUtility.TryFindBestBetterStoreCellFor(t, carrier, map, currentPriority, faction, out foundCell, needAccurateResult);
+
                     var haulTracker = haulTrackers.GetValueSafe(carrier);
                     return JooStoreUtility.TryFindBestBetterStoreCellFor_ClosestToDestCell(
                         t, haulTracker?.destCell ?? IntVec3.Invalid, carrier, map, currentPriority, faction, out foundCell, haulTracker?.destCell.IsValid ?? false);
@@ -86,6 +91,7 @@ namespace JobsOfOpportunity
 
                 [HarmonyPrefix]
                 static void TempReduceStoragePriorityForHaulBeforeCarry(WorkGiver_Scanner __instance, ref bool __state, Pawn pawn, Thing thing) {
+                    if (!haulToInventory.Value || !enabled.Value) return;
                     if (!haulToEqualPriority.Value) return;
 
                     var haulTracker = haulTrackers.GetValueSafe(pawn);
@@ -108,6 +114,7 @@ namespace JobsOfOpportunity
                         StoreUtility.CurrentHaulDestinationOf(thing).GetStoreSettings().Priority += 1;
 
                     if (__result == null) return;
+                    if (!haulToInventory.Value || !enabled.Value) return;
 
                     // JobOnThing() can run additional times (e.g. haulMoreWork toil) so don't assume this is already added if there's a jobCell or destCell
                     var haulTracker = PuahHaulTracker.GetOrCreate(pawn);
@@ -125,6 +132,7 @@ namespace JobsOfOpportunity
 
                 [HarmonyPrefix]
                 static bool UsePuahFirstUnloadableThing(ref ThingCount __result, Pawn pawn) {
+                    if (!haulToInventory.Value || !enabled.Value) return true;
                     __result = JooStoreUtility.PuahFirstUnloadableThing(pawn);
                     return false;
                 }
