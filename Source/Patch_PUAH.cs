@@ -17,15 +17,17 @@ namespace JobsOfOpportunity
             static class JobDriver_GetReport_Patch
             {
                 static bool       Prepare()      => havePuah;
-                static MethodBase TargetMethod() => AccessTools.Method(PuahJobDriver_HaulToInventoryType, "GetReport");
+                // always use DeclaredMethod (explicit)
+                static MethodBase TargetMethod() => AccessTools.DeclaredMethod(typeof(JobDriver), nameof(JobDriver.GetReport));
 
                 [HarmonyPostfix]
-                static void GetPuahOpportunityJobString(JobDriver __instance, ref string __result) {
-                    if (!PuahJobDriver_HaulToInventoryType.IsInstanceOfType(__instance)) return;
+                static void CustomPuahJobReport(JobDriver __instance, ref string __result) {
                     if (!haulToInventory.Value || !enabled.Value) return;
-                    if (!haulTrackers.TryGetValue(__instance.pawn, out var haulTracker)) return;
-                    if (haulTracker.jobCell.IsValid || haulTracker.destCell.IsValid)
-                        __result = $"Opportunistically {__result}";
+                    if (PuahJobDriver_HaulToInventoryType.IsInstanceOfType(__instance)) {
+                        if (!haulTrackers.TryGetValue(__instance.pawn, out var haulTracker)) return;
+                        __result = haulTracker.GetJobReportPrefix() + __result;
+                    } else if (PuahJobDriver_UnloadYourHauledInventoryType.IsInstanceOfType(__instance))
+                        __result = "Efficiently " + __result;
                 }
             }
 
@@ -89,7 +91,7 @@ namespace JobsOfOpportunity
                     if (!haulToEqualPriority.Value) return;
 
                     var haulTracker = haulTrackers.GetValueSafe(pawn);
-                    if (haulTracker == null || !haulTracker.destCell.IsValid) return;
+                    if (haulTracker == null || haulTracker.haulType != SpecialHaulType.HaulBeforeCarry) return;
 
                     var currentHaulDestination = StoreUtility.CurrentHaulDestinationOf(thing);
                     if (currentHaulDestination == null) return;
@@ -111,7 +113,7 @@ namespace JobsOfOpportunity
                     if (!haulToInventory.Value || !enabled.Value) return;
 
                     // JobOnThing() can run additional times (e.g. haulMoreWork toil) so don't assume this is already added if there's a jobCell or destCell
-                    var haulTracker = PuahHaulTracker.GetOrCreate(pawn);
+                    var haulTracker = haulTrackers.GetValueSafe(pawn) ?? HaulTracker.CreateAndAdd(SpecialHaulType.None, pawn, IntVec3.Invalid);
                     // thing from parameter because targetA is null because things are in queues instead
                     //  https://github.com/Mehni/PickUpAndHaul/blob/af50a05a8ae5ca64d9b95fee8f593cf91f13be3d/Source/PickUpAndHaul/WorkGiver_HaulToInventory.cs#L98
                     haulTracker.Add(thing, __result.targetB.Cell, false);

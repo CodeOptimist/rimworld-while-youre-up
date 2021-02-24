@@ -12,33 +12,55 @@ namespace JobsOfOpportunity
 {
     partial class JobsOfOpportunity
     {
-        public static readonly Dictionary<Pawn, PuahHaulTracker> haulTrackers = new Dictionary<Pawn, PuahHaulTracker>();
+        public enum SpecialHaulType { None, Opportunity, HaulBeforeCarry }
 
-        public class PuahHaulTracker
+        public static readonly Dictionary<Pawn, HaulTracker> haulTrackers = new Dictionary<Pawn, HaulTracker>();
+
+        public class HaulTracker
         {
+            public SpecialHaulType haulType;
+
             // reminder that storeCell is just *some* cell in our stockpile, actual unload cell is determined at unload
             public List<(Thing thing, IntVec3 storeCell)> hauls;    // for opportune checking (with jobCell)
             public Dictionary<ThingDef, IntVec3>          defHauls; // for unload ordering
 
             public IntVec3 startCell;
-            public IntVec3 jobCell;  // when our haul is an opportunity on the way to a job
-            public IntVec3 destCell; // when store isn't the destination (e.g. bill ingredients, blueprint supplies)
+            public IntVec3 jobCell  = IntVec3.Invalid; // when our haul is an opportunity on the way to a job
+            public IntVec3 destCell = IntVec3.Invalid; // when store isn't the destination (e.g. bill ingredients, blueprint supplies)
 
-            public PuahHaulTracker(Pawn pawn, IntVec3 jobCell, IntVec3 destCell) {
-                hauls = new List<(Thing thing, IntVec3 storeCell)>();
-                defHauls = new Dictionary<ThingDef, IntVec3>();
-
-                startCell = pawn.Position;
-                this.jobCell = jobCell;
-                this.destCell = destCell;
+            HaulTracker() {
             }
 
-            // use sparingly!
-            public static PuahHaulTracker GetOrCreate(Pawn pawn) {
-                if (haulTrackers.TryGetValue(pawn, out var haulTracker)) return haulTracker;
-                haulTracker = new PuahHaulTracker(pawn, IntVec3.Invalid, IntVec3.Invalid);
+            public static HaulTracker CreateAndAdd(SpecialHaulType haulType, Pawn pawn, IntVec3 cell) {
+                var haulTracker = new HaulTracker {haulType = haulType};
+
+                if (havePuah) {
+                    haulTracker.hauls = new List<(Thing thing, IntVec3 storeCell)>();
+                    haulTracker.defHauls = new Dictionary<ThingDef, IntVec3>();
+                }
+
+                haulTracker.startCell = pawn.Position;
+                switch (haulType) {
+                    case SpecialHaulType.Opportunity:
+                        haulTracker.jobCell = cell;
+                        break;
+                    case SpecialHaulType.HaulBeforeCarry:
+                        haulTracker.destCell = cell;
+                        break;
+                    case SpecialHaulType.None: break;
+                    default:                   throw new ArgumentOutOfRangeException(nameof(haulType), haulType, null);
+                }
+
                 haulTrackers.SetOrAdd(pawn, haulTracker);
                 return haulTracker;
+            }
+
+            public string GetJobReportPrefix() {
+                switch (haulType) {
+                    case SpecialHaulType.Opportunity:     return "Opportunistically ";
+                    case SpecialHaulType.HaulBeforeCarry: return "Optimally ";
+                    default:                              return "";
+                }
             }
 
             public void Add(Thing thing, IntVec3 storeCell, bool toEnd = true, [CallerMemberName] string callerName = "") {
@@ -57,7 +79,7 @@ namespace JobsOfOpportunity
 
         static class JooStoreUtility
         {
-            static bool AddOpportuneHaulToTracker(PuahHaulTracker haulTracker, Thing thing, Pawn pawn, ref IntVec3 foundCell, [CallerMemberName] string callerName = "") {
+            static bool AddOpportuneHaulToTracker(HaulTracker haulTracker, Thing thing, Pawn pawn, ref IntVec3 foundCell, [CallerMemberName] string callerName = "") {
                 var hauls = haulTracker.hauls;
                 var defHauls = haulTracker.defHauls;
 
@@ -211,17 +233,17 @@ namespace JobsOfOpportunity
                 // use our version for the haul to equal priority setting
                 if (!TryFindBestBetterStoreCellFor_ClosestToDestCell(
                     thing, haulTracker?.destCell ?? IntVec3.Invalid, pawn, map, currentPriority, faction, out foundCell, false)) return false;
-                return haulTracker == null || !haulTracker.jobCell.IsValid || AddOpportuneHaulToTracker(haulTracker, thing, pawn, ref foundCell);
+                return haulTracker == null || haulTracker.haulType != SpecialHaulType.Opportunity || AddOpportuneHaulToTracker(haulTracker, thing, pawn, ref foundCell);
             }
 
             public static bool PuahAllocateThingAtCell_GetStore(Thing thing, Pawn pawn, Map map, StoragePriority currentPriority, Faction faction, out IntVec3 foundCell) {
                 var skipCells = (HashSet<IntVec3>) AccessTools.DeclaredField(PuahWorkGiver_HaulToInventoryType, "skipCells").GetValue(null);
-                var haulTracker = PuahHaulTracker.GetOrCreate(pawn);
+                var haulTracker = haulTrackers.GetValueSafe(pawn) ?? HaulTracker.CreateAndAdd(SpecialHaulType.None, pawn, IntVec3.Invalid);
                 if (!TryFindBestBetterStoreCellFor_ClosestToDestCell(
                     thing, haulTracker.destCell, pawn, map, currentPriority, faction, out foundCell, haulTracker.destCell.IsValid, skipCells)) return false;
 
                 skipCells.Add(foundCell);
-                if (haulTracker.jobCell.IsValid) return AddOpportuneHaulToTracker(haulTracker, thing, pawn, ref foundCell);
+                if (haulTracker.haulType == SpecialHaulType.Opportunity) return AddOpportuneHaulToTracker(haulTracker, thing, pawn, ref foundCell);
                 haulTracker.Add(thing, foundCell);
                 return true;
             }
@@ -232,7 +254,7 @@ namespace JobsOfOpportunity
                 var thingsHauled = Traverse.Create(hauledToInventoryComp).Method("GetHashSet").GetValue<HashSet<Thing>>();
 
                 // should only be necessary because haulTrackers aren't currently saved in file like CompHauledToInventory
-                IntVec3 GetStoreCell(PuahHaulTracker haulTracker_, Thing thing) {
+                IntVec3 GetStoreCell(HaulTracker haulTracker_, Thing thing) {
                     if (haulTracker_.defHauls.TryGetValue(thing.def, out var storeCell))
                         return storeCell;
                     if (TryFindBestBetterStoreCellFor_ClosestToDestCell(

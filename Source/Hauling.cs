@@ -13,8 +13,6 @@ namespace JobsOfOpportunity
         {
             public enum HaulProximities { Both, Either, Ignored }
 
-            public static readonly Dictionary<Pawn, bool> pawnHaulToCell = new Dictionary<Pawn, bool>();
-
             static readonly        Dictionary<Thing, ProximityStage> thingProximityStage        = new Dictionary<Thing, ProximityStage>();
             public static readonly Dictionary<Thing, IntVec3>        cachedOpportunityStoreCell = new Dictionary<Thing, IntVec3>();
 
@@ -117,8 +115,8 @@ namespace JobsOfOpportunity
                         pawn.Map.debugDrawer.FlashLine(storeCell,      jobCell,        600, SimpleColor.Blue);
                     }
 
-                    pawnHaulToCell.SetOrAdd(pawn, true);
-                    return PuahJob(pawn, jobCell, thing, storeCell, IntVec3.Invalid) ?? HaulAIUtility.HaulToCellStorageJob(pawn, thing, storeCell, false);
+                    var haulTracker = HaulTracker.CreateAndAdd(SpecialHaulType.Opportunity, pawn, jobCell);
+                    return PuahJob(haulTracker, pawn, thing, storeCell) ?? HaulAIUtility.HaulToCellStorageJob(pawn, thing, storeCell, false);
                 }
 
                 return null;
@@ -139,18 +137,16 @@ namespace JobsOfOpportunity
                 if (supplyFromStoreDist + 1 < supplyFromHereDist) {
 //                    Debug.WriteLine(
 //                        $"'{pawn}' prefixed job with haul for '{thing.Label}' because '{storeCell.GetSlotGroup(pawn.Map)}' is closer to original destination '{destCell}'.");
-                    pawnHaulToCell.SetOrAdd(pawn, true);
-                    return PuahJob(pawn, IntVec3.Invalid, thing, storeCell, destCell) ?? HaulAIUtility.HaulToCellStorageJob(pawn, thing, storeCell, false);
+                    var haulTracker = HaulTracker.CreateAndAdd(SpecialHaulType.HaulBeforeCarry, pawn, destCell);
+                    return PuahJob(haulTracker, pawn, thing, storeCell) ?? HaulAIUtility.HaulToCellStorageJob(pawn, thing, storeCell, false);
                 }
 
                 return null;
             }
 
-            public static Job PuahJob(Pawn pawn, IntVec3 jobCell, Thing thing, IntVec3 storeCell, IntVec3 destCell) {
+            static Job PuahJob(HaulTracker haulTracker, Pawn pawn, Thing thing, IntVec3 storeCell) {
                 if (!havePuah || !haulToInventory.Value || !enabled.Value) return null;
-                var haulTracker = new PuahHaulTracker(pawn, jobCell, destCell);
                 haulTracker.Add(thing, storeCell);
-                haulTrackers.SetOrAdd(pawn, haulTracker);
                 return (Job) PuahJobOnThing.Invoke(puahWorkGiver, new object[] {pawn, thing, false});
             }
 

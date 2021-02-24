@@ -15,7 +15,7 @@ intro: |-
   [img]https://i.imgur.com/tbpLbha.gif[/img]
   
 header: |-
-  [b]A pawn's job will say "Opportunistically ", otherwise it's a different mod[/b] (e.g. normal hauling; normal hauling with [url=https://steamcommunity.com/sharedfiles/filedetails/?id=2277459062]Pick Up And Haul[/url], or triggered by [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1561769193]Common Sense[/url]).
+  [b]A pawn's job will say "Opportunistically", otherwise it's a different mod[/b] (e.g. normal hauling; normal hauling with [url=https://steamcommunity.com/sharedfiles/filedetails/?id=2277459062]Pick Up And Haul[/url], or triggered by [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1561769193]Common Sense[/url]).
   
   [i]@Modders:[/i] if you set [i]allowOpportunisticPrefix[/i] to [i]false[/i] for a JobDef, it won't allow opportunistic jobs. This is a vanilla feature.
 
@@ -230,5 +230,9 @@ features:
       - "     - New [i]"
       - *haulToEqualPriority
       - "[/i] setting (defaults on).\n"
-      - "     - Checks closest storage (to destination, not item) for closeness to destination.\n"
-  
+      - "     - Checks closest storage (to destination, not item) for closeness to destination."
+
+# wrapping issues in HugsLib news from e.g. "Prefix " instead of "Prefix"
+  - at: 2.0.0
+    desc: |-
+      • Added "Optimally" and "Efficiently unloading" job prefixes (like "Opportunistically").

@@ -13,8 +13,11 @@ namespace JobsOfOpportunity
             static class JobDriver_HaulToCell_MakeNewToils_Patch
             {
                 [HarmonyPostfix]
-                static void AddJooFinish(JobDriver __instance) {
-                    __instance.AddFinishAction(() => Hauling.pawnHaulToCell.Remove(__instance.pawn));
+                static void ClearHaulTypeAtFinish(JobDriver __instance) {
+                    __instance.AddFinishAction(() => {
+                        if (!haulTrackers.TryGetValue(__instance.pawn, out var haulTracker)) return;
+                        haulTracker.haulType = SpecialHaulType.None;
+                    });
                 }
             }
 
@@ -22,9 +25,9 @@ namespace JobsOfOpportunity
             static class JobDriver_HaulToCell_GetReport_Patch
             {
                 [HarmonyPostfix]
-                static void GetJooReportString(JobDriver_HaulToCell __instance, ref string __result) {
-                    if (!Hauling.pawnHaulToCell.ContainsKey(__instance.pawn)) return;
-                    __result = $"Opportunistically {__result}";
+                static void CustomJobReport(JobDriver_HaulToCell __instance, ref string __result) {
+                    if (!haulTrackers.TryGetValue(__instance.pawn, out var haulTracker)) return;
+                    __result = haulTracker.GetJobReportPrefix() + __result;
                 }
             }
         }
