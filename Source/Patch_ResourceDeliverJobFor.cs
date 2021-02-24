@@ -6,6 +6,8 @@ using HarmonyLib;
 using RimWorld;
 using Verse;
 using Verse.AI;
+// ReSharper disable once RedundantUsingDirective
+using Debug = System.Diagnostics.Debug;
 
 namespace JobsOfOpportunity
 {
@@ -18,6 +20,11 @@ namespace JobsOfOpportunity
             {
                 static Job HaulBeforeSupply(Pawn pawn, Thing constructible, Thing th) {
                     if (!haulBeforeSupply.Value || !enabled.Value) return null;
+                    if (JooStoreUtility.PuahHasThingsHauled(pawn)) {
+                        Debug.WriteLine($"{RealTime.frameCount} {pawn} Aborting {MethodBase.GetCurrentMethod().Name}() already holding items.");
+                        return null;
+                    }
+
                     return Helper.CatchStanding(pawn, Hauling.HaulBeforeCarry(pawn, constructible.Position, th));
                 }
 

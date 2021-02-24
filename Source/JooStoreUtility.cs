@@ -229,7 +229,7 @@ namespace JobsOfOpportunity
             public static ThingCount PuahFirstUnloadableThing(Pawn pawn) {
                 var hauledToInventoryComp =
                     (ThingComp) AccessTools.DeclaredMethod(typeof(ThingWithComps), "GetComp").MakeGenericMethod(PuahCompHauledToInventoryType).Invoke(pawn, null);
-                var thingsHauled = (HashSet<Thing>) AccessTools.DeclaredMethod(PuahCompHauledToInventoryType, "GetHashSet").Invoke(hauledToInventoryComp, null);
+                var thingsHauled = Traverse.Create(hauledToInventoryComp).Method("GetHashSet").GetValue<HashSet<Thing>>();
 
                 // should only be necessary because haulTrackers aren't currently saved in file like CompHauledToInventory
                 IntVec3 GetStoreCell(PuahHaulTracker haulTracker_, Thing thing) {
@@ -258,6 +258,13 @@ namespace JobsOfOpportunity
                 }
 
                 return new ThingCount(firstThingToUnload, firstThingToUnload.stackCount);
+            }
+
+            public static bool PuahHasThingsHauled(Pawn pawn) {
+                if (!havePuah) return false;
+                var hauledToInventoryComp =
+                    (ThingComp) AccessTools.DeclaredMethod(typeof(ThingWithComps), "GetComp").MakeGenericMethod(PuahCompHauledToInventoryType).Invoke(pawn, null);
+                return Traverse.Create(hauledToInventoryComp).Field<HashSet<Thing>>("takenToInventory").Value.Any(t => t != null);
             }
         }
     }

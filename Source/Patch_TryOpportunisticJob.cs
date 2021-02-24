@@ -18,6 +18,11 @@ namespace JobsOfOpportunity
             static Job TryOpportunisticJob(Pawn_JobTracker jobTracker, Job job) {
 //                Debug.WriteLine($"Opportunity checking {job}");
                 var pawn = Traverse.Create(jobTracker).Field("pawn").GetValue<Pawn>();
+                if (JooStoreUtility.PuahHasThingsHauled(pawn)) {
+                    Debug.WriteLine($"{RealTime.frameCount} {pawn} Aborting {MethodBase.GetCurrentMethod().Name}() during {job}; already holding items.");
+                    return null;
+                }
+
                 var jobCell = job.targetA.Cell;
 
                 if (job.def == JobDefOf.DoBill && haulBeforeBill.Value && enabled.Value) {
