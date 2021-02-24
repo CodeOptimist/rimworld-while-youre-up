@@ -50,12 +50,6 @@ namespace JobsOfOpportunity
                 static bool       Prepare()      => havePuah;
                 static MethodBase TargetMethod() => AccessTools.DeclaredMethod(PuahWorkGiver_HaulToInventoryType, "HasJobOnThing");
 
-                [HarmonyPrefix]
-                static void ClearPawnHaulTracker(Pawn pawn) {
-                    // keep for the haulMoreWork toil that extends our path, otherwise clear it for fresh distance calculations
-                    if (pawn.CurJobDef?.defName != "HaulToInventory") haulTrackers.Remove(pawn);
-                }
-
                 // we need to patch PUAH's use of vanilla TryFindBestBetterStoreCellFor within HasJobOnThing for the haulMoreWork toil
                 [HarmonyTranspiler]
                 static IEnumerable<CodeInstruction> UsePuahHasJobOnThing_HasStore(IEnumerable<CodeInstruction> instructions) {
@@ -137,6 +131,39 @@ namespace JobsOfOpportunity
                     return false;
                 }
             }
+
+            [HarmonyPatch]
+            static class JobDriver_UnloadYourHauledInventory_MakeNewToils_Patch
+            {
+                static bool       Prepare()      => havePuah;
+                static MethodBase TargetMethod() => AccessTools.DeclaredMethod(PuahJobDriver_UnloadYourHauledInventoryType, "MakeNewToils");
+
+                [HarmonyPostfix]
+                static void ClearTrackingAfterUnload(JobDriver __instance) {
+                    Debug.WriteLine($"{RealTime.frameCount} {__instance.pawn} STARTED UNLOAD.");
+
+                    __instance.AddFinishAction(
+                        () => {
+                            haulTrackers.Remove(__instance.pawn);
+                            Debug.WriteLine($"{RealTime.frameCount} {__instance.pawn} FINISHED UNLOAD. Wiped tracking.");
+                        });
+                }
+            }
+
+#if DEBUG
+            [HarmonyPatch]
+            static class CompHauledToInventory_RegisterHauledItem_Patch
+            {
+                static bool       Prepare()      => havePuah;
+                static MethodBase TargetMethod() => AccessTools.DeclaredMethod(PuahCompHauledToInventoryType, "RegisterHauledItem");
+
+                [HarmonyPostfix]
+                static void TrackHauledItem(ThingComp __instance, Thing thing) {
+                    var pawn = (Pawn) __instance.parent;
+                    Debug.WriteLine($"{RealTime.frameCount} {pawn} GRABBED {thing}");
+                }
+            }
+#endif
         }
     }
 }
