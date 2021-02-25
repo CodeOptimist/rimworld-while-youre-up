@@ -125,10 +125,10 @@ features:
       - name: drawOpportunisticJobs
         title: Draw opportunistic jobs
         desc: |-
-          Paths are colored red, green, blue.
-          start →ᴿ haulable →ᴳ storage →ᴮ job
+          Original job paths are red, new opportunistic paths are green.
+          Original ingredient/supply paths are magenta, new optimal paths are cyan.
   
-          (This is vanilla's [i]Development mode → inspector icon → Visibility → Draw Opportunistic Jobs, which is why it doesn't persist through restarts.)[/i]
+          (This is sync'd to vanilla's [i]Development mode → inspector icon → Visibility → Draw Opportunistic Jobs, which is why it doesn't persist through restarts.)[/i]
 
       - name: haulProximities_Both
         title: Both required (vanilla)
@@ -236,3 +236,4 @@ features:
   - at: 2.0.0
     desc: |-
       • Added "Optimally" and "Efficiently unloading" job prefixes (like "Opportunistically").
+      • Updated "Draw opportunistic jobs" to include optimized hauls (magenta & cyan).

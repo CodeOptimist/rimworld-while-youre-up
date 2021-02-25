@@ -108,12 +108,16 @@ namespace JobsOfOpportunity
                     thingProximityStage.SetOrAdd(thing, newProximityStage);
                     if (newProximityStage != ProximityStage.Success) continue;
 
+#if RELEASE
                     if (DebugViewSettings.drawOpportunisticJobs) {
-                        Log.Message("Opportunistic job spawned");
-                        pawn.Map.debugDrawer.FlashLine(pawn.Position,  thing.Position, 600, SimpleColor.Red);
+#endif
+                        pawn.Map.debugDrawer.FlashLine(pawn.Position,  jobCell,        600, SimpleColor.Red);
+                        pawn.Map.debugDrawer.FlashLine(pawn.Position,  thing.Position, 600, SimpleColor.Green);
                         pawn.Map.debugDrawer.FlashLine(thing.Position, storeCell,      600, SimpleColor.Green);
-                        pawn.Map.debugDrawer.FlashLine(storeCell,      jobCell,        600, SimpleColor.Blue);
+                        pawn.Map.debugDrawer.FlashLine(storeCell,      jobCell,        600, SimpleColor.Green);
+#if RELEASE
                     }
+#endif
 
                     var haulTracker = HaulTracker.CreateAndAdd(SpecialHaulType.Opportunity, pawn, jobCell);
                     return PuahJob(haulTracker, pawn, thing, storeCell) ?? HaulAIUtility.HaulToCellStorageJob(pawn, thing, storeCell, false);
@@ -135,8 +139,20 @@ namespace JobsOfOpportunity
                 // [KV] Infinite Storage https://steamcommunity.com/sharedfiles/filedetails/?id=1233893175
                 // infinite storage has an interaction spot 1 tile away from itself
                 if (supplyFromStoreDist + 1 < supplyFromHereDist) {
-//                    Debug.WriteLine(
-//                        $"'{pawn}' prefixed job with haul for '{thing.Label}' because '{storeCell.GetSlotGroup(pawn.Map)}' is closer to original destination '{destCell}'.");
+                    //                    Debug.WriteLine(
+                    //                        $"'{pawn}' prefixed job with haul for '{thing.Label}' because '{storeCell.GetSlotGroup(pawn.Map)}' is closer to original destination '{destCell}'.");
+
+#if RELEASE
+                    if (DebugViewSettings.drawOpportunisticJobs) {
+#endif
+                        pawn.Map.debugDrawer.FlashLine(pawn.Position,  thing.Position, 600, SimpleColor.White); // unchanged
+                        pawn.Map.debugDrawer.FlashLine(thing.Position, destCell,       600, SimpleColor.Magenta);
+                        pawn.Map.debugDrawer.FlashLine(thing.Position, storeCell,      600, SimpleColor.Cyan);
+                        pawn.Map.debugDrawer.FlashLine(storeCell,      destCell,       600, SimpleColor.Cyan);
+#if RELEASE
+                    }
+#endif
+
                     var haulTracker = HaulTracker.CreateAndAdd(SpecialHaulType.HaulBeforeCarry, pawn, destCell);
                     return PuahJob(haulTracker, pawn, thing, storeCell) ?? HaulAIUtility.HaulToCellStorageJob(pawn, thing, storeCell, false);
                 }
