@@ -7,8 +7,7 @@ using HarmonyLib;
 using HugsLib;
 using HugsLib.Settings;
 using RimWorld;
-using Verse;
-// ReSharper disable once RedundantUsingDirective
+using Verse; // ReSharper disable once RedundantUsingDirective
 using Debug = System.Diagnostics.Debug;
 using Dialog_ModSettings = HugsLib.Settings.Dialog_ModSettings;
 
@@ -88,9 +87,8 @@ namespace JobsOfOpportunity
             }
 
             haulToEqualPriority = s.GetSettingHandle("haulToEqualPriority", true);
-            skipIfBleeding = s.GetSettingHandle("skipIfBleeding",           true);
-            haulProximities = s.GetSettingHandle(
-                "haulProximities", Hauling.HaulProximities.Ignored, default, default, $"{settingIdentifier}_SettingTitle_haulProximities_");
+            skipIfBleeding = s.GetSettingHandle("skipIfBleeding", true);
+            haulProximities = s.GetSettingHandle("haulProximities", Hauling.HaulProximities.Ignored, default, default, $"{settingIdentifier}_SettingTitle_haulProximities_");
 
             drawOpportunisticJobs = s.GetSettingHandle("drawOpportunisticJobs", DebugViewSettings.drawOpportunisticJobs);
             drawOpportunisticJobs.Unsaved = true;
@@ -111,6 +109,8 @@ namespace JobsOfOpportunity
             maxStoreToJobRegionLookCount = s.GetSettingHandle("maxStoreToJobRegionLookCount",     25,   Validators.IntRangeValidator(0, 999), ShowVanillaParameters);
         }
 
+        // ReSharper disable UnusedType.Local
+        // ReSharper disable UnusedMember.Local
         [HarmonyPatch(typeof(Dialog_ModSettings), "PopulateControlInfo")]
         static class Dialog_ModSettings_PopulateControlInfo_Patch
         {
@@ -136,5 +136,7 @@ namespace JobsOfOpportunity
                 }
             }
         }
+        // ReSharper restore UnusedType.Local
+        // ReSharper restore UnusedMember.Local
     }
 }

@@ -1,8 +1,7 @@
 ﻿using System.Collections.Generic;
 using RimWorld;
 using Verse;
-using Verse.AI;
-// ReSharper disable once RedundantUsingDirective
+using Verse.AI; // ReSharper disable once RedundantUsingDirective
 using Debug = System.Diagnostics.Debug;
 
 namespace JobsOfOpportunity
@@ -82,7 +81,7 @@ namespace JobsOfOpportunity
 
                 bool PawnToThingRegionFail() {
                     return maxStartToThingRegionLookCount.Value > 0 && !pawn.Position.WithinRegions(
-                               thing.Position, pawn.Map, maxStartToThingRegionLookCount.Value, TraverseParms.For(pawn));
+                        thing.Position, pawn.Map, maxStartToThingRegionLookCount.Value, TraverseParms.For(pawn));
                 }
 
                 bool StoreToJobRegionFail(IntVec3 _storeCell) {
@@ -145,7 +144,8 @@ namespace JobsOfOpportunity
 #if RELEASE
                     if (DebugViewSettings.drawOpportunisticJobs) {
 #endif
-                        pawn.Map.debugDrawer.FlashLine(pawn.Position,  thing.Position, 600, SimpleColor.White); // unchanged
+                        // ReSharper disable once RedundantArgumentDefaultValue
+                        pawn.Map.debugDrawer.FlashLine(pawn.Position,  thing.Position, 600, SimpleColor.White);
                         pawn.Map.debugDrawer.FlashLine(thing.Position, destCell,       600, SimpleColor.Magenta);
                         pawn.Map.debugDrawer.FlashLine(thing.Position, storeCell,      600, SimpleColor.Cyan);
                         pawn.Map.debugDrawer.FlashLine(storeCell,      destCell,       600, SimpleColor.Cyan);
@@ -168,6 +168,7 @@ namespace JobsOfOpportunity
 
             enum ProximityCheck { Both, Either, Ignored }
 
+            // ReSharper disable once UnusedMember.Local
             enum ProximityStage { Initial, PawnToThing, StoreToJob, PawnToThingRegion, Fail, Success }
         }
     }

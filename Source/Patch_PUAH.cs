@@ -3,9 +3,11 @@ using System.Reflection;
 using HarmonyLib;
 using RimWorld;
 using Verse;
-using Verse.AI;
-// ReSharper disable once RedundantUsingDirective
+using Verse.AI; // ReSharper disable once RedundantUsingDirective
 using Debug = System.Diagnostics.Debug;
+
+// ReSharper disable UnusedType.Local
+// ReSharper disable UnusedMember.Local
 
 namespace JobsOfOpportunity
 {
@@ -16,7 +18,8 @@ namespace JobsOfOpportunity
             [HarmonyPatch]
             static class JobDriver_GetReport_Patch
             {
-                static bool       Prepare()      => havePuah;
+                static bool Prepare() => havePuah;
+
                 // always use DeclaredMethod (explicit)
                 static MethodBase TargetMethod() => AccessTools.DeclaredMethod(typeof(JobDriver), nameof(JobDriver.GetReport));
 

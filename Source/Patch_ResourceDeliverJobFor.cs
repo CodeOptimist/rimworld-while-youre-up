@@ -5,9 +5,11 @@ using CodeOptimist;
 using HarmonyLib;
 using RimWorld;
 using Verse;
-using Verse.AI;
-// ReSharper disable once RedundantUsingDirective
+using Verse.AI; // ReSharper disable once RedundantUsingDirective
 using Debug = System.Diagnostics.Debug;
+
+// ReSharper disable UnusedType.Local
+// ReSharper disable UnusedMember.Local
 
 namespace JobsOfOpportunity
 {

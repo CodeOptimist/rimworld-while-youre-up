@@ -1,53 +1,53 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <ProjectGuid>{6367C120-5B04-4F1F-A497-2715743251A9}</ProjectGuid>
-    <TargetFramework>net472</TargetFramework>
-    <AssemblyTitle>JobsOfOpportunity</AssemblyTitle>
-    <Product>JobsOfOpportunity</Product>
-    <Copyright>Copyright © 2020-$([System.DateTime]::Now.Year) Christopher Galpin</Copyright>
-    <MinutesSinceEpoch>$([System.DateTime]::UtcNow.Subtract($([System.DateTime]::MinValue)).TotalMinutes)</MinutesSinceEpoch>
-    <Revision>$([System.Math]::Truncate($([System.Decimal]::Remainder($(MinutesSinceEpoch), 10000))))</Revision>
-    <Version>2.0.0.$(Revision)</Version>
-    <AssemblyVersion>$(Version)</AssemblyVersion>
-    <FileVersion>$(Version)</FileVersion>
-    <OutputPath>bin\$(Configuration)\</OutputPath>
-  </PropertyGroup>
-  <Target Name="BuildMessage" AfterTargets="Build">
-    <Message Text="$(Version)" Importance="High" />
-  </Target>
-  <ItemGroup>
-    <PackageReference Include="ILRepack.Lib.MSBuild.Task" Version="2.0.18.2" />
-    <PackageReference Include="Lib.Harmony" Version="2.0.4" />
-  </ItemGroup>
-  <ItemGroup>
-    <Reference Include="Assembly-CSharp">
-      <HintPath>..\..\..\..\Program Files (x86)\Steam\steamapps\common\RimWorld\RimWorldWin64_Data\Managed\Assembly-CSharp.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="HugsLib">
-      <HintPath>..\..\..\..\Program Files (x86)\Steam\steamapps\workshop\content\294100\818773962\v1.2\Assemblies\HugsLib.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\CodeOptimist\CodeOptimist.csproj" />
-  </ItemGroup>
-  <Target Name="ILRepacker" AfterTargets="Build">
-    <ItemGroup>
-      <!-- all but first assembly will be internalized -->
-      <InputAssemblies Include="$(OutputPath)\$(AssemblyName).dll" />
-      <InputAssemblies Include="$(OutputPath)\CodeOptimist.dll" />
-    </ItemGroup>
-    <ItemGroup>
-      <LibraryPath Include="$(SolutionDir)\packages\Lib.Harmony.2.0.4\lib\net472\" />
-      <LibraryPath Include="$(ProgramFiles)\Steam\steamapps\common\RimWorld\RimWorldWin64_Data\Managed\" />
-    </ItemGroup>
-    <ILRepack Parallel="true" Internalize="true" LibraryPath="@(LibraryPath)" InputAssemblies="@(InputAssemblies)"
-              TargetKind="Dll" OutputFile="$(ProjectDir)..\1.2\Assemblies\$(AssemblyName).dll" />
-  </Target>
-  <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
-    <Exec Command="type nul&gt;$(Temp)\rw_build" />
-  </Target>
+	<PropertyGroup>
+		<ProjectGuid>{6367C120-5B04-4F1F-A497-2715743251A9}</ProjectGuid>
+		<TargetFramework>net472</TargetFramework>
+		<AssemblyTitle>JobsOfOpportunity</AssemblyTitle>
+		<Product>JobsOfOpportunity</Product>
+		<Copyright>Copyright © 2020-$([System.DateTime]::Now.Year) Christopher Galpin</Copyright>
+		<MinutesSinceEpoch>$([System.DateTime]::UtcNow.Subtract($([System.DateTime]::MinValue)).TotalMinutes)</MinutesSinceEpoch>
+		<Revision>$([System.Math]::Truncate($([System.Decimal]::Remainder($(MinutesSinceEpoch), 10000))))</Revision>
+		<Version>2.0.0.$(Revision)</Version>
+		<AssemblyVersion>$(Version)</AssemblyVersion>
+		<FileVersion>$(Version)</FileVersion>
+		<OutputPath>bin\$(Configuration)\</OutputPath>
+	</PropertyGroup>
+	<Target Name="BuildMessage" AfterTargets="Build">
+		<Message Text="$(Version)" Importance="High" />
+	</Target>
+	<ItemGroup>
+		<PackageReference Include="ILRepack.Lib.MSBuild.Task" Version="2.0.18.2" />
+		<PackageReference Include="Lib.Harmony" Version="2.0.4" />
+	</ItemGroup>
+	<ItemGroup>
+		<Reference Include="Assembly-CSharp">
+			<HintPath>..\..\..\..\Program Files (x86)\Steam\steamapps\common\RimWorld\RimWorldWin64_Data\Managed\Assembly-CSharp.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="HugsLib">
+			<HintPath>..\..\..\..\Program Files (x86)\Steam\steamapps\workshop\content\294100\818773962\v1.2\Assemblies\HugsLib.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+	</ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\..\CodeOptimist\CodeOptimist.csproj" />
+	</ItemGroup>
+	<Target Name="ILRepacker" AfterTargets="Build">
+		<ItemGroup>
+			<!-- all but first assembly will be internalized -->
+			<InputAssemblies Include="$(OutputPath)\$(AssemblyName).dll" />
+			<InputAssemblies Include="$(OutputPath)\CodeOptimist.dll" />
+		</ItemGroup>
+		<ItemGroup>
+			<LibraryPath Include="$(SolutionDir)\packages\Lib.Harmony.2.0.4\lib\net472\" />
+			<LibraryPath Include="$(ProgramFiles)\Steam\steamapps\common\RimWorld\RimWorldWin64_Data\Managed\" />
+		</ItemGroup>
+		<ILRepack Parallel="true" Internalize="true" LibraryPath="@(LibraryPath)" InputAssemblies="@(InputAssemblies)"
+		          TargetKind="Dll" OutputFile="$(ProjectDir)..\1.2\Assemblies\$(AssemblyName).dll" />
+	</Target>
+	<Target Name="PreBuild" BeforeTargets="PreBuildEvent">
+		<Exec Command="type nul&gt;$(Temp)\rw_build" />
+	</Target>
 </Project>
