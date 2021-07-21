@@ -13,6 +13,7 @@ ModMetaData: !merge
   supportedVersions:
     - 1.1
     - 1.2
+    - 1.3
   incompatibleWith:
     - hoodie.whileyoureup
     - kevlou127.WhileHYouOreHUpHQ1V0S
@@ -20,14 +21,16 @@ ModMetaData: !merge
 published_file_id: 2034960453
 preview_from_path: '{out_dir}\..\JoO.png'
 
-intro: &intro |-
+intro: |-
   Vanilla's opportunistic hauling, only better. Compatible with existing saves. Any load order.
 
+steam_intro: |-
+  {intro}
+
   [img]https://i.imgur.com/tbpLbha.gif[/img]
-stable_intro: *intro
 
 header: |-
-  [b]A pawn's job will say "Opportunistically", otherwise it's a different mod[/b] (e.g. normal hauling; normal hauling with [url=https://steamcommunity.com/sharedfiles/filedetails/?id=2277459062]Pick Up And Haul[/url], or triggered by [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1561769193]Common Sense[/url]).
+  [b]A pawn's job will say "Opportunistically", "Optimally", or "Efficiently unloading", otherwise it's a different mod[/b] (e.g. normal hauling; normal hauling with [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1279012058]Pick Up And Haul[/url], or triggered by [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1561769193]Common Sense[/url]).
 
   [i]@Modders:[/i] if you set [i]allowOpportunisticPrefix[/i] to [i]false[/i] for a JobDef, it won't allow opportunistic jobs. This is a vanilla feature.
 
@@ -47,7 +50,7 @@ footer: |-
   This method will save me hours upon hours of setup and get issues fixed quickly.
 
   [h1]Background[/h1]
-  I began with the intention to [url=https://gist.github.com/CodeOptimist/5a740dd803fc370ec43f22ffa8bc953d#file-utils-cs-L48]fork[/url] [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1544626521][i]kevlou's[/i] While You're Up[/url], until I saw the [url=https://github.com/CodeOptimist/rimworld-jobs-of-opportunity/blob/29391b0a075a1dd77d4788777b0137e26390328c/Source/Patch_TryOpportunisticJob.cs]improved version Ludeon added[/url] to the core game. Since WYU appears discontinued, and this in its spirit, I hope to get away with carrying on the name ♥.
+  I began with the intention to [url=https://gist.github.com/CodeOptimist/5a740dd803fc370ec43f22ffa8bc953d#file-utils-cs-L48]fork[/url] [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1544626521][i]kevlou's[/i] While You're Up[/url], until I saw the [url=https://github.com/CodeOptimist/rimworld-jobs-of-opportunity/blob/29391b0a075a1dd77d4788777b0137e26390328c/Source/Patch_TryOpportunisticJob.cs]improved version Ludeon added[/url] to the core game. Since WYU is discontinued, and this in its spirit, I hope to carry on the name ♥.
 
   These (now adjustable) settings show [url=https://steamuserimages-a.akamaihd.net/ugc/1000305627047582524/6DCE6BD8630614062AADAFAF2C441451BADCDFCF/]how vanilla does opportunistic hauling[/url].
   And for those curious, here are the [url=https://i.imgur.com/eRSl8t0.png]settings for the original While You're Up[/url] (not recommended).
@@ -56,20 +59,28 @@ footer: |-
   Now that these checks are merely [i]preferred[/i], and we trigger for all jobs, it's the best of both worlds!
 
 features:
+  - title: Efficient unloading
+    at: 2.0.0
+    desc: |-
+      Custom modification of [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1279012058]Pick Up And Haul[/url]. (Optional mod. Installed separately.)
+
+      We now control PUAH to eliminate chaotic unloading between stockpiles.
+      This also means more hauling opportunities on the way to a separate job.
+
+  - title: Haul to inventory
+    at: 1.4.0
+    desc: |-
+      Custom use of [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1279012058]Pick Up And Haul[/url]! (Optional mod. Installed separately.)
+
+      PUAH is carefully controlled so only items qualifying as opportunistic will be gathered.
+      (Dedicated haul jobs behave as normal, gathering as much as they can.)
+
   - title: More hauling opportunities
     at: 1.0.0
     desc: |-
       Vanilla requires a haulable be near your [b]start[/b] position, and its stockpile near your job. Too far and it won't be hauled, [i]even if it's directly in your path[/i]. We can do better.
 
       We prefer the proximity requirements set by vanilla, but relax them to find valid haulables. Adjustable for performance (see tooltips).
-
-  - title: Haul to inventory
-    at: 1.4.0
-    desc: |-
-      Custom use of [url=https://steamcommunity.com/sharedfiles/filedetails/?id=2277459062]Pick Up And Haul[/url]! (Optional. Installed separately.)
-
-      The way we control PUAH, only items qualifying as opportunistic will be gathered: solves issue with spread-out stockpiles and [url=https://youtu.be/97aNVniNlGE]unloading madness[/url].
-      (Dedicated haul jobs behave as normal, gathering as much as they can.)
 
   - title: Optimize hauling ingredients
     at: 1.6.0
@@ -86,7 +97,6 @@ features:
       If hauling supplies to storage would bring them closer to their blueprint, do that first (grabbing extra).
     steam: |-
       If you've ever seen your builder cross the map to retrieve a [b]single[/b] component.
-      {desc}
 
       [img]https://i.imgur.com/G2oh7Mm.png[/img]
     settings:
@@ -103,7 +113,7 @@ features:
 updates:
   - at: 1.0.0
     desc: |-
-      • Support for [url=https://steamcommunity.com/sharedfiles/filedetails/?id=2277459062][i]Mehni's[/i] Pick Up And Haul[/url]!
+      • Support for [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1279012058][i]Mehni's[/i] Pick Up And Haul[/url]!
 
   - at: 1.1.0
     desc: |-
@@ -139,6 +149,22 @@ updates:
     desc: |-
       • Fixed "Optimize hauling ingredients/supplies" to no longer cause "Standing" loop when ingredient is in a pawn inventory. Fixes surgery with [i]Smart Medicine[/i], compatibility with [i]Build From Inventory[/i], and others.
 
+  - at: 2.0.0
+    credit: 'Kellogg''s#0574'
+    haul_to_equal_priority: &haulToEqualPriority Allow "Optimize hauling" to same-priority
+    desc: |-
+      • [i]Optimize hauling ingredients/supplies[/i] will trigger more often:
+           - Fixed hauling from existing storage, not just un-stored.
+           - New [i]{haul_to_equal_priority}[/i] setting (off by default, see info).
+           - Checks closest storage (to destination, not item) for closeness to destination.
+
+  # wrapping issues in HugsLib news from e.g. "Prefix " instead of "Prefix"
+  - at: 2.0.0
+    desc: |-
+      • Added "Optimally" and "Efficiently unloading" job prefixes (like "Opportunistically").
+      • Updated "Draw opportunistic jobs" to include optimized hauls (magenta & cyan).
+      • Updated for RimWorld 1.3.
+
 settings:
   - name: enabled
     title: Enabled
@@ -151,6 +177,11 @@ settings:
     title: Use & improve Pick Up And Haul
     desc: |-
       Controls both efficient unloading and using inventory for opportunistic hauls.
+
+  - name: haulToEqualPriority
+    title: *haulToEqualPriority
+    desc: |-
+      Not recommended with storage mods. This modifies "Optimize hauling" to include delivery to same-priority storage.
 
   - name: haulProximities
     title: Haulable & storage initial closeness
@@ -170,12 +201,12 @@ settings:
     title: Preferred (recommended)
 
   - name: drawOpportunisticJobs
-    title: Draw opportunistic jobs
+    title: Draw opportunistic & optimal jobs
     desc: |-
-      Paths are colored red, green, blue.
-      start →ᴿ haulable →ᴳ storage →ᴮ job
+      Original job paths are red, new opportunistic paths are green.
+      Original ingredient/supply paths are magenta, new optimal paths are cyan.
 
-      (This is vanilla's [i]Development mode → inspector icon → Visibility → Draw Opportunistic Jobs, which is why it doesn't persist through restarts.)[/i]
+      (This is sync'd to vanilla's [i]Development mode → inspector icon → Visibility → Draw Opportunistic Jobs, which is why it doesn't persist through restarts.)[/i]
 
   - name: showVanillaParameters
     title: Show opportunity parameters…

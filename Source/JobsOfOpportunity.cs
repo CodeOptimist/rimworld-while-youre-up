@@ -26,7 +26,7 @@ namespace JobsOfOpportunity
 
         static SettingHandle<Hauling.HaulProximities> haulProximities;
 
-        static readonly SettingHandle.ShouldDisplay HavePuah = ModLister.HasActiveModWithName("Pick Up And Haul") || ModLister.HasActiveModWithName("Pick Up And Haul (Continued)")
+        static readonly SettingHandle.ShouldDisplay HavePuah = ModLister.HasActiveModWithName("Pick Up And Haul")
             ? new SettingHandle.ShouldDisplay(() => true)
             : () => false;
 
@@ -77,8 +77,8 @@ namespace JobsOfOpportunity
 
                 Settings.SaveChanges();
 
-                haulBeforeBill.OnValueChanged += value => {
-                    if (value && (bool) CsHaulingOverBillsSetting.GetValue(csSettings)) {
+                haulBeforeBill.ValueChanged += handle => {
+                    if (haulBeforeBill.Value && (bool) CsHaulingOverBillsSetting.GetValue(csSettings)) {
                         CsHaulingOverBillsSetting.SetValue(csSettings, false);
                         Messages.Message(
                             "[Jobs of Opportunity] Unticked setting in CommonSense: \"haul ingredients for a bill\". (Can't use both.)", MessageTypeDefOf.SilentInput, false);
@@ -92,7 +92,7 @@ namespace JobsOfOpportunity
 
             drawOpportunisticJobs = s.GetSettingHandle("drawOpportunisticJobs", DebugViewSettings.drawOpportunisticJobs);
             drawOpportunisticJobs.Unsaved = true;
-            drawOpportunisticJobs.OnValueChanged += value => DebugViewSettings.drawOpportunisticJobs = value;
+            drawOpportunisticJobs.ValueChanged += handle => DebugViewSettings.drawOpportunisticJobs = drawOpportunisticJobs.Value;
 
             showVanillaParameters = s.GetSettingHandle("showVanillaParameters", false);
             var ShowVanillaParameters = new SettingHandle.ShouldDisplay(() => showVanillaParameters.Value);
