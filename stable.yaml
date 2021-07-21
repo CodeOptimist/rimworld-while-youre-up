@@ -89,7 +89,7 @@ features:
 
       Unticks similar setting in [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1561769193]Common Sense[/url] mod.
     settings:
-      - name: haulBeforeBill
+      - name: HaulBeforeBill
 
   - title: Optimize hauling supplies
     at: 1.0.0
@@ -100,7 +100,7 @@ features:
 
       [img]https://i.imgur.com/G2oh7Mm.png[/img]
     settings:
-      - name: haulBeforeSupply
+      - name: HaulBeforeSupply
 
   - title: Skip when bleeding
     at: 1.1.0
@@ -108,7 +108,7 @@ features:
       Don't take jobs of opportunity when bleeding.
       "Optimize hauling" features still apply since they (hopefully) expedite a job.
     settings:
-      - name: skipIfBleeding
+      - name: SkipIfBleeding
 
 updates:
   - at: 1.0.0
@@ -166,24 +166,24 @@ updates:
       • Updated for RimWorld 1.3.
 
 settings:
-  - name: enabled
+  - name: Enabled
     title: Enabled
     desc: |-
       Toggle mod without restarting.
 
       Off is equivalent to disabling all features, resetting each vanilla parameter, and "initial closeness" set to "(vanilla)".
 
-  - name: haulToInventory
+  - name: HaulToInventory
     title: Use & improve Pick Up And Haul
     desc: |-
       Controls both efficient unloading and using inventory for opportunistic hauls.
 
-  - name: haulToEqualPriority
+  - name: HaulToEqualPriority
     title: *haulToEqualPriority
     desc: |-
       Not recommended with storage mods. This modifies "Optimize hauling" to include delivery to same-priority storage.
 
-  - name: haulProximities
+  - name: HaulProximities
     title: Haulable & storage initial closeness
     desc: |-
       For performance reasons vanilla doesn't calculate and sort all haul paths to find opportunities, instead it settles for the first found with a haulable near our starting position, and its storage near our job destination. I've made these parameters configurable (marked with ¹).
@@ -193,14 +193,14 @@ settings:
       If performance is an issue, set this stricter to reduce available hauls.
       If straight-line distance poorly represents your actual haul paths, set this stricter and adjust "max region look count"¹.
 
-  - name: haulProximities_Both
+  - name: HaulProximities_Both
     title: Both required (vanilla)
-  - name: haulProximities_Either
+  - name: HaulProximities_Either
     title: Either required
-  - name: haulProximities_Ignored
+  - name: HaulProximities_Ignored
     title: Preferred (recommended)
 
-  - name: drawOpportunisticJobs
+  - name: DrawOpportunisticJobs
     title: Draw opportunistic & optimal jobs
     desc: |-
       Original job paths are red, new opportunistic paths are green.
@@ -208,31 +208,31 @@ settings:
 
       (This is sync'd to vanilla's [i]Development mode → inspector icon → Visibility → Draw Opportunistic Jobs, which is why it doesn't persist through restarts.)[/i]
 
-  - name: showVanillaParameters
+  - name: ShowVanillaParameters
     title: Show opportunity parameters…
     desc: |-
       These settings are provided for explaining and tweaking vanilla's built-in opportunistic hauling.
 
       A value of 0 will skip a check.
 
-  - name: maxNewLegsPctOrigTrip
+  - name: MaxNewLegsPctOrigTrip
     title: ²Max new legs % of original trip
     dist: &dist |-
       This is straight-line distance ("as the crow flies").
     desc: |-
       Max start-to-haulable + storage-to-job % of original trip.
       {dist}
-  - name: maxTotalTripPctOrigTrip
+  - name: MaxTotalTripPctOrigTrip
     title: ²Max total trip % of original trip
     desc: *dist
 
-  - name: maxStartToThing
+  - name: MaxStartToThing
     title: ¹Max start-to-haulable
     desc: *dist
-  - name: maxStartToThingPctOrigTrip
+  - name: MaxStartToThingPctOrigTrip
     title: ¹Max start-to-haulable % of original trip
     desc: *dist
-  - name: maxStartToThingRegionLookCount
+  - name: MaxStartToThingRegionLookCount
     title: ¹Max start-to-haulable region look count
     desc: &region_look_count |-
       This parameter limits our actual pathing.
@@ -242,12 +242,12 @@ settings:
 
       It can't be calculated perfectly from distance, as regions will vary in size and neighbors. (A corridor has only forward and back, so they're explored further.)
       But in a completely open field, if a pawn must travel the distance of n=3 full-sized 12x12 regions (~36 tiles), the algorithm will explore 2(n^2+n)+1 or 25 regions.
-  - name: maxStoreToJob
+  - name: MaxStoreToJob
     title: ¹Max storage-to-job
     desc: *dist
-  - name: maxStoreToJobPctOrigTrip
+  - name: MaxStoreToJobPctOrigTrip
     title: ¹Max storage-to-job % of original trip
     desc: *dist
-  - name: maxStoreToJobRegionLookCount
+  - name: MaxStoreToJobRegionLookCount
     title: ¹Max storage-to-job region look count
     desc: *region_look_count

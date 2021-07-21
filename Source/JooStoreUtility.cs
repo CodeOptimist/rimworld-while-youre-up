@@ -138,27 +138,27 @@ namespace JobsOfOpportunity
                 var lastStoreToJob = haulsByUnloadOrder.Last().storeCell.DistanceTo(haulTracker.jobCell);
                 var origTrip = haulTracker.startCell.DistanceTo(haulTracker.jobCell);
                 var totalTrip = startToLastThing + lastThingToStore + storeToLastStore + lastStoreToJob;
-                var maxTotalTrip = origTrip * maxTotalTripPctOrigTrip.Value;
+                var maxTotalTrip = origTrip * settings.MaxTotalTripPctOrigTrip;
                 var newLegs = startToLastThing + storeToLastStore + lastStoreToJob;
-                var maxNewLegs = origTrip * maxNewLegsPctOrigTrip.Value;
-                var exceedsMaxTrip = maxTotalTripPctOrigTrip.Value > 0 && totalTrip > maxTotalTrip;
-                var exceedsMaxNewLegs = maxNewLegsPctOrigTrip.Value > 0 && newLegs > maxNewLegs;
+                var maxNewLegs = origTrip * settings.MaxNewLegsPctOrigTrip;
+                var exceedsMaxTrip = settings.MaxTotalTripPctOrigTrip > 0 && totalTrip > maxTotalTrip;
+                var exceedsMaxNewLegs = settings.MaxNewLegsPctOrigTrip > 0 && newLegs > maxNewLegs;
                 var isRejected = exceedsMaxTrip || exceedsMaxNewLegs;
 
-                if (!isRejected) {
-                    Debug.WriteLine($"{(isRejected ? "REJECTED" : "APPROVED")} {hauls.Last()} for {pawn}");
-//                    Debug.WriteLine(
-//                        $"\tstartToLastThing: {pawn}{haulTracker.startCell} -> {string.Join(" -> ", hauls.Select(x => $"{x.thing}{x.thing.Position}"))} = {startToLastThing}");
-//                    Debug.WriteLine($"\tlastThingToStore: {hauls.Last().thing}{hauls.Last().thing.Position} -> {hauls.Last()} = {lastThingToStore}");
-//                    Debug.WriteLine($"\tstoreToLastStore: {string.Join(" -> ", haulsByUnloadOrder)} = {storeToLastStore}");
-//                    Debug.WriteLine($"\tlastStoreToJob: {haulsByUnloadOrder.Last()} -> {haulTracker.jobCell} = {lastStoreToJob}");
-//                    Debug.WriteLine($"\torigTrip: {pawn}{haulTracker.startCell} -> {haulTracker.jobCell} = {origTrip}");
-//                    Debug.WriteLine($"\ttotalTrip: {startToLastThing} + {lastThingToStore} + {storeToLastStore} + {lastStoreToJob}  = {totalTrip}");
-//                    Debug.WriteLine($"\tmaxTotalTrip: {origTrip} * {maxTotalTripPctOrigTrip.Value} = {maxTotalTrip}");
-//                    Debug.WriteLine($"\tnewLegs: {startToLastThing} + {storeToLastStore} + {lastStoreToJob} = {newLegs}");
-//                    Debug.WriteLine($"\tmaxNewLegs: {origTrip} * {maxNewLegsPctOrigTrip.Value} = {maxNewLegs}");
-//                    Debug.WriteLine("");
-                }
+                // Debug.WriteLine($"{(isRejected ? "REJECTED" : "APPROVED")} {hauls.Last()} for {pawn}");
+                // if (!isRejected) {
+                //     Debug.WriteLine(
+                //         $"\tstartToLastThing: {pawn}{haulTracker.startCell} -> {string.Join(" -> ", hauls.Select(x => $"{x.thing}{x.thing.Position}"))} = {startToLastThing}");
+                //     Debug.WriteLine($"\tlastThingToStore: {hauls.Last().thing}{hauls.Last().thing.Position} -> {hauls.Last()} = {lastThingToStore}");
+                //     Debug.WriteLine($"\tstoreToLastStore: {string.Join(" -> ", haulsByUnloadOrder)} = {storeToLastStore}");
+                //     Debug.WriteLine($"\tlastStoreToJob: {haulsByUnloadOrder.Last()} -> {haulTracker.jobCell} = {lastStoreToJob}");
+                //     Debug.WriteLine($"\torigTrip: {pawn}{haulTracker.startCell} -> {haulTracker.jobCell} = {origTrip}");
+                //     Debug.WriteLine($"\ttotalTrip: {startToLastThing} + {lastThingToStore} + {storeToLastStore} + {lastStoreToJob}  = {totalTrip}");
+                //     Debug.WriteLine($"\tmaxTotalTrip: {origTrip} * {settings.MaxTotalTripPctOrigTrip} = {maxTotalTrip}");
+                //     Debug.WriteLine($"\tnewLegs: {startToLastThing} + {storeToLastStore} + {lastStoreToJob} = {newLegs}");
+                //     Debug.WriteLine($"\tmaxNewLegs: {origTrip} * {settings.MaxNewLegsPctOrigTrip} = {maxNewLegs}");
+                //     Debug.WriteLine("");
+                // }
 
                 if (isRejected) {
                     foundCell = IntVec3.Invalid;
@@ -189,7 +189,7 @@ namespace JobsOfOpportunity
                 if (!destCell.IsValid && Hauling.cachedOpportunityStoreCell.TryGetValue(thing, out foundCell))
                     return true;
 
-                var allowEqualPriority = destCell.IsValid && haulToEqualPriority.Value;
+                var allowEqualPriority = destCell.IsValid && settings.HaulToEqualPriority;
                 var closestSlot = IntVec3.Invalid;
                 var closestDistSquared = (float) int.MaxValue;
                 var foundPriority = currentPriority;
@@ -227,7 +227,7 @@ namespace JobsOfOpportunity
 
             public static bool PuahHasJobOnThing_HasStore(Thing thing, Pawn pawn, Map map, StoragePriority currentPriority, Faction faction, out IntVec3 foundCell,
                 bool needAccurateResult) {
-                if (!haulToInventory.Value || !enabled.Value)
+                if (!settings.HaulToInventory || !settings.Enabled)
                     return StoreUtility.TryFindBestBetterStoreCellFor(thing, pawn, map, currentPriority, faction, out foundCell, needAccurateResult);
 
                 var haulTracker = haulTrackers.GetValueSafe(pawn);

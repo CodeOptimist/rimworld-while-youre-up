@@ -21,7 +21,7 @@ namespace JobsOfOpportunity
             static class WorkGiver_ConstructDeliverResources_ResourceDeliverJobFor_Patch
             {
                 static Job HaulBeforeSupply(Pawn pawn, Thing constructible, Thing th) {
-                    if (!haulBeforeSupply.Value || !enabled.Value) return null;
+                    if (!settings.HaulBeforeSupply || !settings.Enabled) return null;
                     if (JooStoreUtility.PuahHasThingsHauled(pawn)) {
                         Debug.WriteLine($"{RealTime.frameCount} {pawn} Aborting {MethodBase.GetCurrentMethod().Name}() already holding items.");
                         return null;

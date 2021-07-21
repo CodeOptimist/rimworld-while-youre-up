@@ -27,7 +27,7 @@ namespace JobsOfOpportunity
 
                 var jobCell = job.targetA.Cell;
 
-                if (job.def == JobDefOf.DoBill && haulBeforeBill.Value && enabled.Value) {
+                if (job.def == JobDefOf.DoBill && settings.HaulBeforeBill && settings.Enabled) {
 //                    Debug.WriteLine($"Bill: '{job.bill}' label: '{job.bill.Label}'");
 //                    Debug.WriteLine($"Recipe: '{job.bill.recipe}' workerClass: '{job.bill.recipe.workerClass}'");
                     foreach (var localTargetInfo in job.targetQueueB) {
@@ -42,7 +42,7 @@ namespace JobsOfOpportunity
                     }
                 }
 
-                if (skipIfBleeding.Value && pawn.health.hediffSet.BleedRateTotal > 0.001f) return null;
+                if (settings.SkipIfBleeding && pawn.health.hediffSet.BleedRateTotal > 0.001f) return null;
 //                return Helper.CatchStanding(pawn, Hauling.TryHaul(pawn, jobCell) ?? Cleaning.TryClean(pawn, jobCell));
                 return Helper.CatchStanding(pawn, Hauling.TryHaul(pawn, jobCell));
             }
@@ -74,7 +74,7 @@ namespace JobsOfOpportunity
                 }
 
                 static bool IsEnabled() {
-                    return enabled.Value;
+                    return settings.Enabled;
                 }
             }
         }

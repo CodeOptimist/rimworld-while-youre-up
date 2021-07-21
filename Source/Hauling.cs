@@ -17,7 +17,7 @@ namespace JobsOfOpportunity
 
             public static Job TryHaul(Pawn pawn, IntVec3 jobCell) {
                 Job _TryHaul() {
-                    switch (haulProximities.Value) {
+                    switch (settings.HaulProximities) {
                         case HaulProximities.Both:
                             return TryHaulStage(pawn, jobCell, ProximityCheck.Both);
                         case HaulProximities.Either:
@@ -42,8 +42,8 @@ namespace JobsOfOpportunity
 
                 var pawnToThing = pawn.Position.DistanceTo(thing.Position);
                 if (proximityStage < ProximityStage.StoreToJob) {
-                    var atMax = maxStartToThing.Value > 0 && pawnToThing > maxStartToThing.Value;
-                    var atMaxPct = maxStartToThingPctOrigTrip.Value > 0 && pawnToThing > pawnToJob * maxStartToThingPctOrigTrip.Value;
+                    var atMax = settings.MaxStartToThing > 0 && pawnToThing > settings.MaxStartToThing;
+                    var atMaxPct = settings.MaxStartToThingPctOrigTrip > 0 && pawnToThing > pawnToJob * settings.MaxStartToThingPctOrigTrip;
                     var pawnToThingFail = atMax || atMaxPct;
                     switch (proximityCheck) {
                         case ProximityCheck.Both when pawnToThingFail: return ProximityStage.PawnToThing;
@@ -51,7 +51,7 @@ namespace JobsOfOpportunity
 
                     var thingToJob = thing.Position.DistanceTo(jobCell);
                     // if this one exceeds the maximum the next maxTotalTripPctOrigTrip check certainly will
-                    if (maxTotalTripPctOrigTrip.Value > 0 && pawnToThing + thingToJob > pawnToJob * maxTotalTripPctOrigTrip.Value) return ProximityStage.Fail;
+                    if (settings.MaxTotalTripPctOrigTrip > 0 && pawnToThing + thingToJob > pawnToJob * settings.MaxTotalTripPctOrigTrip) return ProximityStage.Fail;
                     if (pawn.Map.reservationManager.FirstRespectedReserver(thing, pawn) != null) return ProximityStage.Fail;
                     if (thing.IsForbidden(pawn)) return ProximityStage.Fail;
                     if (!HaulAIUtility.PawnCanAutomaticallyHaulFast(pawn, thing, false)) return ProximityStage.Fail;
@@ -66,8 +66,8 @@ namespace JobsOfOpportunity
 
                 var storeToJob = storeCell.DistanceTo(jobCell);
                 if (proximityStage < ProximityStage.PawnToThingRegion) {
-                    var atMax2 = maxStoreToJob.Value > 0 && storeToJob > maxStoreToJob.Value;
-                    var atMaxPct2 = maxStoreToJobPctOrigTrip.Value > 0 && storeToJob > pawnToJob * maxStoreToJobPctOrigTrip.Value;
+                    var atMax2 = settings.MaxStoreToJob > 0 && storeToJob > settings.MaxStoreToJob;
+                    var atMaxPct2 = settings.MaxStoreToJobPctOrigTrip > 0 && storeToJob > pawnToJob * settings.MaxStoreToJobPctOrigTrip;
                     var storeToJobFail = atMax2 || atMaxPct2;
                     switch (proximityCheck) {
                         case ProximityCheck.Both when storeToJobFail:                                                   return ProximityStage.StoreToJob;
@@ -75,17 +75,18 @@ namespace JobsOfOpportunity
                     }
 
                     var thingToStore = thing.Position.DistanceTo(storeCell);
-                    if (maxTotalTripPctOrigTrip.Value > 0 && pawnToThing + thingToStore + storeToJob > pawnToJob * maxTotalTripPctOrigTrip.Value) return ProximityStage.Fail;
-                    if (maxNewLegsPctOrigTrip.Value > 0 && pawnToThing + storeToJob > pawnToJob * maxNewLegsPctOrigTrip.Value) return ProximityStage.Fail;
+                    if (settings.MaxTotalTripPctOrigTrip > 0 && pawnToThing + thingToStore + storeToJob > pawnToJob * settings.MaxTotalTripPctOrigTrip) return ProximityStage.Fail;
+                    if (settings.MaxNewLegsPctOrigTrip > 0 && pawnToThing + storeToJob > pawnToJob * settings.MaxNewLegsPctOrigTrip) return ProximityStage.Fail;
                 }
 
                 bool PawnToThingRegionFail() {
-                    return maxStartToThingRegionLookCount.Value > 0 && !pawn.Position.WithinRegions(
-                        thing.Position, pawn.Map, maxStartToThingRegionLookCount.Value, TraverseParms.For(pawn));
+                    return settings.MaxStartToThingRegionLookCount > 0 && !pawn.Position.WithinRegions(
+                        thing.Position, pawn.Map, settings.MaxStartToThingRegionLookCount, TraverseParms.For(pawn));
                 }
 
                 bool StoreToJobRegionFail(IntVec3 _storeCell) {
-                    return maxStoreToJobRegionLookCount.Value > 0 && !_storeCell.WithinRegions(jobCell, pawn.Map, maxStoreToJobRegionLookCount.Value, TraverseParms.For(pawn));
+                    return settings.MaxStoreToJobRegionLookCount > 0 && !_storeCell.WithinRegions(
+                        jobCell, pawn.Map, settings.MaxStoreToJobRegionLookCount, TraverseParms.For(pawn));
                 }
 
                 switch (proximityCheck) {
@@ -103,20 +104,16 @@ namespace JobsOfOpportunity
                         continue;
 
                     var newProximityStage = CanHaul(proximityStage, pawn, thing, jobCell, proximityCheck, out var storeCell);
-//                    Debug.WriteLine($"{pawn} for {thing} proximity stage: {proximityStage} -> {newProximityStage}");
+                    // Debug.WriteLine($"{pawn} for {thing} proximity stage: {proximityStage} -> {newProximityStage}");
                     thingProximityStage.SetOrAdd(thing, newProximityStage);
                     if (newProximityStage != ProximityStage.Success) continue;
 
-#if RELEASE
                     if (DebugViewSettings.drawOpportunisticJobs) {
-#endif
                         pawn.Map.debugDrawer.FlashLine(pawn.Position,  jobCell,        600, SimpleColor.Red);
                         pawn.Map.debugDrawer.FlashLine(pawn.Position,  thing.Position, 600, SimpleColor.Green);
                         pawn.Map.debugDrawer.FlashLine(thing.Position, storeCell,      600, SimpleColor.Green);
                         pawn.Map.debugDrawer.FlashLine(storeCell,      jobCell,        600, SimpleColor.Green);
-#if RELEASE
                     }
-#endif
 
                     var haulTracker = HaulTracker.CreateAndAdd(SpecialHaulType.Opportunity, pawn, jobCell);
                     return PuahJob(haulTracker, pawn, thing, storeCell) ?? HaulAIUtility.HaulToCellStorageJob(pawn, thing, storeCell, false);
@@ -133,7 +130,7 @@ namespace JobsOfOpportunity
 
                 var supplyFromHereDist = thing.Position.DistanceTo(destCell);
                 var supplyFromStoreDist = storeCell.DistanceTo(destCell);
-//                Debug.WriteLine($"Carry from here: {supplyFromHereDist}; carry from store: {supplyFromStoreDist}");
+                // Debug.WriteLine($"Carry from here: {supplyFromHereDist}; carry from store: {supplyFromStoreDist}");
 
                 // [KV] Infinite Storage https://steamcommunity.com/sharedfiles/filedetails/?id=1233893175
                 // infinite storage has an interaction spot 1 tile away from itself
@@ -141,17 +138,13 @@ namespace JobsOfOpportunity
                     //                    Debug.WriteLine(
                     //                        $"'{pawn}' prefixed job with haul for '{thing.Label}' because '{storeCell.GetSlotGroup(pawn.Map)}' is closer to original destination '{destCell}'.");
 
-#if RELEASE
                     if (DebugViewSettings.drawOpportunisticJobs) {
-#endif
                         // ReSharper disable once RedundantArgumentDefaultValue
                         pawn.Map.debugDrawer.FlashLine(pawn.Position,  thing.Position, 600, SimpleColor.White);
                         pawn.Map.debugDrawer.FlashLine(thing.Position, destCell,       600, SimpleColor.Magenta);
                         pawn.Map.debugDrawer.FlashLine(thing.Position, storeCell,      600, SimpleColor.Cyan);
                         pawn.Map.debugDrawer.FlashLine(storeCell,      destCell,       600, SimpleColor.Cyan);
-#if RELEASE
                     }
-#endif
 
                     var haulTracker = HaulTracker.CreateAndAdd(SpecialHaulType.HaulBeforeCarry, pawn, destCell);
                     return PuahJob(haulTracker, pawn, thing, storeCell) ?? HaulAIUtility.HaulToCellStorageJob(pawn, thing, storeCell, false);
@@ -161,8 +154,9 @@ namespace JobsOfOpportunity
             }
 
             static Job PuahJob(HaulTracker haulTracker, Pawn pawn, Thing thing, IntVec3 storeCell) {
-                if (!havePuah || !haulToInventory.Value || !enabled.Value) return null;
+                if (!havePuah || !settings.HaulToInventory || !settings.Enabled) return null;
                 haulTracker.Add(thing, storeCell);
+                var puahWorkGiver = DefDatabase<WorkGiverDef>.GetNamed("HaulToInventory").Worker;
                 return (Job) PuahJobOnThing.Invoke(puahWorkGiver, new object[] {pawn, thing, false});
             }
 
