@@ -12,7 +12,8 @@ namespace JobsOfOpportunity
             var list = new Listing_Standard();
             list.Begin(inRect);
 
-            list.DrawBool(ref settings.Enabled, nameof(settings.Enabled));
+            list.DrawBool(ref settings.Enabled,        nameof(settings.Enabled));
+            list.DrawBool(ref settings.StockpilesOnly, nameof(settings.StockpilesOnly));
             if (ModLister.HasActiveModWithName("Pick Up And Haul"))
                 list.DrawBool(ref settings.HaulToInventory, nameof(settings.HaulToInventory));
             list.DrawBool(ref settings.HaulBeforeSupply,    nameof(settings.HaulBeforeSupply));
@@ -47,12 +48,14 @@ namespace JobsOfOpportunity
         // ReSharper disable once ClassNeverInstantiated.Local
         class Settings : ModSettings
         {
-            public   bool Enabled, HaulToInventory, HaulBeforeSupply, HaulBeforeBill, HaulBeforeBill_NeedsInitForCs, HaulToEqualPriority, SkipIfBleeding, DrawOpportunisticJobs;
+            public bool Enabled, StockpilesOnly, HaulToInventory, HaulBeforeSupply, HaulBeforeBill, HaulBeforeBill_NeedsInitForCs, HaulToEqualPriority, SkipIfBleeding,
+                DrawOpportunisticJobs;
+
             public   Hauling.HaulProximities HaulProximities;
-            public   bool ShowVanillaParameters;
-            public   float MaxStartToThing, MaxStartToThingPctOrigTrip, MaxStoreToJob, MaxStoreToJobPctOrigTrip, MaxTotalTripPctOrigTrip, MaxNewLegsPctOrigTrip;
-            public   int MaxStartToThingRegionLookCount, MaxStoreToJobRegionLookCount;
-            internal bool exposedData;
+            public   bool                    ShowVanillaParameters;
+            public   float                   MaxStartToThing, MaxStartToThingPctOrigTrip, MaxStoreToJob, MaxStoreToJobPctOrigTrip, MaxTotalTripPctOrigTrip, MaxNewLegsPctOrigTrip;
+            public   int                     MaxStartToThingRegionLookCount, MaxStoreToJobRegionLookCount;
+            internal bool                    exposedData;
 
             public override void ExposeData() {
                 exposedData = true;
@@ -65,11 +68,12 @@ namespace JobsOfOpportunity
                 }
 
                 Look(ref Enabled,                        nameof(Enabled),                        true);
+                Look(ref StockpilesOnly,                 nameof(StockpilesOnly),                 true);
                 Look(ref HaulToInventory,                nameof(HaulToInventory),                true);
                 Look(ref HaulBeforeSupply,               nameof(HaulBeforeSupply),               true);
                 Look(ref HaulBeforeBill,                 nameof(HaulBeforeBill),                 true);
                 Look(ref HaulBeforeBill_NeedsInitForCs,  nameof(HaulBeforeBill_NeedsInitForCs),  true);
-                Look(ref HaulToEqualPriority,            nameof(HaulToEqualPriority),            false);
+                Look(ref HaulToEqualPriority,            nameof(HaulToEqualPriority) + "_2.1.0", true);
                 Look(ref SkipIfBleeding,                 nameof(SkipIfBleeding),                 true);
                 Look(ref HaulProximities,                nameof(HaulProximities),                Hauling.HaulProximities.Ignored);
                 Look(ref DrawOpportunisticJobs,          nameof(DrawOpportunisticJobs),          false);

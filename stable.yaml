@@ -165,6 +165,17 @@ updates:
       • Updated "Draw opportunistic jobs" to include optimized hauls (magenta & cyan).
       • Updated for RimWorld 1.3.
 
+  - at: 2.1.0
+    desc: |-
+      • Improving storage mod compatibility:
+        - Added "Stockpiles only" setting (on by default).
+        - Changed 'Allow "Optimize hauling" to same-priority' to only deliver to stockpiles.
+            Automatically turned on (new default). Disable it manually if issues.
+        - Switched to vanilla-style settings window (future room for a storage building allow-list).
+
+      • Setting for "Draw opportunistic & optimal jobs" is now saved.
+          Try it out, it's fun! See tooltip for description.
+
 settings:
   - name: Enabled
     title: Enabled
@@ -172,6 +183,11 @@ settings:
       Toggle mod without restarting.
 
       Off is equivalent to disabling all features, resetting each vanilla parameter, and "initial closeness" set to "(vanilla)".
+
+  - name: StockpilesOnly
+    title: Stockpiles only
+    desc: |-
+      Only work with stockpiles. (There will be an allow-list for all building storage in the future.)
 
   - name: HaulToInventory
     title: Use & improve Pick Up And Haul
@@ -181,7 +197,7 @@ settings:
   - name: HaulToEqualPriority
     title: *haulToEqualPriority
     desc: |-
-      Not recommended with storage mods. This modifies "Optimize hauling" to include delivery to same-priority storage.
+      This modifies "Optimize hauling" to include delivery to stockpiles (only) of same-priority storage.
 
   - name: HaulProximities
     title: Haulable & storage initial closeness
@@ -206,7 +222,7 @@ settings:
       Original job paths are red, new opportunistic paths are green.
       Original ingredient/supply paths are magenta, new optimal paths are cyan.
 
-      (This is sync'd to vanilla's [i]Development mode → inspector icon → Visibility → Draw Opportunistic Jobs, which is why it doesn't persist through restarts.)[/i]
+      (This is sync'd to vanilla's [i]Development mode → inspector icon → Visibility → Draw Opportunistic Jobs[/i].)
 
   - name: ShowVanillaParameters
     title: Show opportunity parameters…

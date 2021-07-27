@@ -132,11 +132,9 @@ namespace JobsOfOpportunity
                 var supplyFromStoreDist = storeCell.DistanceTo(destCell);
                 // Debug.WriteLine($"Carry from here: {supplyFromHereDist}; carry from store: {supplyFromStoreDist}");
 
-                // [KV] Infinite Storage https://steamcommunity.com/sharedfiles/filedetails/?id=1233893175
-                // infinite storage has an interaction spot 1 tile away from itself
-                if (supplyFromStoreDist + 1 < supplyFromHereDist) {
-                    //                    Debug.WriteLine(
-                    //                        $"'{pawn}' prefixed job with haul for '{thing.Label}' because '{storeCell.GetSlotGroup(pawn.Map)}' is closer to original destination '{destCell}'.");
+                if (supplyFromStoreDist < supplyFromHereDist) {
+                    Debug.WriteLine(
+                        $"'{pawn}' prefixed job with haul for '{thing.Label}' because '{storeCell.GetSlotGroup(pawn.Map)}' is closer to original destination '{destCell}'.");
 
                     if (DebugViewSettings.drawOpportunisticJobs) {
                         // ReSharper disable once RedundantArgumentDefaultValue
