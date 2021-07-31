@@ -107,7 +107,7 @@ namespace JobsOfOpportunity
                 }
 
                 [HarmonyPostfix]
-                static void AddFirstRegularHaulToTracker(WorkGiver_Scanner __instance, bool __state, Job __result, Pawn pawn, Thing thing) {
+                static void TrackInitialHaul(WorkGiver_Scanner __instance, bool __state, Job __result, Pawn pawn, Thing thing) {
                     // restore storage priority
                     if (__state)
                         StoreUtility.CurrentHaulDestinationOf(thing).GetStoreSettings().Priority += 1;
@@ -115,11 +115,11 @@ namespace JobsOfOpportunity
                     if (__result == null) return;
                     if (!settings.HaulToInventory || !settings.Enabled) return;
 
-                    // JobOnThing() can run additional times (e.g. haulMoreWork toil) so don't assume this is already added if there's a jobCell or destCell
                     var haulTracker = haulTrackers.GetValueSafe(pawn) ?? HaulTracker.CreateAndAdd(SpecialHaulType.None, pawn, IntVec3.Invalid);
                     // thing from parameter because targetA is null because things are in queues instead
                     //  https://github.com/Mehni/PickUpAndHaul/blob/af50a05a8ae5ca64d9b95fee8f593cf91f13be3d/Source/PickUpAndHaul/WorkGiver_HaulToInventory.cs#L98
-                    haulTracker.Add(thing, __result.targetB.Cell, false);
+                    // JobOnThing() can run additional times (e.g. haulMoreWork toil) so don't assume this is already added if it's an Opportunity or HaulBeforeCarry
+                    haulTracker.Add(thing, __result.targetB.Cell, isInitial: true);
                 }
             }
 

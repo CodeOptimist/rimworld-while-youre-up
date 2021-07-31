@@ -62,17 +62,25 @@ namespace JobsOfOpportunity
                 }
             }
 
-            public void Add(Thing thing, IntVec3 storeCell, bool toEnd = true, [CallerMemberName] string callerName = "") {
+            public void Add(Thing thing, IntVec3 storeCell, bool isInitial = false, [CallerMemberName] string callerName = "") {
 #if DEBUG
                 // make deterministic, but merges and initial hauls will still fluctuate
                 storeCell = storeCell.GetSlotGroup(thing.Map).CellsList[0];
 #endif
-                if (callerName != "AddOpportuneHaulToTracker")
-                    Debug.WriteLine($"{RealTime.frameCount} {callerName}() {thing} -> {storeCell} " + (toEnd ? "Added to tracker." : "PREPENDED to tracker."));
 
-                var idx = toEnd ? hauls.Count : 0;
-                hauls.Insert(idx, (thing, storeCell));
+                string verb;
+                if (isInitial && hauls.FirstOrDefault().thing == thing) {
+                    hauls.RemoveAt(0);
+                    verb = "UPDATED on";
+                } else
+                    verb = isInitial ? "PREPENDED to" : "Added to";
+
+                hauls.Insert(isInitial ? 0 : hauls.Count, (thing, storeCell));
                 defHauls.SetOrAdd(thing.def, storeCell);
+
+                if (callerName != "AddOpportuneHaulToTracker")
+                    Debug.WriteLine($"{RealTime.frameCount} {callerName}() {thing} -> {storeCell} {verb} tracker.");
+
             }
         }
 
