@@ -41,10 +41,11 @@ namespace JobsOfOpportunity
                 static MethodBase TargetMethod() => AccessTools.DeclaredMethod(PuahWorkGiver_HaulToInventoryType, "TryFindBestBetterStoreCellFor");
 
                 [HarmonyPrefix]
-                static bool UsePuahAllocateThingAtCell_GetStore(ref bool __result, Thing thing, Pawn carrier, Map map, StoragePriority currentPriority, Faction faction,
+                static bool UseJooPuahAllocateThingAtCell_TryFindBestBetterStoreCellFor(ref bool __result, Thing thing, Pawn carrier, Map map, StoragePriority currentPriority,
+                    Faction faction,
                     ref IntVec3 foundCell) {
                     if (!settings.HaulToInventory || !settings.Enabled) return true;
-                    __result = JooStoreUtility.PuahAllocateThingAtCell_GetStore(thing, carrier, map, currentPriority, faction, out foundCell);
+                    __result = JooStoreUtility.PuahAllocateThingAtCell_TryFindBestBetterStoreCellFor(thing, carrier, map, currentPriority, faction, out foundCell);
                     return false;
                 }
             }
@@ -57,7 +58,7 @@ namespace JobsOfOpportunity
 
                 // we need to patch PUAH's use of vanilla TryFindBestBetterStoreCellFor within HasJobOnThing for the haulMoreWork toil
                 [HarmonyTranspiler]
-                static IEnumerable<CodeInstruction> UsePuahHasJobOnThing_HasStore(IEnumerable<CodeInstruction> instructions) {
+                static IEnumerable<CodeInstruction> UseJooPuahHasJobOnThing_HasStore(IEnumerable<CodeInstruction> instructions) {
                     return instructions.MethodReplacer(
                         AccessTools.DeclaredMethod(typeof(StoreUtility),    nameof(StoreUtility.TryFindBestBetterStoreCellFor)),
                         AccessTools.DeclaredMethod(typeof(JooStoreUtility), nameof(JooStoreUtility.PuahHasJobOnThing_HasStore)));
@@ -130,7 +131,7 @@ namespace JobsOfOpportunity
                 static MethodBase TargetMethod() => AccessTools.DeclaredMethod(PuahJobDriver_UnloadYourHauledInventoryType, "FirstUnloadableThing");
 
                 [HarmonyPrefix]
-                static bool UsePuahFirstUnloadableThing(ref ThingCount __result, Pawn pawn) {
+                static bool UseJooPuahFirstUnloadableThing(ref ThingCount __result, Pawn pawn) {
                     if (!settings.HaulToInventory || !settings.Enabled) return true;
                     __result = JooStoreUtility.PuahFirstUnloadableThing(pawn);
                     return false;

@@ -80,7 +80,6 @@ namespace JobsOfOpportunity
 
                 if (callerName != "AddOpportuneHaulToTracker")
                     Debug.WriteLine($"{RealTime.frameCount} {callerName}() {thing} -> {storeCell} {verb} tracker.");
-
             }
         }
 
@@ -249,7 +248,8 @@ namespace JobsOfOpportunity
                 return haulTracker == null || haulTracker.haulType != SpecialHaulType.Opportunity || AddOpportuneHaulToTracker(haulTracker, thing, pawn, ref foundCell);
             }
 
-            public static bool PuahAllocateThingAtCell_GetStore(Thing thing, Pawn pawn, Map map, StoragePriority currentPriority, Faction faction, out IntVec3 foundCell) {
+            public static bool PuahAllocateThingAtCell_TryFindBestBetterStoreCellFor(Thing thing, Pawn pawn, Map map, StoragePriority currentPriority, Faction faction,
+                out IntVec3 foundCell) {
                 var skipCells = (HashSet<IntVec3>) AccessTools.DeclaredField(PuahWorkGiver_HaulToInventoryType, "skipCells").GetValue(null);
                 var haulTracker = haulTrackers.GetValueSafe(pawn) ?? HaulTracker.CreateAndAdd(SpecialHaulType.None, pawn, IntVec3.Invalid);
                 if (!TryFindBestBetterStoreCellFor_ClosestToDestCell(
