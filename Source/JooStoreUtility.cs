@@ -299,7 +299,8 @@ namespace JobsOfOpportunity
                 if (!havePuah) return false;
                 var hauledToInventoryComp =
                     (ThingComp) AccessTools.DeclaredMethod(typeof(ThingWithComps), "GetComp").MakeGenericMethod(PuahCompHauledToInventoryType).Invoke(pawn, null);
-                return Traverse.Create(hauledToInventoryComp).Field<HashSet<Thing>>("takenToInventory").Value.Any(t => t != null);
+                var takenToInventory = Traverse.Create(hauledToInventoryComp).Field<HashSet<Thing>>("takenToInventory").Value;
+                return takenToInventory != null && takenToInventory.Any(t => t != null);
             }
         }
     }

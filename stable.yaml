@@ -181,6 +181,11 @@ updates:
     desc: |-
       • Fixed hauling loop issue with PUAH, chunks, and multiple dumping stockpiles.
 
+  - at: 2.1.2
+    credit: https://steamcommunity.com/id/macbuk
+    desc: |-
+      • Fixed inventory hauling check to work with non-Pawns (e.g. [i]Misc. Robots[/i] mod).
+
 settings:
   - name: Enabled
     title: Enabled
