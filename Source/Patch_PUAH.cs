@@ -15,6 +15,30 @@ namespace JobsOfOpportunity
     {
         static class Patch_PUAH
         {
+            static bool inPuah;
+
+            [HarmonyPriority(Priority.HigherThanNormal)]
+            [HarmonyPatch]
+            static class StoreUtility_TryFindBestBetterStoreCellFor_Patch
+            {
+                static bool       Prepare()      => havePuah;
+                static MethodBase TargetMethod() => AccessTools.DeclaredMethod(typeof(StoreUtility), nameof(StoreUtility.TryFindBestBetterStoreCellFor));
+
+                [HarmonyPrefix]
+                static bool UseJooTryFindBestBetterStoreCellFor_ClosestToDestCell(ref bool __result, Thing t, Pawn carrier, Map map, StoragePriority currentPriority,
+                    Faction faction, ref IntVec3 foundCell, bool needAccurateResult) {
+                    if (!inPuah) return true;
+                    if (!settings.HaulToInventory || !settings.Enabled) return true;
+
+                    if (carrier == null) return true;
+                    var haulTracker = haulTrackers.GetValueSafe(carrier);
+
+                    __result = JooStoreUtility.TryFindBestBetterStoreCellFor_ClosestToDestCell(
+                        t, haulTracker?.destCell ?? IntVec3.Invalid, carrier, map, currentPriority, faction, out foundCell, haulTracker?.destCell.IsValid ?? false);
+                    return false;
+                }
+            }
+
             [HarmonyPatch]
             static class JobDriver_GetReport_Patch
             {
@@ -71,26 +95,9 @@ namespace JobsOfOpportunity
                 static bool       Prepare()      => havePuah;
                 static MethodBase TargetMethod() => AccessTools.DeclaredMethod(PuahWorkGiver_HaulToInventoryType, "JobOnThing");
 
-                static bool UseTryFindBestBetterStoreCellFor_ClosestToDestCell(Thing t, Pawn carrier, Map map, StoragePriority currentPriority, Faction faction,
-                    out IntVec3 foundCell,
-                    bool needAccurateResult) {
-                    if (!settings.HaulToInventory || !settings.Enabled)
-                        return StoreUtility.TryFindBestBetterStoreCellFor(t, carrier, map, currentPriority, faction, out foundCell, needAccurateResult);
-
-                    var haulTracker = haulTrackers.GetValueSafe(carrier);
-                    return JooStoreUtility.TryFindBestBetterStoreCellFor_ClosestToDestCell(
-                        t, haulTracker?.destCell ?? IntVec3.Invalid, carrier, map, currentPriority, faction, out foundCell, haulTracker?.destCell.IsValid ?? false);
-                }
-
-                [HarmonyTranspiler]
-                static IEnumerable<CodeInstruction> _UseTryFindBestBetterStoreCellFor_ClosestToDestCell(IEnumerable<CodeInstruction> instructions) {
-                    return instructions.MethodReplacer(
-                        AccessTools.DeclaredMethod(typeof(StoreUtility),                               nameof(StoreUtility.TryFindBestBetterStoreCellFor)),
-                        AccessTools.DeclaredMethod(typeof(WorkGiver_HaulToInventory_JobOnThing_Patch), nameof(UseTryFindBestBetterStoreCellFor_ClosestToDestCell)));
-                }
-
                 [HarmonyPrefix]
                 static void TempReduceStoragePriorityForHaulBeforeCarry(WorkGiver_Scanner __instance, ref bool __state, Pawn pawn, Thing thing) {
+                    inPuah = true;
                     if (!settings.HaulToInventory || !settings.Enabled) return;
                     if (!settings.HaulToEqualPriority) return;
 
@@ -109,6 +116,7 @@ namespace JobsOfOpportunity
 
                 [HarmonyPostfix]
                 static void TrackInitialHaul(WorkGiver_Scanner __instance, bool __state, Job __result, Pawn pawn, Thing thing) {
+                    inPuah = false;
                     // restore storage priority
                     if (__state)
                         StoreUtility.CurrentHaulDestinationOf(thing).GetStoreSettings().Priority += 1;

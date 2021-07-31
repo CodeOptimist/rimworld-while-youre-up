@@ -135,7 +135,7 @@ updates:
       • Improved settings and descriptions.
 
   - at: 1.5.1
-    credit: '@"Saken"SakenW'
+    credit: https://steamcommunity.com/id/SakenW
     desc: |-
       • Compatibility with [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1233893175][i]KV's[/i] Infinite Storage[/url]: [i]Optimize hauling supplies[/i] should now work instead of looping on storage and retrieval.
 
@@ -175,6 +175,11 @@ updates:
 
       • Setting for "Draw opportunistic & optimal jobs" is now saved.
           Try it out, it's fun! See tooltip for description.
+
+  - at: 2.1.1
+    credit: https://steamcommunity.com/profiles/76561198110437158
+    desc: |-
+      • Fixed hauling loop issue with PUAH, chunks, and multiple dumping stockpiles.
 
 settings:
   - name: Enabled
