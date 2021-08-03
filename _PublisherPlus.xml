@@ -4,7 +4,8 @@
     <exclude>C:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods\JobsOfOpportunity\.git</exclude>
     <exclude>C:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods\JobsOfOpportunity\About\LICENSE.txt</exclude>
     <exclude>C:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods\JobsOfOpportunity\About\NOTICE.txt</exclude>
-    <exclude>C:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods\JobsOfOpportunity\public.yaml</exclude>
+    <exclude>C:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods\JobsOfOpportunity\beta.yaml</exclude>
     <exclude>C:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods\JobsOfOpportunity\Source</exclude>
+    <exclude>C:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods\JobsOfOpportunity\stable.yaml</exclude>
   </Excluded>
 </Configuration>
