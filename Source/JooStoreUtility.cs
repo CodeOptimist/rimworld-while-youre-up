@@ -295,12 +295,18 @@ namespace JobsOfOpportunity
                 return new ThingCount(firstThingToUnload, firstThingToUnload.stackCount);
             }
 
-            public static bool PuahHasThingsHauled(Pawn pawn) {
-                if (!havePuah) return false;
-                var hauledToInventoryComp =
-                    (ThingComp) AccessTools.DeclaredMethod(typeof(ThingWithComps), "GetComp").MakeGenericMethod(PuahCompHauledToInventoryType).Invoke(pawn, null);
-                var takenToInventory = Traverse.Create(hauledToInventoryComp).Field<HashSet<Thing>>("takenToInventory").Value;
-                return takenToInventory != null && takenToInventory.Any(t => t != null);
+            public static bool AlreadyHauling(Pawn pawn) {
+                if (haulTrackers.TryGetValue(pawn, out var haulTracker)) return true;
+
+                // because we may load a game with an incomplete haul
+                if (havePuah) {
+                    var hauledToInventoryComp =
+                        (ThingComp) AccessTools.DeclaredMethod(typeof(ThingWithComps), "GetComp").MakeGenericMethod(PuahCompHauledToInventoryType).Invoke(pawn, null);
+                    var takenToInventory = Traverse.Create(hauledToInventoryComp).Field<HashSet<Thing>>("takenToInventory").Value;
+                    if (takenToInventory != null && takenToInventory.Any(t => t != null)) return true;
+                }
+
+                return false;
             }
         }
     }

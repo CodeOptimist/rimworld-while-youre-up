@@ -1,4 +1,5 @@
 ﻿using HarmonyLib;
+using Verse;
 using Verse.AI; // ReSharper disable once RedundantUsingDirective
 using Debug = System.Diagnostics.Debug;
 
@@ -15,11 +16,11 @@ namespace JobsOfOpportunity
             static class JobDriver_HaulToCell_MakeNewToils_Patch
             {
                 [HarmonyPostfix]
-                static void ClearHaulTypeAtFinish(JobDriver __instance) {
+                static void ClearTrackingAfterHaul(JobDriver __instance) {
                     __instance.AddFinishAction(
                         () => {
-                            if (!haulTrackers.TryGetValue(__instance.pawn, out var haulTracker)) return;
-                            haulTracker.haulType = SpecialHaulType.None;
+                            haulTrackers.Remove(__instance.pawn);
+                            Debug.WriteLine($"{RealTime.frameCount} {__instance.pawn} Finished Haul. Wiped tracking.");
                         });
                 }
             }

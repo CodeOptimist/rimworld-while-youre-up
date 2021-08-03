@@ -101,8 +101,7 @@ namespace JobsOfOpportunity
                     if (!settings.HaulToInventory || !settings.Enabled) return;
                     if (!settings.HaulToEqualPriority) return;
 
-                    var haulTracker = haulTrackers.GetValueSafe(pawn);
-                    if (haulTracker == null || haulTracker.haulType != SpecialHaulType.HaulBeforeCarry) return;
+                    if (!haulTrackers.TryGetValue(pawn, out var haulTracker) || haulTracker.haulType != SpecialHaulType.HaulBeforeCarry) return;
 
                     var currentHaulDestination = StoreUtility.CurrentHaulDestinationOf(thing);
                     if (currentHaulDestination == null) return;

@@ -22,10 +22,7 @@ namespace JobsOfOpportunity
             {
                 static Job HaulBeforeSupply(Pawn pawn, Thing constructible, Thing th) {
                     if (!settings.HaulBeforeSupply || !settings.Enabled) return null;
-                    if (JooStoreUtility.PuahHasThingsHauled(pawn)) {
-                        Debug.WriteLine($"{RealTime.frameCount} {pawn} Aborting {MethodBase.GetCurrentMethod().Name}() already holding items.");
-                        return null;
-                    }
+                    if (JooStoreUtility.AlreadyHauling(pawn)) return null;
 
                     return Helper.CatchStanding(pawn, Hauling.HaulBeforeCarry(pawn, constructible.Position, th));
                 }
