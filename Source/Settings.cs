@@ -13,15 +13,13 @@ namespace JobsOfOpportunity
             list.Begin(inRect);
 
             list.DrawBool(ref settings.Enabled,        nameof(settings.Enabled));
-            list.DrawBool(ref settings.StockpilesOnly, nameof(settings.StockpilesOnly));
             if (ModLister.HasActiveModWithName("Pick Up And Haul"))
                 list.DrawBool(ref settings.HaulToInventory, nameof(settings.HaulToInventory));
-            list.DrawBool(ref settings.HaulBeforeSupply,    nameof(settings.HaulBeforeSupply));
-            list.DrawBool(ref settings.HaulBeforeBill,      nameof(settings.HaulBeforeBill));
-            list.DrawBool(ref settings.HaulToEqualPriority, nameof(settings.HaulToEqualPriority));
-            list.DrawBool(ref settings.SkipIfBleeding,      nameof(settings.SkipIfBleeding));
-            list.DrawEnum(settings.HaulProximities, nameof(settings.HaulProximities), val => { settings.HaulProximities = val; });
             list.DrawBool(ref settings.DrawOpportunisticJobs, nameof(settings.DrawOpportunisticJobs));
+
+            list.Gap();
+            list.DrawEnum(settings.HaulProximities, nameof(settings.HaulProximities), val => { settings.HaulProximities = val; });
+            list.DrawBool(ref settings.SkipIfBleeding,        nameof(settings.SkipIfBleeding));
 
             list.DrawBool(ref settings.ShowVanillaParameters, nameof(settings.ShowVanillaParameters));
             if (settings.ShowVanillaParameters) {
@@ -37,10 +35,15 @@ namespace JobsOfOpportunity
                 }
             }
 
+            list.Gap();
+            list.DrawBool(ref settings.HaulBeforeSupply,    nameof(settings.HaulBeforeSupply));
+            list.DrawBool(ref settings.HaulBeforeBill,      nameof(settings.HaulBeforeBill));
+            list.DrawBool(ref settings.StockpilesOnly, nameof(settings.StockpilesOnly));
+            list.DrawBool(ref settings.HaulToEqualPriority, nameof(settings.HaulToEqualPriority));
+
             list.Gap(12f * 4);
             if (Widgets.ButtonText(list.GetRect(30f).LeftPart(0.25f), "RestoreToDefaultSettings".Translate()))
                 settings.ExposeData();
-            list.Gap(list.verticalSpacing);
 
             list.End();
         }

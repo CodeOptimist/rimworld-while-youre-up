@@ -44,7 +44,8 @@ footer: |-
   [h1]Compatibility[/h1]
   [i]Common Sense?[/i] Yes.
   [i]Deep Storage? Infinite Storage? Simple Storage? OgreStack? RimFridge? RimFactory?[/i]
-  As of v2.1.0, we only work with stockpiles by default - so it's safe to use with any of these.
+  "Opportunistic" hauls will work will all storage since it's a vanilla feature.
+  As of v2.1.0, we only "optimize hauling" to stockpiles by default, for safe use with these mods.
   In the next version there will be an allow-list for non-vanilla storage buildings!
 
   [i]@Modders:[/i] if you set [i]allowOpportunisticPrefix[/i] to [i]false[/i] for a JobDef, it won't allow opportunistic jobs. This is a vanilla feature.
@@ -144,7 +145,7 @@ updates:
 
   - at: 2.0.0
     credit: Kellogg''s#0574
-    haul_to_equal_priority: &haulToEqualPriority Allow "Optimize hauling" to same-priority
+    haul_to_equal_priority: &haulToEqualPriority Allow "optimize hauling" to same-priority
     desc: |-
       • [i]Optimize hauling ingredients/supplies[/i] will trigger more often:
            - Fixed hauling from existing storage, not just un-stored.
@@ -162,8 +163,6 @@ updates:
     desc: |-
       • Improving storage mod compatibility:
         - Added "Stockpiles only" setting (on by default).
-        - Changed 'Allow "Optimize hauling" to same-priority' to only deliver to stockpiles.
-            Automatically turned on (new default). Disable it manually if issues.
         - Switched to vanilla-style settings window (future room for a storage building allow-list).
 
       • Setting for "Draw opportunistic & optimal jobs" is now saved.
@@ -196,81 +195,78 @@ settings:
     desc: |-
       Toggle mod without restarting.
 
-      Off is equivalent to disabling all features, resetting each vanilla parameter, and "initial closeness" set to "(vanilla)".
+      Off is equivalent to disabling all features, resetting each vanilla parameter, and closeness set to "(vanilla)".
 
   - name: SkipIfBleeding
     at: 1.1.0
-    title: Skip when bleeding
+    title: Skip opportunities when bleeding
     desc: |-
-      Don't take jobs of opportunity when bleeding.
       "Optimize hauling" features still apply since they (hopefully) expedite a job.
 
   - name: StockpilesOnly
-    title: Stockpiles only
+    title: Only "optimize hauling" to stockpiles (for maximum compatibility)
     desc: |-
-      Only work with stockpiles. (There will be an allow-list for all building storage in the future.)
+      (There will be an allow-list for all building storage in the future.)
 
   - name: HaulToInventory
     title: Use & improve Pick Up And Haul
     desc: |-
-      Controls both efficient unloading and using inventory for opportunistic hauls.
+      Enables both: efficient unloading, and using inventory for opportunistic and optimal hauls.
 
   - name: HaulToEqualPriority
     title: *haulToEqualPriority
     desc: |-
-      This modifies "Optimize hauling" to include delivery to stockpiles (only) of same-priority storage.
+      Modifies "optimize hauling" to include delivery to same-priority storage.
 
   - name: HaulProximities
-    title: Haulable & storage initial closeness
+    title: Closeness of haulable to *starting* position & storage to job
     desc: |-
-      For performance reasons vanilla doesn't calculate and sort all haul paths to find opportunities, instead it settles for the first found with a haulable near our starting position, and its storage near our job destination. I've made these parameters configurable (marked with ¹).
+      The primary way we improve on vanilla's opportunistic hauling.
 
-      Since other parameters do well in limiting travel distance (marked with ²) we can change this from a requirement to simply a preference for closer hauls.
-
-      If performance is an issue, set this stricter to reduce available hauls.
-      If straight-line distance poorly represents your actual haul paths, set this stricter and adjust "max region look count"¹.
+      Set "required" if pawns are having difficulty with long walls, until I add a true pathfinding option.
 
   - name: HaulProximities_Both
-    title: Both required (vanilla)
+    title: Require both (vanilla)
   - name: HaulProximities_Either
-    title: Either required
+    title: Require either one
   - name: HaulProximities_Ignored
-    title: Preferred (recommended)
+    title: Prefer both, but require neither (recommended)
 
   - name: DrawOpportunisticJobs
     title: Draw opportunistic & optimal jobs
     desc: |-
       Original job paths are red, new opportunistic paths are green.
+
       Original ingredient/supply paths are magenta, new optimal paths are cyan.
 
       (This is sync'd to vanilla's [i]Development mode → inspector icon → Visibility → Draw Opportunistic Jobs[/i].)
 
   - name: ShowVanillaParameters
-    title: Show opportunity parameters…
+    title: Show vanilla's opportunity parameters…
     desc: |-
-      These settings are provided for explaining and tweaking vanilla's built-in opportunistic hauling.
+      Provided for explaining and tweaking vanilla's built-in opportunistic hauling.
 
       A value of 0 will skip a check.
 
   - name: MaxNewLegsPctOrigTrip
-    title: ²Max new legs % of original trip
+    title: Max new legs % of original trip
     dist: &dist |-
       This is straight-line distance ("as the crow flies").
     desc: |-
       Max start-to-haulable + storage-to-job % of original trip.
       {dist}
   - name: MaxTotalTripPctOrigTrip
-    title: ²Max total trip % of original trip
+    title: Max total trip % of original trip
     desc: *dist
 
   - name: MaxStartToThing
-    title: ¹Max start-to-haulable
+    title: Max start-to-haulable
     desc: *dist
   - name: MaxStartToThingPctOrigTrip
-    title: ¹Max start-to-haulable % of original trip
+    title: Max start-to-haulable % of original trip
     desc: *dist
   - name: MaxStartToThingRegionLookCount
-    title: ¹Max start-to-haulable region look count
+    title: Max start-to-haulable region look count
     desc: &region_look_count |-
       This parameter limits our actual pathing.
       To understand it, enable [i]Development mode → inspector icon → Visibility → Draw Regions[/i].
@@ -280,11 +276,11 @@ settings:
       It can't be calculated perfectly from distance, as regions will vary in size and neighbors. (A corridor has only forward and back, so they're explored further.)
       But in a completely open field, if a pawn must travel the distance of n=3 full-sized 12x12 regions (~36 tiles), the algorithm will explore 2(n^2+n)+1 or 25 regions.
   - name: MaxStoreToJob
-    title: ¹Max storage-to-job
+    title: Max storage-to-job
     desc: *dist
   - name: MaxStoreToJobPctOrigTrip
-    title: ¹Max storage-to-job % of original trip
+    title: Max storage-to-job % of original trip
     desc: *dist
   - name: MaxStoreToJobRegionLookCount
-    title: ¹Max storage-to-job region look count
+    title: Max storage-to-job region look count
     desc: *region_look_count
