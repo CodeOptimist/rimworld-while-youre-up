@@ -4,7 +4,6 @@ using System.Linq;
 using System.Reflection;
 using CodeOptimist;
 using HarmonyLib;
-using HugsLib.Settings;
 using RimWorld;
 using Verse; // ReSharper disable once RedundantUsingDirective
 using Debug = System.Diagnostics.Debug;
@@ -27,6 +26,10 @@ namespace JobsOfOpportunity
         static readonly bool havePuah = new List<object>
                 {PuahCompHauledToInventoryType, PuahWorkGiver_HaulToInventoryType, PuahJobDriver_HaulToInventoryType, PuahJobDriver_UnloadYourHauledInventoryType, PuahJobOnThing}
             .All(x => x != null);
+
+        static readonly Type HugsDialog_VanillaModSettingsType = GenTypes.GetTypeInAnyAssembly("HugsLib.Settings.Dialog_VanillaModSettings");
+
+        static readonly bool haveHugs = HugsDialog_VanillaModSettingsType != null;
 
         static readonly Type      CsModType                 = GenTypes.GetTypeInAnyAssembly("CommonSense.CommonSense");
         static readonly Type      CsSettingsType            = GenTypes.GetTypeInAnyAssembly("CommonSense.Settings");
@@ -54,36 +57,52 @@ namespace JobsOfOpportunity
 
         // ReSharper disable UnusedType.Local
         // ReSharper disable UnusedMember.Local
-        [HarmonyPatch(typeof(Dialog_VanillaModSettings), MethodType.Constructor, typeof(Mod))]
-        static class Dialog_VanillaModSettings_Dialog_VanillaModSettings_Patch
+
+        [HarmonyPatch]
+        static class Dialog_ModSettings_Dialog_ModSettings_Patch
         {
-            [HarmonyPostfix]
-            static void SyncDrawSettingToVanilla(Mod mod) {
-                if (mod == JobsOfOpportunity.mod)
-                    settings.DrawOpportunisticJobs = DebugViewSettings.drawOpportunisticJobs;
+            static MethodBase TargetMethod() {
+                if (haveHugs)
+                    return AccessTools.DeclaredConstructor(HugsDialog_VanillaModSettingsType, new[] {typeof(Mod)});
+                return AccessTools.DeclaredConstructor(typeof(Dialog_ModSettings));
             }
+
+            [HarmonyPostfix]
+            static void SyncDrawSettingToVanilla() => settings.DrawOpportunisticJobs = DebugViewSettings.drawOpportunisticJobs;
         }
 
-        [HarmonyPatch(typeof(Dialog_VanillaModSettings), nameof(Dialog_VanillaModSettings.PreClose))]
-        static class Dialog_VanillaModSettings_PreClose_Patch
+        [HarmonyPatch]
+        static class Dialog_ModSettings_DoWindowContents_Patch
         {
+            static MethodBase TargetMethod() {
+                if (haveHugs)
+                    return AccessTools.DeclaredMethod(HugsDialog_VanillaModSettingsType, "DoWindowContents");
+                return AccessTools.DeclaredMethod(typeof(Dialog_ModSettings), nameof(Dialog_ModSettings.DoWindowContents));
+            }
+
             [HarmonyPostfix]
-            static void CheckCommonSenseSetting(Mod ___selectedMod) {
+            static void CheckCommonSenseSetting(object __instance) {
+                var selModField = haveHugs
+                    ? AccessTools.DeclaredField(HugsDialog_VanillaModSettingsType, "selectedMod")
+                    : AccessTools.DeclaredField(typeof(Dialog_ModSettings),        "selMod");
+                var selMod = selModField.GetValue(__instance);
+
                 if (settings.HaulBeforeBill && haveCommonSense && (bool) CsHaulingOverBillsSetting.GetValue(null)) {
                     var csMod = LoadedModManager.GetMod(CsModType);
-                    if (___selectedMod == mod) {
+                    if (selMod == mod) {
                         CsHaulingOverBillsSetting.SetValue(null, false);
                         csMod.WriteSettings();
                         Messages.Message(
                             "[Jobs of Opportunity] Unticked setting in CommonSense: \"haul ingredients for a bill\". (Can't use both.)", MessageTypeDefOf.SilentInput, false);
-                    } else if (___selectedMod == csMod) {
+                    } else if (selMod == csMod) {
                         settings.HaulBeforeBill = false;
                         //mod.WriteSettings(); // no save because we handle it best on loading
-                        Messages.Message("[Jobs of Opportunity] Unticked setting \"Optimize hauling ingredients\". (Can't use both.)", MessageTypeDefOf.SilentInput, false);
+                        Messages.Message("[Jobs of Opportunity] Unticked setting in Jobs of Opportunity: \"Optimize hauling ingredients\". (Can't use both.)", MessageTypeDefOf.SilentInput, false);
                     }
                 }
             }
         }
+
         // ReSharper restore UnusedType.Local
         // ReSharper restore UnusedMember.Local
     }
