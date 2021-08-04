@@ -196,7 +196,6 @@ namespace JobsOfOpportunity
                 if (!destCell.IsValid && Hauling.cachedOpportunityStoreCell.TryGetValue(thing, out foundCell))
                     return true;
 
-                var allowEqualPriority = destCell.IsValid && settings.HaulToEqualPriority;
                 var closestSlot = IntVec3.Invalid;
                 var closestDistSquared = (float) int.MaxValue;
                 var foundPriority = currentPriority;
@@ -204,13 +203,15 @@ namespace JobsOfOpportunity
                 foreach (var slotGroup in map.haulDestinationManager.AllGroupsListInPriorityOrder) {
                     if (slotGroup.Settings.Priority < foundPriority) break;
                     if (slotGroup.Settings.Priority < currentPriority) break;
-                    if (slotGroup.Settings.Priority == currentPriority) {
-                        if (!allowEqualPriority) break;
-                        if (!(slotGroup.parent is Zone_Stockpile)) break;
+                    if (slotGroup.Settings.Priority == currentPriority && !destCell.IsValid) break;
+
+                    if (destCell.IsValid) {
+                        // haulTracker.haulType == SpecialHaulType.HaulBeforeCarry
+                        if (!settings.HaulToEqualPriority && slotGroup.Settings.Priority == currentPriority) break;
+                        if (settings.StockpilesOnly && !(slotGroup.parent is Zone_Stockpile)) continue;
+                        if (settings.HaulToEqualPriority && slotGroup == map.haulDestinationManager.SlotGroupAt(thing.Position)) continue;
                     }
 
-                    if (settings.StockpilesOnly && !(slotGroup.parent is Zone_Stockpile)) continue;
-                    if (allowEqualPriority && slotGroup == map.haulDestinationManager.SlotGroupAt(thing.Position)) continue;
                     if (!slotGroup.parent.Accepts(thing)) continue;
 
                     var position = destCell.IsValid ? destCell : thing.SpawnedOrAnyParentSpawned ? thing.PositionHeld : pawn.PositionHeld;

@@ -184,6 +184,12 @@ updates:
     desc: |-
       • Fixed "Optimal" hauls occasionally being recalculated many times in 1 tick.
 
+  - at: 2.1.4
+    credit: https://steamcommunity.com/id/thispagesucks
+    desc: |-
+      • Fixed recent "Stockpiles only" setting accidentally applying to all inventory hauling (PUAH).
+      • Clarity improvements to mod settings dialog.
+
 settings:
   - name: Enabled
     title: Enabled
