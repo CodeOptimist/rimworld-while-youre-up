@@ -14,13 +14,24 @@
 		<AssemblyVersion>$(Version)</AssemblyVersion>
 		<FileVersion>$(Version)</FileVersion>
 		<OutputPath>bin\$(Configuration)\</OutputPath>
+		<PublicizeAsReferenceAssemblies>false</PublicizeAsReferenceAssemblies>
 	</PropertyGroup>
 	<Target Name="BuildMessage" AfterTargets="Build">
 		<Message Text="$(Version)" Importance="High" />
 	</Target>
 	<ItemGroup>
+		<Publicize Include="Assembly-CSharp" />
+	</ItemGroup>
+	<ItemGroup>
 		<PackageReference Include="ILRepack.Lib.MSBuild.Task" Version="2.0.18.2" />
+		<PackageReference Include="Krafs.Publicizer" Version="1.0.0">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
 		<PackageReference Include="Lib.Harmony" Version="2.1.1" />
+	</ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\..\CodeOptimist\CodeOptimist.csproj" />
 	</ItemGroup>
 	<ItemGroup>
 		<Reference Include="Assembly-CSharp">
@@ -29,13 +40,12 @@
 		</Reference>
 		<Reference Include="UnityEngine.CoreModule">
 			<HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\RimWorld\RimWorldWin64_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
+			<Private>false</Private>
 		</Reference>
 		<Reference Include="UnityEngine.TextRenderingModule">
 			<HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\RimWorld\RimWorldWin64_Data\Managed\UnityEngine.TextRenderingModule.dll</HintPath>
+			<Private>false</Private>
 		</Reference>
-	</ItemGroup>
-	<ItemGroup>
-		<ProjectReference Include="..\..\CodeOptimist\CodeOptimist.csproj" />
 	</ItemGroup>
 	<Target Name="ILRepacker" AfterTargets="Build">
 		<ItemGroup>
