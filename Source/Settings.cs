@@ -61,22 +61,36 @@ namespace JobsOfOpportunity
             var rightList = new Listing_Standard();
             rightList.Begin(rightRect);
             rightList.Label($"{modId}_SettingTitle_OptimizeHaulingTo".Translate(), Text.LineHeight, $"{modId}_SettingDesc_OptimizeHaulingTo".Translate());
-            SettingsWindow.optimizeHaulSearchWidget.OnGUI(rightList.GetRect(30f));
+
+            var innerList = new Listing_Standard();
+            var innerRect = rightList.GetRect(24f);
+            innerRect.width -= 25f;
+            innerList.Begin(innerRect);
+            innerList.DrawBool(ref settings.OptimizeHaul_Auto, nameof(settings.OptimizeHaul_Auto));
+            innerList.End();
+
+            rightList.Gap(4f);
+            SettingsWindow.optimizeHaulSearchWidget.OnGUI(rightList.GetRect(24f));
+            rightList.Gap(4f);
 
             var outRect = rightList.GetRect(rightRect.height - rightList.CurHeight);
             var viewRect = new Rect(0f, 0f, outRect.width - 20f, SettingsWindow.optimizeHaulTreeFilter?.CurHeight ?? 10000f);
             Widgets.BeginScrollView(outRect, ref SettingsWindow.optimizeHaulScrollPosition, viewRect);
+            if (settings.OptimizeHaul_Auto)
+                SettingsWindow.optimizeHaulDummyFilter.CopyAllowancesFrom(settings.OptimizeHaulDefaultFilter);
             SettingsWindow.optimizeHaulTreeFilter = new Listing_TreeThingFilter(
-                settings.OptimizeHaul_BuildingFilter, null, null, null, null, SettingsWindow.optimizeHaulSearchFilter);
+                settings.OptimizeHaul_Auto ? SettingsWindow.optimizeHaulDummyFilter : settings.OptimizeHaul_BuildingFilter, null, null, null, null,
+                SettingsWindow.optimizeHaulSearchFilter);
             SettingsWindow.optimizeHaulTreeFilter.Begin(viewRect);
             SettingsWindow.optimizeHaulTreeFilter.ListCategoryChildren(SettingsWindow.optimizeHaulCategoryDef.treeNode, 1, null, viewRect);
             SettingsWindow.optimizeHaulTreeFilter.End();
-
             Widgets.EndScrollView();
             rightList.End();
+
             list.End();
         }
 
+        // Don't reference this except in DoSettingsWindowContents()! Referencing it early will trigger the static constructor before defs are loaded.
         [StaticConstructorOnStartup]
         public static class SettingsWindow
         {
@@ -85,6 +99,8 @@ namespace JobsOfOpportunity
             public static QuickSearchFilter       optimizeHaulSearchFilter = new QuickSearchFilter();
             public static QuickSearchWidget       optimizeHaulSearchWidget = new QuickSearchWidget();
             public static ThingCategoryDef        optimizeHaulCategoryDef;
+
+            public static ThingFilter optimizeHaulDummyFilter = new ThingFilter();
 
             static SettingsWindow() {
                 // now that defs are loaded this will work
@@ -109,9 +125,10 @@ namespace JobsOfOpportunity
                 optimizeHaulCategoryDef.PostLoad();
                 optimizeHaulCategoryDef.ResolveReferences();
 
+                ResetModFilter(optimizeHaulCategoryDef, settings.OptimizeHaulDefaultFilter);
                 if (settings.OptimizeHaul_BuildingFilter == null) {
                     settings.OptimizeHaul_BuildingFilter = new ThingFilter();
-                    ResetModFilter(optimizeHaulCategoryDef, settings.OptimizeHaul_BuildingFilter);
+                    settings.OptimizeHaul_BuildingFilter?.CopyAllowancesFrom(settings.OptimizeHaulDefaultFilter);
                 }
             }
 
@@ -141,11 +158,12 @@ namespace JobsOfOpportunity
         // ReSharper disable once ClassNeverInstantiated.Local
         class Settings : ModSettings
         {
-            public   ThingFilter OptimizeHaul_BuildingFilter;
-            internal XmlNode     optimizeHaulFilterXmlNode;
+            public readonly ThingFilter OptimizeHaulDefaultFilter = new ThingFilter();
+            public          ThingFilter OptimizeHaul_BuildingFilter;
+            internal        XmlNode     optimizeHaulFilterXmlNode;
 
-            public bool Enabled, HaulToInventory, HaulBeforeSupply, HaulBeforeBill, HaulBeforeBill_NeedsInitForCs, HaulToEqualPriority, SkipIfBleeding,
-                DrawOpportunisticJobs;
+            public bool                Enabled, HaulToInventory, HaulBeforeSupply, HaulBeforeBill, HaulBeforeBill_NeedsInitForCs, HaulToEqualPriority, SkipIfBleeding,
+                DrawOpportunisticJobs, OptimizeHaul_Auto;
 
             public Hauling.HaulProximities HaulProximities;
             public bool                    ShowVanillaParameters;
@@ -169,6 +187,7 @@ namespace JobsOfOpportunity
                 Look(ref HaulBeforeBill,                 nameof(HaulBeforeBill),                 true);
                 Look(ref HaulBeforeBill_NeedsInitForCs,  nameof(HaulBeforeBill_NeedsInitForCs),  true);
                 Look(ref HaulToEqualPriority,            nameof(HaulToEqualPriority) + "_2.1.0", true);
+                Look(ref OptimizeHaul_Auto,              nameof(OptimizeHaul_Auto),              true);
                 Look(ref SkipIfBleeding,                 nameof(SkipIfBleeding),                 true);
                 Look(ref HaulProximities,                nameof(HaulProximities),                Hauling.HaulProximities.Ignored);
                 Look(ref DrawOpportunisticJobs,          nameof(DrawOpportunisticJobs),          false);

@@ -218,6 +218,9 @@ settings:
     title: *haulToEqualPriority
     desc:
 
+  - name: OptimizeHaul_Auto
+    title: Automatic (updated from community feedback)
+
   - name: HaulProximities
     title: Closeness of haulable to *starting* position & storage to job
     desc: |-
