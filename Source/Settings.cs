@@ -1,6 +1,8 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Xml;
 using CodeOptimist;
+using HarmonyLib;
 using RimWorld;
 using UnityEngine;
 using Verse; // ReSharper disable once RedundantUsingDirective
@@ -90,6 +92,44 @@ namespace JobsOfOpportunity
             list.End();
         }
 
+        // ReSharper disable UnusedType.Local
+        // ReSharper disable UnusedMember.Local
+        [HarmonyPatch(typeof(Log), nameof(Log.Error), typeof(string))]
+        static class Log_Error_Patch
+        {
+            static bool         ignoreLoadReferenceErrors;
+            static LoadSaveMode scribeMode;
+
+            public static void SuppressLoadReferenceErrors(Action action) {
+                scribeMode = Scribe.mode;
+                Scribe.mode = LoadSaveMode.LoadingVars;
+                ignoreLoadReferenceErrors = true;
+
+                void Restore() {
+                    ignoreLoadReferenceErrors = false;
+                    Scribe.mode = scribeMode;
+                }
+
+                try {
+                    action();
+                } catch (Exception) {
+                    Restore();
+                    throw;
+                } finally {
+                    Restore();
+                }
+            }
+
+            [HarmonyPrefix]
+            static bool IgnoreCouldNotLoadReferenceOfRemovedModStorageBuildings(string text) {
+                if (ignoreLoadReferenceErrors && text.StartsWith("Could not load reference to "))
+                    return false;
+                return true;
+            }
+        }
+        // ReSharper restore UnusedType.Local
+        // ReSharper restore UnusedMember.Local
+
         // Don't reference this except in DoSettingsWindowContents()! Referencing it early will trigger the static constructor before defs are loaded.
         [StaticConstructorOnStartup]
         public static class SettingsWindow
@@ -104,10 +144,8 @@ namespace JobsOfOpportunity
 
             static SettingsWindow() {
                 // now that defs are loaded this will work
-                Scribe.mode = LoadSaveMode.LoadingVars;
-                settings.OptimizeHaul_BuildingFilter = ScribeExtractor.SaveableFromNode<ThingFilter>(settings.optimizeHaulFilterXmlNode, null);
-                Scribe.mode = LoadSaveMode.Inactive;
-
+                Log_Error_Patch.SuppressLoadReferenceErrors(
+                    () => settings.OptimizeHaul_BuildingFilter = ScribeExtractor.SaveableFromNode<ThingFilter>(settings.optimizeHaulFilterXmlNode, null));
                 optimizeHaulSearchWidget.filter = optimizeHaulSearchFilter;
 
                 var storageBuildingTypes = typeof(Building_Storage).AllSubclassesNonAbstract();
