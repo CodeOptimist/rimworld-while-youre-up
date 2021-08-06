@@ -209,7 +209,7 @@ namespace JobsOfOpportunity
                     if (destCell.IsValid) {
                         // haulTracker.haulType == SpecialHaulType.HaulBeforeCarry
                         if (!settings.HaulToEqualPriority && slotGroup.Settings.Priority == currentPriority) break;
-                        if (settings.StockpilesOnly && !(slotGroup.parent is Zone_Stockpile)) continue;
+                        if (slotGroup.parent is Building_Storage buildingStorage && !settings.OptimizeHaul_BuildingFilter.Allows(buildingStorage.def)) continue;
                         if (settings.HaulToEqualPriority && slotGroup == map.haulDestinationManager.SlotGroupAt(thing.Position)) continue;
                     }
 

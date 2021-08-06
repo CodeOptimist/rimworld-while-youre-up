@@ -42,11 +42,7 @@ footer: |-
 
 
   [h1]Compatibility[/h1]
-  [i]Common Sense?[/i] Yes.
-  [i]Deep Storage? Infinite Storage? Simple Storage? OgreStack? RimFridge? RimFactory?[/i]
-  "Opportunistic" hauls will work will all storage since it's a vanilla feature.
-  As of v2.1.0, we only "optimize hauling" to stockpiles by default, for safe use with these mods.
-  In the next version there will be an allow-list for non-vanilla storage buildings!
+  [i]Common Sense?[/i] Yup! Incompatible settings have been made mutually exclusive.
 
   [i]@Modders:[/i] if you set [i]allowOpportunisticPrefix[/i] to [i]false[/i] for a JobDef, it won't allow opportunistic jobs. This is a vanilla feature.
 
@@ -112,6 +108,11 @@ features:
     settings:
       - name: HaulBeforeSupply
 
+  - title: Mod compatibility via storage building filter
+    at: 2.2.0
+    desc: |-
+      Permit or deny "optimize hauling" for any storage building through settings, or leave it automatically managed.
+
 updates:
   - at: 1.0.0
     desc: |-
@@ -170,7 +171,7 @@ updates:
   - at: 2.1.0
     desc: |-
       • Improving storage mod compatibility:
-        - Added "Stockpiles only" setting (on by default).
+        - A̶d̶d̶e̶d̶ ̶"̶S̶t̶o̶c̶k̶p̶i̶l̶e̶s̶ ̶o̶n̶l̶y̶"̶ ̶s̶e̶t̶t̶i̶n̶g̶ ̶(̶o̶n̶ ̶b̶y̶ ̶d̶e̶f̶a̶u̶l̶t̶)̶.̶
         - Switched to vanilla-style settings window (future room for a storage building allow-list).
 
       • Setting for "Draw opportunistic & optimal jobs" is now saved.
@@ -205,10 +206,8 @@ settings:
 
       Off is equivalent to disabling all features, resetting each vanilla parameter, and closeness set to "(vanilla)".
 
-  - name: StockpilesOnly
-    title: Only "optimize hauling" to stockpiles (for maximum compatibility)
-    desc: |-
-      (There will be an allow-list for all building storage in the future.)
+  - name: OptimizeHaulingTo
+    title: 'Optimize hauling (supplies, ingredients) to:'
 
   - name: HaulToInventory
     title: Use & improve Pick Up And Haul

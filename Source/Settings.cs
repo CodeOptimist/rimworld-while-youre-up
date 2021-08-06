@@ -1,4 +1,7 @@
-﻿using CodeOptimist;
+﻿using System.Linq;
+using System.Xml;
+using CodeOptimist;
+using RimWorld;
 using UnityEngine;
 using Verse; // ReSharper disable once RedundantUsingDirective
 using Debug = System.Diagnostics.Debug;
@@ -16,8 +19,8 @@ namespace JobsOfOpportunity
             if (ModLister.HasActiveModWithName("Pick Up And Haul"))
                 list.DrawBool(ref settings.HaulToInventory, nameof(settings.HaulToInventory));
             list.DrawBool(ref settings.DrawOpportunisticJobs, nameof(settings.DrawOpportunisticJobs));
-
             list.Gap();
+
             list.DrawEnum(settings.HaulProximities, nameof(settings.HaulProximities), val => { settings.HaulProximities = val; });
             list.DrawBool(ref settings.SkipIfBleeding, nameof(settings.SkipIfBleeding));
 
@@ -34,24 +37,114 @@ namespace JobsOfOpportunity
                     list.DrawInt(ref settings.MaxStoreToJobRegionLookCount, nameof(settings.MaxStoreToJobRegionLookCount));
                 }
             }
-
             list.Gap();
+
             list.DrawBool(ref settings.HaulBeforeSupply,    nameof(settings.HaulBeforeSupply));
             list.DrawBool(ref settings.HaulBeforeBill,      nameof(settings.HaulBeforeBill));
-            list.DrawBool(ref settings.StockpilesOnly,      nameof(settings.StockpilesOnly));
             list.DrawBool(ref settings.HaulToEqualPriority, nameof(settings.HaulToEqualPriority));
+            list.Gap();
 
-            list.Gap(12f * 4);
-            if (Widgets.ButtonText(list.GetRect(30f).LeftPart(0.25f), "RestoreToDefaultSettings".Translate()))
-                settings.ExposeData();
+            var leftRect = list.GetRect(0f).LeftHalf();
+            var rightRect = list.GetRect(inRect.height - list.CurHeight).RightHalf();
+            leftRect.height = rightRect.height;
 
+            var leftList = new Listing_Standard();
+            leftList.Begin(leftRect);
+            leftList.Gap(leftRect.height - 30f);
+            if (Widgets.ButtonText(leftList.GetRect(30f).LeftHalf(), "RestoreToDefaultSettings".Translate())) {
+                settings.ExposeData(); // restore defaults
+                SettingsWindow.optimizeHaulSearchWidget.Reset();
+                SettingsWindow.ResetModFilter(SettingsWindow.optimizeHaulCategoryDef, settings.OptimizeHaul_BuildingFilter);
+            }
+            leftList.End();
+
+            var rightList = new Listing_Standard();
+            rightList.Begin(rightRect);
+            rightList.Label($"{modId}_SettingTitle_OptimizeHaulingTo".Translate(), Text.LineHeight, $"{modId}_SettingDesc_OptimizeHaulingTo".Translate());
+            SettingsWindow.optimizeHaulSearchWidget.OnGUI(rightList.GetRect(30f));
+
+            var outRect = rightList.GetRect(rightRect.height - rightList.CurHeight);
+            var viewRect = new Rect(0f, 0f, outRect.width - 20f, SettingsWindow.optimizeHaulTreeFilter?.CurHeight ?? 10000f);
+            Widgets.BeginScrollView(outRect, ref SettingsWindow.optimizeHaulScrollPosition, viewRect);
+            SettingsWindow.optimizeHaulTreeFilter = new Listing_TreeThingFilter(
+                settings.OptimizeHaul_BuildingFilter, null, null, null, null, SettingsWindow.optimizeHaulSearchFilter);
+            SettingsWindow.optimizeHaulTreeFilter.Begin(viewRect);
+            SettingsWindow.optimizeHaulTreeFilter.ListCategoryChildren(SettingsWindow.optimizeHaulCategoryDef.treeNode, 1, null, viewRect);
+            SettingsWindow.optimizeHaulTreeFilter.End();
+
+            Widgets.EndScrollView();
+            rightList.End();
             list.End();
+        }
+
+        [StaticConstructorOnStartup]
+        public static class SettingsWindow
+        {
+            public static Vector2                 optimizeHaulScrollPosition;
+            public static Listing_TreeThingFilter optimizeHaulTreeFilter;
+            public static QuickSearchFilter       optimizeHaulSearchFilter = new QuickSearchFilter();
+            public static QuickSearchWidget       optimizeHaulSearchWidget = new QuickSearchWidget();
+            public static ThingCategoryDef        optimizeHaulCategoryDef;
+
+            static SettingsWindow() {
+                // now that defs are loaded this will work
+                Scribe.mode = LoadSaveMode.LoadingVars;
+                settings.OptimizeHaul_BuildingFilter = ScribeExtractor.SaveableFromNode<ThingFilter>(settings.optimizeHaulFilterXmlNode, null);
+                Scribe.mode = LoadSaveMode.Inactive;
+
+                optimizeHaulSearchWidget.filter = optimizeHaulSearchFilter;
+
+                var storageBuildingTypes = typeof(Building_Storage).AllSubclassesNonAbstract();
+                storageBuildingTypes.Add(typeof(Building_Storage));
+                optimizeHaulCategoryDef = new ThingCategoryDef();
+                var storageBuildings = DefDatabase<ThingDef>.AllDefsListForReading.Where(x => storageBuildingTypes.Contains(x.thingClass)).ToList();
+                foreach (var storageMod in storageBuildings.Select(x => x.modContentPack).Distinct()) {
+                    var modCategoryDef = new ThingCategoryDef { label = storageMod.Name };
+                    optimizeHaulCategoryDef.childCategories.Add(modCategoryDef);
+                    modCategoryDef.childThingDefs.AddRange(storageBuildings.Where(x => x.modContentPack == storageMod).Select(x => x));
+                    modCategoryDef.PostLoad();
+                    modCategoryDef.ResolveReferences();
+                }
+
+                optimizeHaulCategoryDef.PostLoad();
+                optimizeHaulCategoryDef.ResolveReferences();
+
+                if (settings.OptimizeHaul_BuildingFilter == null) {
+                    settings.OptimizeHaul_BuildingFilter = new ThingFilter();
+                    ResetModFilter(optimizeHaulCategoryDef, settings.OptimizeHaul_BuildingFilter);
+                }
+            }
+
+            public static void ResetModFilter(ThingCategoryDef thingCategoryDef, ThingFilter thingFilter) {
+                thingFilter.SetDisallowAll();
+
+                foreach (var modCategoryDef in thingCategoryDef.childCategories) {
+                    modCategoryDef.treeNode.SetOpen(1, false);
+
+                    var mod = LoadedModManager.RunningModsListForReading.FirstOrDefault(x => x.Name == modCategoryDef.label);
+                    Debug.WriteLine($"{mod?.PackageId}, {mod?.PackageIdPlayerFacing}");
+                    switch (mod?.PackageId) {
+                        case "ludeon.rimworld":
+                            modCategoryDef.treeNode.SetOpen(1, true);
+                            goto case "vanillaexpanded.vfecore";
+                        case "vanillaexpanded.vfecore":
+                        case "skullywag.extendedstorage":
+                        case "mlie.extendedstorage":
+                        case "lwm.deepstorage":
+                            thingFilter.SetAllow(modCategoryDef, true);
+                            break;
+                    }
+                }
+            }
         }
 
         // ReSharper disable once ClassNeverInstantiated.Local
         class Settings : ModSettings
         {
-            public bool Enabled, StockpilesOnly, HaulToInventory, HaulBeforeSupply, HaulBeforeBill, HaulBeforeBill_NeedsInitForCs, HaulToEqualPriority, SkipIfBleeding,
+            public   ThingFilter OptimizeHaul_BuildingFilter;
+            internal XmlNode     optimizeHaulFilterXmlNode;
+
+            public bool Enabled, HaulToInventory, HaulBeforeSupply, HaulBeforeBill, HaulBeforeBill_NeedsInitForCs, HaulToEqualPriority, SkipIfBleeding,
                 DrawOpportunisticJobs;
 
             public Hauling.HaulProximities HaulProximities;
@@ -59,6 +152,7 @@ namespace JobsOfOpportunity
             public float                   MaxStartToThing, MaxStartToThingPctOrigTrip, MaxStoreToJob, MaxStoreToJobPctOrigTrip, MaxTotalTripPctOrigTrip, MaxNewLegsPctOrigTrip;
             public int                     MaxStartToThingRegionLookCount, MaxStoreToJobRegionLookCount;
 
+            // we also manually call this to restore defaults and to set them before config file exists (Scribe.mode == LoadSaveMode.Inactive)
             public override void ExposeData() {
                 foundConfig = true;
 
@@ -70,7 +164,6 @@ namespace JobsOfOpportunity
                 }
 
                 Look(ref Enabled,                        nameof(Enabled),                        true);
-                Look(ref StockpilesOnly,                 nameof(StockpilesOnly),                 true);
                 Look(ref HaulToInventory,                nameof(HaulToInventory),                true);
                 Look(ref HaulBeforeSupply,               nameof(HaulBeforeSupply),               true);
                 Look(ref HaulBeforeBill,                 nameof(HaulBeforeBill),                 true);
@@ -88,6 +181,11 @@ namespace JobsOfOpportunity
                 Look(ref MaxNewLegsPctOrigTrip,          nameof(MaxNewLegsPctOrigTrip),          1.0f);
                 Look(ref MaxStartToThingRegionLookCount, nameof(MaxStartToThingRegionLookCount), 25);
                 Look(ref MaxStoreToJobRegionLookCount,   nameof(MaxStoreToJobRegionLookCount),   25);
+
+                if (Scribe.mode == LoadSaveMode.Saving)
+                    Scribe_Deep.Look(ref OptimizeHaul_BuildingFilter, nameof(OptimizeHaul_BuildingFilter));
+                if (Scribe.mode == LoadSaveMode.LoadingVars)
+                    optimizeHaulFilterXmlNode = Scribe.loader.curXmlParent[nameof(OptimizeHaul_BuildingFilter)]; // so we can load later after Defs
 
                 if (Scribe.mode == LoadSaveMode.LoadingVars || Scribe.mode == LoadSaveMode.Saving)
                     DebugViewSettings.drawOpportunisticJobs = DrawOpportunisticJobs;
