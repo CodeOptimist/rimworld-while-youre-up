@@ -156,7 +156,7 @@ namespace JobsOfOpportunity
                 if (!havePuah || !settings.HaulToInventory || !settings.Enabled) return null;
                 haulTracker.Add(thing, storeCell);
                 var puahWorkGiver = DefDatabase<WorkGiverDef>.GetNamed("HaulToInventory").Worker;
-                return (Job) PuahJobOnThing.Invoke(puahWorkGiver, new object[] {pawn, thing, false});
+                return (Job)PuahJobOnThing.Invoke(puahWorkGiver, new object[] { pawn, thing, false });
             }
 
             enum ProximityCheck { Both, Either, Ignored }

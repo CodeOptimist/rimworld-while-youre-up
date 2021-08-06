@@ -10,12 +10,13 @@ using Debug = System.Diagnostics.Debug;
 
 namespace JobsOfOpportunity
 {
-    [StaticConstructorOnStartup]
     partial class JobsOfOpportunity : Mod
     {
-        const  string   modId = "CodeOptimist.JobsOfOpportunity"; // explicit because PackageId may be changed e.g. "__copy__" suffix
-        static Mod      mod;
-        static Settings settings;
+        const           string   modId = "CodeOptimist.JobsOfOpportunity"; // explicit because PackageId may be changed e.g. "__copy__" suffix
+        static          Mod      mod;
+        static          Settings settings;
+        static          bool     foundConfig;
+        static readonly Harmony  harmony = new Harmony(modId);
 
         static readonly Type       PuahCompHauledToInventoryType               = GenTypes.GetTypeInAnyAssembly("PickUpAndHaul.CompHauledToInventory");
         static readonly Type       PuahWorkGiver_HaulToInventoryType           = GenTypes.GetTypeInAnyAssembly("PickUpAndHaul.WorkGiver_HaulToInventory");
@@ -24,7 +25,7 @@ namespace JobsOfOpportunity
         static readonly MethodInfo PuahJobOnThing                              = AccessTools.DeclaredMethod(PuahWorkGiver_HaulToInventoryType, "JobOnThing");
 
         static readonly bool havePuah = new List<object>
-                {PuahCompHauledToInventoryType, PuahWorkGiver_HaulToInventoryType, PuahJobDriver_HaulToInventoryType, PuahJobDriver_UnloadYourHauledInventoryType, PuahJobOnThing}
+                { PuahCompHauledToInventoryType, PuahWorkGiver_HaulToInventoryType, PuahJobDriver_HaulToInventoryType, PuahJobDriver_UnloadYourHauledInventoryType, PuahJobOnThing }
             .All(x => x != null);
 
         static readonly Type HugsDialog_VanillaModSettingsType = GenTypes.GetTypeInAnyAssembly("HugsLib.Settings.Dialog_VanillaModSettings");
@@ -35,7 +36,7 @@ namespace JobsOfOpportunity
         static readonly Type      CsSettingsType            = GenTypes.GetTypeInAnyAssembly("CommonSense.Settings");
         static readonly FieldInfo CsHaulingOverBillsSetting = AccessTools.DeclaredField(CsSettingsType, "hauling_over_bills");
 
-        static readonly bool haveCommonSense = new List<object> {CsModType, CsSettingsType, CsHaulingOverBillsSetting}.All(x => x != null);
+        static readonly bool haveCommonSense = new List<object> { CsModType, CsSettingsType, CsHaulingOverBillsSetting }.All(x => x != null);
 
         static JobsOfOpportunity() {
             Helper.CatchStanding_Initialize(typeof(JobsOfOpportunity), new Harmony("CodeOptimist"));
@@ -44,10 +45,9 @@ namespace JobsOfOpportunity
         public JobsOfOpportunity(ModContentPack content) : base(content) {
             mod = this;
             settings = GetSettings<Settings>();
-            if (!settings.exposedData)
-                settings.ExposeData();
+            if (!foundConfig)
+                settings.ExposeData(); // initialize to defaults
 
-            var harmony = new Harmony(modId);
             harmony.PatchAll();
         }
 
@@ -63,7 +63,7 @@ namespace JobsOfOpportunity
         {
             static MethodBase TargetMethod() {
                 if (haveHugs)
-                    return AccessTools.DeclaredConstructor(HugsDialog_VanillaModSettingsType, new[] {typeof(Mod)});
+                    return AccessTools.DeclaredConstructor(HugsDialog_VanillaModSettingsType, new[] { typeof(Mod) });
                 return AccessTools.DeclaredConstructor(typeof(Dialog_ModSettings));
             }
 
@@ -87,17 +87,19 @@ namespace JobsOfOpportunity
                     : AccessTools.DeclaredField(typeof(Dialog_ModSettings),        "selMod");
                 var selMod = selModField.GetValue(__instance);
 
-                if (settings.HaulBeforeBill && haveCommonSense && (bool) CsHaulingOverBillsSetting.GetValue(null)) {
+                if (settings.HaulBeforeBill && haveCommonSense && (bool)CsHaulingOverBillsSetting.GetValue(null)) {
                     var csMod = LoadedModManager.GetMod(CsModType);
                     if (selMod == mod) {
                         CsHaulingOverBillsSetting.SetValue(null, false);
                         csMod.WriteSettings();
                         Messages.Message(
-                            "[Jobs of Opportunity] Unticked setting in CommonSense: \"haul ingredients for a bill\". (Can't use both.)", MessageTypeDefOf.SilentInput, false);
+                            $"[{mod.Content.Name}] Unticked setting in CommonSense: \"haul ingredients for a bill\". (Can't use both.)", MessageTypeDefOf.SilentInput, false);
                     } else if (selMod == csMod) {
                         settings.HaulBeforeBill = false;
                         //mod.WriteSettings(); // no save because we handle it best on loading
-                        Messages.Message("[Jobs of Opportunity] Unticked setting in Jobs of Opportunity: \"Optimize hauling ingredients\". (Can't use both.)", MessageTypeDefOf.SilentInput, false);
+                        Messages.Message(
+                            $"[{mod.Content.Name}] Unticked setting in Jobs of Opportunity: \"Optimize hauling ingredients\". (Can't use both.)", MessageTypeDefOf.SilentInput,
+                            false);
                     }
                 }
             }

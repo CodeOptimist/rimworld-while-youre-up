@@ -172,7 +172,7 @@ namespace JobsOfOpportunity
 
                 [HarmonyPostfix]
                 static void TrackHauledItem(ThingComp __instance, Thing thing) {
-                    var pawn = (Pawn) __instance.parent;
+                    var pawn = (Pawn)__instance.parent;
                     Debug.WriteLine($"{RealTime.frameCount} {pawn} GRABBED {thing}");
                 }
             }

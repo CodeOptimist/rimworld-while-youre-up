@@ -12,18 +12,18 @@ namespace JobsOfOpportunity
             var list = new Listing_Standard();
             list.Begin(inRect);
 
-            list.DrawBool(ref settings.Enabled,        nameof(settings.Enabled));
+            list.DrawBool(ref settings.Enabled, nameof(settings.Enabled));
             if (ModLister.HasActiveModWithName("Pick Up And Haul"))
                 list.DrawBool(ref settings.HaulToInventory, nameof(settings.HaulToInventory));
             list.DrawBool(ref settings.DrawOpportunisticJobs, nameof(settings.DrawOpportunisticJobs));
 
             list.Gap();
             list.DrawEnum(settings.HaulProximities, nameof(settings.HaulProximities), val => { settings.HaulProximities = val; });
-            list.DrawBool(ref settings.SkipIfBleeding,        nameof(settings.SkipIfBleeding));
+            list.DrawBool(ref settings.SkipIfBleeding, nameof(settings.SkipIfBleeding));
 
             list.DrawBool(ref settings.ShowVanillaParameters, nameof(settings.ShowVanillaParameters));
             if (settings.ShowVanillaParameters) {
-                using (new DrawContext {TextAnchor = TextAnchor.MiddleRight}) {
+                using (new DrawContext { TextAnchor = TextAnchor.MiddleRight }) {
                     list.DrawFloat(ref settings.MaxNewLegsPctOrigTrip,      nameof(settings.MaxNewLegsPctOrigTrip));
                     list.DrawFloat(ref settings.MaxTotalTripPctOrigTrip,    nameof(settings.MaxTotalTripPctOrigTrip));
                     list.DrawFloat(ref settings.MaxStartToThing,            nameof(settings.MaxStartToThing));
@@ -38,7 +38,7 @@ namespace JobsOfOpportunity
             list.Gap();
             list.DrawBool(ref settings.HaulBeforeSupply,    nameof(settings.HaulBeforeSupply));
             list.DrawBool(ref settings.HaulBeforeBill,      nameof(settings.HaulBeforeBill));
-            list.DrawBool(ref settings.StockpilesOnly, nameof(settings.StockpilesOnly));
+            list.DrawBool(ref settings.StockpilesOnly,      nameof(settings.StockpilesOnly));
             list.DrawBool(ref settings.HaulToEqualPriority, nameof(settings.HaulToEqualPriority));
 
             list.Gap(12f * 4);
@@ -54,14 +54,13 @@ namespace JobsOfOpportunity
             public bool Enabled, StockpilesOnly, HaulToInventory, HaulBeforeSupply, HaulBeforeBill, HaulBeforeBill_NeedsInitForCs, HaulToEqualPriority, SkipIfBleeding,
                 DrawOpportunisticJobs;
 
-            public   Hauling.HaulProximities HaulProximities;
-            public   bool                    ShowVanillaParameters;
-            public   float                   MaxStartToThing, MaxStartToThingPctOrigTrip, MaxStoreToJob, MaxStoreToJobPctOrigTrip, MaxTotalTripPctOrigTrip, MaxNewLegsPctOrigTrip;
-            public   int                     MaxStartToThingRegionLookCount, MaxStoreToJobRegionLookCount;
-            internal bool                    exposedData;
+            public Hauling.HaulProximities HaulProximities;
+            public bool                    ShowVanillaParameters;
+            public float                   MaxStartToThing, MaxStartToThingPctOrigTrip, MaxStoreToJob, MaxStoreToJobPctOrigTrip, MaxTotalTripPctOrigTrip, MaxNewLegsPctOrigTrip;
+            public int                     MaxStartToThingRegionLookCount, MaxStoreToJobRegionLookCount;
 
             public override void ExposeData() {
-                exposedData = true;
+                foundConfig = true;
 
                 void Look<T>(ref T value, string label, T defaultValue) {
                     if (Scribe.mode == LoadSaveMode.Inactive)
@@ -99,7 +98,7 @@ namespace JobsOfOpportunity
                             CsHaulingOverBillsSetting.SetValue(null, false);
                             HaulBeforeBill = true;
                             HaulBeforeBill_NeedsInitForCs = false;
-                        } else if ((bool) CsHaulingOverBillsSetting.GetValue(null))
+                        } else if ((bool)CsHaulingOverBillsSetting.GetValue(null))
                             HaulBeforeBill = false;
                     }
                 }

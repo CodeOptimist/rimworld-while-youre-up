@@ -81,6 +81,14 @@ features:
       Vanilla has support for opportunities, but with limitations: haulable near your [b]start[/b] position, and stockpile near your job.
       We prefer these, but drop them as requirements to include hauls along the path.
 
+  - title: Skip opportunities when bleeding
+    at: 1.1.0
+    desc:
+    settings:
+      - name: SkipIfBleeding
+        desc: |-
+          "Optimize hauling" features still apply since they (hopefully) expedite a job.
+
   - title: Opportunity support for [i]Pick Up And Haul[/i]
     at: 1.4.0
     desc: |-
@@ -197,12 +205,6 @@ settings:
 
       Off is equivalent to disabling all features, resetting each vanilla parameter, and closeness set to "(vanilla)".
 
-  - name: SkipIfBleeding
-    at: 1.1.0
-    title: Skip opportunities when bleeding
-    desc: |-
-      "Optimize hauling" features still apply since they (hopefully) expedite a job.
-
   - name: StockpilesOnly
     title: Only "optimize hauling" to stockpiles (for maximum compatibility)
     desc: |-
@@ -215,8 +217,7 @@ settings:
 
   - name: HaulToEqualPriority
     title: *haulToEqualPriority
-    desc: |-
-      Modifies "optimize hauling" to include delivery to same-priority storage.
+    desc:
 
   - name: HaulProximities
     title: Closeness of haulable to *starting* position & storage to job

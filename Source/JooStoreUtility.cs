@@ -31,7 +31,7 @@ namespace JobsOfOpportunity
             }
 
             public static HaulTracker CreateAndAdd(SpecialHaulType haulType, Pawn pawn, IntVec3 cell) {
-                var haulTracker = new HaulTracker {haulType = haulType};
+                var haulTracker = new HaulTracker { haulType = haulType };
 
                 if (havePuah) {
                     haulTracker.hauls = new List<(Thing thing, IntVec3 storeCell)>();
@@ -71,15 +71,15 @@ namespace JobsOfOpportunity
                 string verb;
                 if (isInitial && hauls.FirstOrDefault().thing == thing) {
                     hauls.RemoveAt(0);
-                    verb = "UPDATED on";
+                    verb = "UPDATED on tracker.";
                 } else
-                    verb = isInitial ? "PREPENDED to" : "Added to";
+                    verb = isInitial ? "PREPENDED to tracker." : "Added to tracker.";
 
                 hauls.Insert(isInitial ? 0 : hauls.Count, (thing, storeCell));
                 defHauls.SetOrAdd(thing.def, storeCell);
 
                 if (callerName != "AddOpportuneHaulToTracker")
-                    Debug.WriteLine($"{RealTime.frameCount} {callerName}() {thing} -> {storeCell} {verb} tracker.");
+                    Debug.WriteLine($"{RealTime.frameCount} {haulType} {callerName}() {thing} -> {storeCell} {verb}");
             }
         }
 
@@ -90,7 +90,8 @@ namespace JobsOfOpportunity
                 var defHauls = haulTracker.defHauls;
 
                 Debug.WriteLine(
-                    $"{RealTime.frameCount} {callerName}() {thing} -> {foundCell} " + (hauls.LastOrDefault().thing != thing ? "Added to tracker." : "UPDATED on tracker."));
+                    $"{RealTime.frameCount} {SpecialHaulType.Opportunity} {callerName}() {thing} -> {foundCell} "
+                    + (hauls.LastOrDefault().thing != thing ? "Added to tracker." : "UPDATED on tracker."));
 
                 // already here because a thing merged into it (or presumably from HasJobOnThing()?)
                 // we want to recalculate with the newer store cell since some time has passed
@@ -111,9 +112,9 @@ namespace JobsOfOpportunity
                     List<(Thing thing, IntVec3 storeCell)> haulsUnordered, haulsByUnloadOrder_;
                     if (pawn.carryTracker?.CarriedThing == hauls.Last().thing) {
                         haulsUnordered = new List<(Thing thing, IntVec3 storeCell)>(hauls.GetRange(0, hauls.Count - 1));
-                        haulsByUnloadOrder_ = new List<(Thing thing, IntVec3 storeCell)> {hauls.Last()};
+                        haulsByUnloadOrder_ = new List<(Thing thing, IntVec3 storeCell)> { hauls.Last() };
                     } else {
-                        haulsByUnloadOrder_ = new List<(Thing thing, IntVec3 storeCell)> {hauls.First()};
+                        haulsByUnloadOrder_ = new List<(Thing thing, IntVec3 storeCell)> { hauls.First() };
                         haulsUnordered = new List<(Thing thing, IntVec3 storeCell)>(hauls.GetRange(1, hauls.Count - 1));
                     }
 
@@ -197,7 +198,7 @@ namespace JobsOfOpportunity
                     return true;
 
                 var closestSlot = IntVec3.Invalid;
-                var closestDistSquared = (float) int.MaxValue;
+                var closestDistSquared = (float)int.MaxValue;
                 var foundPriority = currentPriority;
 
                 foreach (var slotGroup in map.haulDestinationManager.AllGroupsListInPriorityOrder) {
@@ -217,10 +218,10 @@ namespace JobsOfOpportunity
                     var position = destCell.IsValid ? destCell : thing.SpawnedOrAnyParentSpawned ? thing.PositionHeld : pawn.PositionHeld;
                     if (Find.TickManager.CurTimeSpeed > TimeSpeed.Normal)
                         needAccurateResult = false;
-                    var maxCheckedCells = needAccurateResult ? (int) Math.Floor((double) slotGroup.CellsList.Count * Rand.Range(0.005f, 0.018f)) : 0;
+                    var maxCheckedCells = needAccurateResult ? (int)Math.Floor((double)slotGroup.CellsList.Count * Rand.Range(0.005f, 0.018f)) : 0;
                     for (var i = 0; i < slotGroup.CellsList.Count; i++) {
                         var cell = slotGroup.CellsList[i];
-                        var distSquared = (float) (position - cell).LengthHorizontalSquared;
+                        var distSquared = (float)(position - cell).LengthHorizontalSquared;
                         if (distSquared > closestDistSquared) continue;
                         if (skipCells != null && skipCells.Contains(cell)) continue;
                         if (!StoreUtility.IsGoodStoreCell(cell, map, thing, pawn, faction)) continue;
@@ -251,7 +252,7 @@ namespace JobsOfOpportunity
 
             public static bool PuahAllocateThingAtCell_TryFindBestBetterStoreCellFor(Thing thing, Pawn pawn, Map map, StoragePriority currentPriority, Faction faction,
                 out IntVec3 foundCell) {
-                var skipCells = (HashSet<IntVec3>) AccessTools.DeclaredField(PuahWorkGiver_HaulToInventoryType, "skipCells").GetValue(null);
+                var skipCells = (HashSet<IntVec3>)AccessTools.DeclaredField(PuahWorkGiver_HaulToInventoryType, "skipCells").GetValue(null);
                 var haulTracker = haulTrackers.GetValueSafe(pawn) ?? HaulTracker.CreateAndAdd(SpecialHaulType.None, pawn, IntVec3.Invalid);
                 if (!TryFindBestBetterStoreCellFor_ClosestToDestCell(
                     thing, haulTracker.destCell, pawn, map, currentPriority, faction, out foundCell, haulTracker.destCell.IsValid, skipCells)) return false;
@@ -264,7 +265,7 @@ namespace JobsOfOpportunity
 
             public static ThingCount PuahFirstUnloadableThing(Pawn pawn) {
                 var hauledToInventoryComp =
-                    (ThingComp) AccessTools.DeclaredMethod(typeof(ThingWithComps), "GetComp").MakeGenericMethod(PuahCompHauledToInventoryType).Invoke(pawn, null);
+                    (ThingComp)AccessTools.DeclaredMethod(typeof(ThingWithComps), "GetComp").MakeGenericMethod(PuahCompHauledToInventoryType).Invoke(pawn, null);
                 var thingsHauled = Traverse.Create(hauledToInventoryComp).Method("GetHashSet").GetValue<HashSet<Thing>>();
 
                 // should only be necessary because haulTrackers aren't currently saved in file like CompHauledToInventory
@@ -297,12 +298,12 @@ namespace JobsOfOpportunity
             }
 
             public static bool AlreadyHauling(Pawn pawn) {
-                if (haulTrackers.TryGetValue(pawn, out var haulTracker)) return true;
+                if (haulTrackers.ContainsKey(pawn)) return true;
 
                 // because we may load a game with an incomplete haul
                 if (havePuah) {
                     var hauledToInventoryComp =
-                        (ThingComp) AccessTools.DeclaredMethod(typeof(ThingWithComps), "GetComp").MakeGenericMethod(PuahCompHauledToInventoryType).Invoke(pawn, null);
+                        (ThingComp)AccessTools.DeclaredMethod(typeof(ThingWithComps), "GetComp").MakeGenericMethod(PuahCompHauledToInventoryType).Invoke(pawn, null);
                     var takenToInventory = Traverse.Create(hauledToInventoryComp).Field<HashSet<Thing>>("takenToInventory").Value;
                     if (takenToInventory != null && takenToInventory.Any(t => t != null)) return true;
                 }
