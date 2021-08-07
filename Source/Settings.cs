@@ -178,15 +178,19 @@ namespace JobsOfOpportunity
                     modCategoryDef.treeNode.SetOpen(1, false);
 
                     var mod = LoadedModManager.RunningModsListForReading.FirstOrDefault(x => x.Name == modCategoryDef.label);
-                    Debug.WriteLine($"{mod?.PackageId}, {mod?.PackageIdPlayerFacing}");
+                    Debug.WriteLine($"{mod?.PackageId}, {mod?.Name}");
                     switch (mod?.PackageId) {
-                        case "ludeon.rimworld":
+                        case "ludeon.rimworld": // Core
                             modCategoryDef.treeNode.SetOpen(1, true);
                             goto case "vanillaexpanded.vfecore";
-                        case "vanillaexpanded.vfecore":
-                        case "skullywag.extendedstorage":
-                        case "mlie.extendedstorage":
-                        case "lwm.deepstorage":
+                        case "vanillaexpanded.vfecore":   // Vanilla Furniture Expanded
+                        case "skullywag.extendedstorage": // Extended Storage
+                        case "mlie.extendedstorage":      // Extended Storage (Continued)
+                        case "lwm.deepstorage":           // LWM's Deep Storage
+                        case "rimfridge.kv.rw":           // [KV] RimFridge
+                        case "solaris.furniturebase":     // GloomyFurniture
+                        case "jangodsoul.simplestorage":  // [JDS] Simple Storage
+                        case "sixdd.littlestorage2":      // Little Storage 2
                             thingFilter.SetAllow(modCategoryDef, true);
                             break;
                     }
