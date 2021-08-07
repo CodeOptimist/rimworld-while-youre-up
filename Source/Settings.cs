@@ -80,7 +80,7 @@ namespace JobsOfOpportunity
             Widgets.BeginScrollView(outRect, ref SettingsWindow.optimizeHaulScrollPosition, viewRect);
             if (settings.OptimizeHaul_Auto)
                 SettingsWindow.optimizeHaulDummyFilter.CopyAllowancesFrom(settings.OptimizeHaulDefaultFilter);
-            SettingsWindow.optimizeHaulTreeFilter = new Listing_TreeThingFilter(
+            SettingsWindow.optimizeHaulTreeFilter = new Listing_SettingsTreeThingFilter(
                 settings.OptimizeHaul_Auto ? SettingsWindow.optimizeHaulDummyFilter : settings.OptimizeHaul_BuildingFilter, null, null, null, null,
                 SettingsWindow.optimizeHaulSearchFilter);
             SettingsWindow.optimizeHaulTreeFilter.Begin(viewRect);
@@ -134,11 +134,11 @@ namespace JobsOfOpportunity
         [StaticConstructorOnStartup]
         public static class SettingsWindow
         {
-            public static Vector2                 optimizeHaulScrollPosition;
-            public static Listing_TreeThingFilter optimizeHaulTreeFilter;
-            public static QuickSearchFilter       optimizeHaulSearchFilter = new QuickSearchFilter();
-            public static QuickSearchWidget       optimizeHaulSearchWidget = new QuickSearchWidget();
-            public static ThingCategoryDef        optimizeHaulCategoryDef;
+            public static Vector2                         optimizeHaulScrollPosition;
+            public static Listing_SettingsTreeThingFilter optimizeHaulTreeFilter;
+            public static QuickSearchFilter               optimizeHaulSearchFilter = new QuickSearchFilter();
+            public static QuickSearchWidget               optimizeHaulSearchWidget = new QuickSearchWidget();
+            public static ThingCategoryDef                optimizeHaulCategoryDef;
 
             public static ThingFilter optimizeHaulDummyFilter = new ThingFilter();
 
