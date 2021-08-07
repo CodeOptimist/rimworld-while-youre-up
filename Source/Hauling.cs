@@ -125,7 +125,7 @@ namespace JobsOfOpportunity
             // "Optimize hauling"
             public static Job HaulBeforeCarry(Pawn pawn, IntVec3 destCell, Thing thing) {
                 if (thing.ParentHolder is Pawn_InventoryTracker) return null;
-                if (MassUtility.WillBeOverEncumberedAfterPickingUp(pawn, thing, 1)) return null;
+                if (MassUtility.WillBeOverEncumberedAfterPickingUp(pawn, thing, 2)) return null;
                 if (!JooStoreUtility.TryFindBestBetterStoreCellFor_ClosestToDestCell(
                     thing, destCell, pawn, pawn.Map, StoreUtility.CurrentStoragePriorityOf(thing), pawn.Faction, out var storeCell, true)) return null;
 
