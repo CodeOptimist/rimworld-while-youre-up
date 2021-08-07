@@ -153,6 +153,7 @@ namespace JobsOfOpportunity
                 optimizeHaulCategoryDef = new ThingCategoryDef();
                 var storageBuildings = DefDatabase<ThingDef>.AllDefsListForReading.Where(x => storageBuildingTypes.Contains(x.thingClass)).ToList();
                 foreach (var storageMod in storageBuildings.Select(x => x.modContentPack).Distinct()) {
+                    if (storageMod == null) continue;
                     var modCategoryDef = new ThingCategoryDef { label = storageMod.Name };
                     optimizeHaulCategoryDef.childCategories.Add(modCategoryDef);
                     modCategoryDef.childThingDefs.AddRange(storageBuildings.Where(x => x.modContentPack == storageMod).Select(x => x));
