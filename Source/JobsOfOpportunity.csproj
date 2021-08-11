@@ -10,7 +10,7 @@
 		<Copyright>Copyright © 2020-$([System.DateTime]::Now.Year) Christopher Galpin</Copyright>
 		<MinutesSinceEpoch>$([System.DateTime]::UtcNow.Subtract($([System.DateTime]::MinValue)).TotalMinutes)</MinutesSinceEpoch>
 		<Revision>$([System.Math]::Truncate($([System.Decimal]::Remainder($(MinutesSinceEpoch), 10000))))</Revision>
-		<Version>2.2.0.$(Revision)</Version>
+		<Version>2.3.0.$(Revision)</Version>
 		<AssemblyVersion>$(Version)</AssemblyVersion>
 		<FileVersion>$(Version)</FileVersion>
 		<OutputPath>bin\$(Configuration)\</OutputPath>

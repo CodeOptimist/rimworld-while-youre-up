@@ -85,6 +85,12 @@ features:
         desc: |-
           "Optimize hauling" features still apply since they (hopefully) expedite a job.
 
+  - title: Skip opportunities when forming a caravan
+    at: 2.3.0
+    desc:
+    settings:
+      - name: SkipIfCaravan
+
   - title: Opportunity support for [i]Pick Up And Haul[/i]
     at: 1.4.0
     desc: |-

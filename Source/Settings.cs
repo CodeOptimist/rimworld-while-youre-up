@@ -24,6 +24,7 @@ namespace JobsOfOpportunity
             list.Gap();
 
             list.DrawEnum(settings.HaulProximities, nameof(settings.HaulProximities), val => { settings.HaulProximities = val; });
+            list.DrawBool(ref settings.SkipIfCaravan,  nameof(settings.SkipIfCaravan));
             list.DrawBool(ref settings.SkipIfBleeding, nameof(settings.SkipIfBleeding));
 
             list.DrawBool(ref settings.ShowVanillaParameters, nameof(settings.ShowVanillaParameters));
@@ -205,7 +206,7 @@ namespace JobsOfOpportunity
             public          ThingFilter OptimizeHaul_BuildingFilter;
             internal        XmlNode     optimizeHaulFilterXmlNode;
 
-            public bool                Enabled, HaulToInventory, HaulBeforeSupply, HaulBeforeBill, HaulBeforeBill_NeedsInitForCs, HaulToEqualPriority, SkipIfBleeding,
+            public bool Enabled, HaulToInventory, HaulBeforeSupply, HaulBeforeBill, HaulBeforeBill_NeedsInitForCs, HaulToEqualPriority, SkipIfCaravan, SkipIfBleeding,
                 DrawOpportunisticJobs, OptimizeHaul_Auto;
 
             public Hauling.HaulProximities HaulProximities;
@@ -231,6 +232,7 @@ namespace JobsOfOpportunity
                 Look(ref HaulBeforeBill_NeedsInitForCs,  nameof(HaulBeforeBill_NeedsInitForCs),  true);
                 Look(ref HaulToEqualPriority,            nameof(HaulToEqualPriority) + "_2.1.0", true);
                 Look(ref OptimizeHaul_Auto,              nameof(OptimizeHaul_Auto),              true);
+                Look(ref SkipIfCaravan,                  nameof(SkipIfCaravan),                  true);
                 Look(ref SkipIfBleeding,                 nameof(SkipIfBleeding),                 true);
                 Look(ref HaulProximities,                nameof(HaulProximities),                Hauling.HaulProximities.Ignored);
                 Look(ref DrawOpportunisticJobs,          nameof(DrawOpportunisticJobs),          false);

@@ -39,6 +39,7 @@ namespace JobsOfOpportunity
                     }
                 }
 
+                if (settings.SkipIfCaravan && job.def == JobDefOf.PrepareCaravan_GatherItems) return null;
                 if (settings.SkipIfBleeding && pawn.health.hediffSet.BleedRateTotal > 0.001f) return null;
 //                return Helper.CatchStanding(pawn, Hauling.TryHaul(pawn, jobCell) ?? Cleaning.TryClean(pawn, jobCell));
                 return Helper.CatchStanding(pawn, Hauling.TryHaul(pawn, jobCell));
