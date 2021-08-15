@@ -34,15 +34,15 @@ namespace JobsOfOpportunity
                             // permitted when bleeding because facilitates whatever bill is important enough to do while bleeding
                             //  may save precious time going back for ingredients... unless we want only 1 medicine ASAP; it's a trade-off
                             var storeJob = Hauling.HaulBeforeCarry(pawn, jobCell, localTargetInfo.Thing);
-                            if (storeJob != null) return Helper.CatchStanding(pawn, storeJob);
+                            if (storeJob != null) return JobUtility_TryStartErrorRecoverJob_Patch.CatchStanding(pawn, storeJob);
                         }
                     }
                 }
 
                 if (settings.SkipIfCaravan && job.def == JobDefOf.PrepareCaravan_GatherItems) return null;
                 if (settings.SkipIfBleeding && pawn.health.hediffSet.BleedRateTotal > 0.001f) return null;
-//                return Helper.CatchStanding(pawn, Hauling.TryHaul(pawn, jobCell) ?? Cleaning.TryClean(pawn, jobCell));
-                return Helper.CatchStanding(pawn, Hauling.TryHaul(pawn, jobCell));
+                // return JobUtility_TryStartErrorRecoverJob_Patch.CatchStanding(pawn, Hauling.TryHaul(pawn, jobCell) ?? Cleaning.TryClean(pawn, jobCell));
+                return JobUtility_TryStartErrorRecoverJob_Patch.CatchStanding(pawn, Hauling.TryHaul(pawn, jobCell));
             }
 
             [HarmonyPatch(typeof(Pawn_JobTracker), nameof(Pawn_JobTracker.TryOpportunisticJob))]

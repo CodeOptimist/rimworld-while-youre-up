@@ -24,7 +24,7 @@ namespace JobsOfOpportunity
                     if (!settings.HaulBeforeSupply || !settings.Enabled) return null;
                     if (JooStoreUtility.AlreadyHauling(pawn)) return null;
 
-                    return Helper.CatchStanding(pawn, Hauling.HaulBeforeCarry(pawn, constructible.Position, th));
+                    return JobUtility_TryStartErrorRecoverJob_Patch.CatchStanding(pawn, Hauling.HaulBeforeCarry(pawn, constructible.Position, th));
                 }
 
                 [HarmonyTranspiler]
