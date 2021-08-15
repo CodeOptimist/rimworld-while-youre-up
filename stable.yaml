@@ -7,7 +7,7 @@ _anchors:
 
 ModMetaData: !merge
   <: *global_ModMetaData
-  url: *repo
+  url: '{discord}'
   name: Jobs of Opportunity (While You're Up)
   packageId: CodeOptimist.JobsOfOpportunity
   supportedVersions:
@@ -17,6 +17,9 @@ ModMetaData: !merge
   incompatibleWith:
     - hoodie.whileyoureup
     - kevlou127.WhileHYouOreHUpHQ1V0S
+  incompatibleWithByVersion:
+    v1.3:
+      - Mlie.PickUpAndHaul
 
 published_file_id: 2034960453
 preview_from_path: '{out_dir}\..\JoO.png'
@@ -115,7 +118,7 @@ features:
       - name: HaulBeforeSupply
 
   - title: Mod compatibility via storage building filter
-    at: 2.2.0
+    at: 2.3.0
     desc: |-
       Permit or deny "optimize hauling" for any storage building through settings, or leave it automatically managed.
 
@@ -203,6 +206,11 @@ updates:
     desc: |-
       • Fixed recent "Stockpiles only" setting accidentally applying to all inventory hauling (PUAH).
       • Clarity improvements to mod settings dialog.
+
+  - at: 2.3.0
+    desc: |-
+      • If willing, please report issues immediately via Discord link here ↗ or in Mods menu.
+
 
 settings:
   - name: Enabled

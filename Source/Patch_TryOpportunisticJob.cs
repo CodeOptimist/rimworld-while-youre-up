@@ -73,5 +73,15 @@ namespace JobsOfOpportunity
             // return JobUtility_TryStartErrorRecoverJob_Patch.CatchStanding(pawn, Hauling.TryHaul(pawn, jobCell) ?? Cleaning.TryClean(pawn, jobCell));
             return JobUtility_TryStartErrorRecoverJob_Patch.CatchStanding(pawn, Hauling.TryHaul(pawn, jobCell));
         }
+
+        [HarmonyPatch(typeof(Pawn_JobTracker), nameof(Pawn_JobTracker.ClearQueuedJobs))]
+        static class Pawn_JobTracker_ClearQueuedJobs_Patch
+        {
+            [HarmonyPostfix]
+            static void ClearJooHaulTracker(Pawn ___pawn) {
+                haulTrackers.Remove(___pawn);
+                Debug.WriteLine($"{RealTime.frameCount} {___pawn} Cleared queued jobs. Wiped tracking.");
+            }
+        }
     }
 }
