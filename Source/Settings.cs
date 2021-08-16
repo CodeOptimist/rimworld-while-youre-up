@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Xml;
 using CodeOptimist;
@@ -10,93 +11,13 @@ using Debug = System.Diagnostics.Debug;
 
 namespace JobsOfOpportunity
 {
-    partial class JobsOfOpportunity
+    partial class Mod
     {
-        public override void DoSettingsWindowContents(Rect inRect) {
-            Gui.modId = modId;
-            var list = new Listing_Standard();
-            list.Begin(inRect);
+        public override void DoSettingsWindowContents(Rect inRect) => SettingsWindow.DoWindowContents(inRect);
 
-            list.DrawBool(ref settings.Enabled, nameof(settings.Enabled));
-            if (ModLister.HasActiveModWithName("Pick Up And Haul"))
-                list.DrawBool(ref settings.HaulToInventory, nameof(settings.HaulToInventory));
-            list.DrawBool(ref settings.DrawOpportunisticJobs, nameof(settings.DrawOpportunisticJobs));
-            list.Gap();
-
-            list.DrawEnum(settings.HaulProximities, nameof(settings.HaulProximities), val => { settings.HaulProximities = val; });
-            list.DrawBool(ref settings.SkipIfCaravan,  nameof(settings.SkipIfCaravan));
-            list.DrawBool(ref settings.SkipIfBleeding, nameof(settings.SkipIfBleeding));
-
-            list.DrawBool(ref settings.ShowVanillaParameters, nameof(settings.ShowVanillaParameters));
-            if (settings.ShowVanillaParameters) {
-                using (new DrawContext { TextAnchor = TextAnchor.MiddleRight }) {
-                    list.DrawFloat(ref settings.MaxNewLegsPctOrigTrip,      nameof(settings.MaxNewLegsPctOrigTrip));
-                    list.DrawFloat(ref settings.MaxTotalTripPctOrigTrip,    nameof(settings.MaxTotalTripPctOrigTrip));
-                    list.DrawFloat(ref settings.MaxStartToThing,            nameof(settings.MaxStartToThing));
-                    list.DrawFloat(ref settings.MaxStartToThingPctOrigTrip, nameof(settings.MaxStartToThingPctOrigTrip));
-                    list.DrawInt(ref settings.MaxStartToThingRegionLookCount, nameof(settings.MaxStartToThingRegionLookCount));
-                    list.DrawFloat(ref settings.MaxStoreToJob,            nameof(settings.MaxStoreToJob));
-                    list.DrawFloat(ref settings.MaxStoreToJobPctOrigTrip, nameof(settings.MaxStoreToJobPctOrigTrip));
-                    list.DrawInt(ref settings.MaxStoreToJobRegionLookCount, nameof(settings.MaxStoreToJobRegionLookCount));
-                }
-            }
-            list.Gap();
-
-            list.DrawBool(ref settings.HaulBeforeSupply,    nameof(settings.HaulBeforeSupply));
-            list.DrawBool(ref settings.HaulBeforeBill,      nameof(settings.HaulBeforeBill));
-            list.DrawBool(ref settings.HaulToEqualPriority, nameof(settings.HaulToEqualPriority));
-            list.Gap();
-
-            var leftRect = list.GetRect(0f).LeftHalf();
-            var rightRect = list.GetRect(inRect.height - list.CurHeight).RightHalf();
-            leftRect.height = rightRect.height;
-
-            var leftList = new Listing_Standard();
-            leftList.Begin(leftRect);
-            leftList.Gap(leftRect.height - 30f);
-            if (Widgets.ButtonText(leftList.GetRect(30f).LeftHalf(), "RestoreToDefaultSettings".Translate())) {
-                settings.ExposeData(); // restore defaults
-                SettingsWindow.optimizeHaulSearchWidget.Reset();
-                SettingsWindow.ResetModFilter(SettingsWindow.optimizeHaulCategoryDef, settings.OptimizeHaul_BuildingFilter);
-            }
-            leftList.End();
-
-            var rightList = new Listing_Standard();
-            rightList.Begin(rightRect);
-            rightList.Label($"{modId}_SettingTitle_OptimizeHaulingTo".Translate(), Text.LineHeight, $"{modId}_SettingDesc_OptimizeHaulingTo".Translate());
-
-            var innerList = new Listing_Standard();
-            var innerRect = rightList.GetRect(24f);
-            innerRect.width -= 25f;
-            innerList.Begin(innerRect);
-            innerList.DrawBool(ref settings.OptimizeHaul_Auto, nameof(settings.OptimizeHaul_Auto));
-            innerList.End();
-
-            rightList.Gap(4f);
-            SettingsWindow.optimizeHaulSearchWidget.OnGUI(rightList.GetRect(24f));
-            rightList.Gap(4f);
-
-            var outRect = rightList.GetRect(rightRect.height - rightList.CurHeight);
-            var viewRect = new Rect(0f, 0f, outRect.width - 20f, SettingsWindow.optimizeHaulTreeFilter?.CurHeight ?? 10000f);
-            Widgets.BeginScrollView(outRect, ref SettingsWindow.optimizeHaulScrollPosition, viewRect);
-            if (settings.OptimizeHaul_Auto)
-                SettingsWindow.optimizeHaulDummyFilter.CopyAllowancesFrom(settings.OptimizeHaulDefaultFilter);
-            SettingsWindow.optimizeHaulTreeFilter = new Listing_SettingsTreeThingFilter(
-                settings.OptimizeHaul_Auto ? SettingsWindow.optimizeHaulDummyFilter : settings.OptimizeHaul_BuildingFilter, null, null, null, null,
-                SettingsWindow.optimizeHaulSearchFilter);
-            SettingsWindow.optimizeHaulTreeFilter.Begin(viewRect);
-            SettingsWindow.optimizeHaulTreeFilter.ListCategoryChildren(SettingsWindow.optimizeHaulCategoryDef.treeNode, 1, null, viewRect);
-            SettingsWindow.optimizeHaulTreeFilter.End();
-            Widgets.EndScrollView();
-            rightList.End();
-
-            list.End();
-        }
-
-        // ReSharper disable UnusedType.Local
-        // ReSharper disable UnusedMember.Local
         [HarmonyPatch(typeof(Log), nameof(Log.Error), typeof(string))]
-        static class Log_Error_Patch
+        [SuppressMessage("ReSharper", "UnusedMember.Local")]
+        static class Log__Error_Patch
         {
             static bool         ignoreLoadReferenceErrors;
             static LoadSaveMode scribeMode;
@@ -128,8 +49,6 @@ namespace JobsOfOpportunity
                 return true;
             }
         }
-        // ReSharper restore UnusedType.Local
-        // ReSharper restore UnusedMember.Local
 
         // Don't reference this except in DoSettingsWindowContents()! Referencing it early will trigger the static constructor before defs are loaded.
         [StaticConstructorOnStartup]
@@ -145,7 +64,7 @@ namespace JobsOfOpportunity
 
             static SettingsWindow() {
                 // now that defs are loaded this will work
-                Log_Error_Patch.SuppressLoadReferenceErrors(
+                Log__Error_Patch.SuppressLoadReferenceErrors(
                     () => settings.OptimizeHaul_BuildingFilter = ScribeExtractor.SaveableFromNode<ThingFilter>(settings.optimizeHaulFilterXmlNode, null));
                 optimizeHaulSearchWidget.filter = optimizeHaulSearchFilter;
 
@@ -187,19 +106,100 @@ namespace JobsOfOpportunity
                         case "vanillaexpanded.vfecore":   // Vanilla Furniture Expanded
                         case "skullywag.extendedstorage": // Extended Storage
                         case "mlie.extendedstorage":      // Extended Storage (Continued)
-                        case "lwm.deepstorage":           // LWM's Deep Storage
-                        case "rimfridge.kv.rw":           // [KV] RimFridge
-                        case "solaris.furniturebase":     // GloomyFurniture
-                        case "jangodsoul.simplestorage":  // [JDS] Simple Storage
-                        case "sixdd.littlestorage2":      // Little Storage 2
+                        // case "lwm.deepstorage":           // LWM's Deep Storage
+                        case "rimfridge.kv.rw":          // [KV] RimFridge
+                        case "solaris.furniturebase":    // GloomyFurniture
+                        case "jangodsoul.simplestorage": // [JDS] Simple Storage
+                        case "sixdd.littlestorage2":     // Little Storage 2
                             thingFilter.SetAllow(modCategoryDef, true);
                             break;
                     }
                 }
             }
+
+            public static void DoWindowContents(Rect inRect) {
+                Gui.modId = modId;
+                var list = new Listing_Standard();
+                list.Begin(inRect);
+
+                list.DrawBool(ref settings.Enabled, nameof(settings.Enabled));
+                if (ModLister.HasActiveModWithName("Pick Up And Haul"))
+                    list.DrawBool(ref settings.HaulToInventory, nameof(settings.HaulToInventory));
+                list.DrawBool(ref settings.DrawOpportunisticJobs, nameof(settings.DrawOpportunisticJobs));
+                list.Gap();
+
+                list.DrawEnum(settings.HaulProximities, nameof(settings.HaulProximities), val => { settings.HaulProximities = val; });
+                list.DrawBool(ref settings.SkipIfCaravan,  nameof(settings.SkipIfCaravan));
+                list.DrawBool(ref settings.SkipIfBleeding, nameof(settings.SkipIfBleeding));
+
+                list.DrawBool(ref settings.ShowVanillaParameters, nameof(settings.ShowVanillaParameters));
+                if (settings.ShowVanillaParameters) {
+                    using (new DrawContext { TextAnchor = TextAnchor.MiddleRight }) {
+                        list.DrawFloat(ref settings.MaxNewLegsPctOrigTrip,      nameof(settings.MaxNewLegsPctOrigTrip));
+                        list.DrawFloat(ref settings.MaxTotalTripPctOrigTrip,    nameof(settings.MaxTotalTripPctOrigTrip));
+                        list.DrawFloat(ref settings.MaxStartToThing,            nameof(settings.MaxStartToThing));
+                        list.DrawFloat(ref settings.MaxStartToThingPctOrigTrip, nameof(settings.MaxStartToThingPctOrigTrip));
+                        list.DrawInt(ref settings.MaxStartToThingRegionLookCount, nameof(settings.MaxStartToThingRegionLookCount));
+                        list.DrawFloat(ref settings.MaxStoreToJob,            nameof(settings.MaxStoreToJob));
+                        list.DrawFloat(ref settings.MaxStoreToJobPctOrigTrip, nameof(settings.MaxStoreToJobPctOrigTrip));
+                        list.DrawInt(ref settings.MaxStoreToJobRegionLookCount, nameof(settings.MaxStoreToJobRegionLookCount));
+                    }
+                }
+                list.Gap();
+
+                list.DrawBool(ref settings.HaulBeforeSupply,    nameof(settings.HaulBeforeSupply));
+                list.DrawBool(ref settings.HaulBeforeBill,      nameof(settings.HaulBeforeBill));
+                list.DrawBool(ref settings.HaulToEqualPriority, nameof(settings.HaulToEqualPriority));
+                list.Gap();
+
+                var leftRect = list.GetRect(0f).LeftHalf();
+                var rightRect = list.GetRect(inRect.height - list.CurHeight).RightHalf();
+                leftRect.height = rightRect.height;
+
+                var leftList = new Listing_Standard();
+                leftList.Begin(leftRect);
+                leftList.Gap(leftRect.height - 30f);
+                if (Widgets.ButtonText(leftList.GetRect(30f).LeftHalf(), "RestoreToDefaultSettings".Translate())) {
+                    settings.ExposeData(); // restore defaults
+                    optimizeHaulSearchWidget.Reset();
+                    ResetModFilter(optimizeHaulCategoryDef, settings.OptimizeHaul_BuildingFilter);
+                }
+                leftList.End();
+
+                var rightList = new Listing_Standard();
+                rightList.Begin(rightRect);
+                rightList.Label($"{modId}_SettingTitle_OptimizeHaulingTo".Translate(), Text.LineHeight, $"{modId}_SettingDesc_OptimizeHaulingTo".Translate());
+
+                var innerList = new Listing_Standard();
+                var innerRect = rightList.GetRect(24f);
+                innerRect.width -= 25f;
+                innerList.Begin(innerRect);
+                innerList.DrawBool(ref settings.OptimizeHaul_Auto, nameof(settings.OptimizeHaul_Auto));
+                innerList.End();
+
+                rightList.Gap(4f);
+                optimizeHaulSearchWidget.OnGUI(rightList.GetRect(24f));
+                rightList.Gap(4f);
+
+                var outRect = rightList.GetRect(rightRect.height - rightList.CurHeight);
+                var viewRect = new Rect(0f, 0f, outRect.width - 20f, optimizeHaulTreeFilter?.CurHeight ?? 10000f);
+                Widgets.BeginScrollView(outRect, ref optimizeHaulScrollPosition, viewRect);
+                if (settings.OptimizeHaul_Auto)
+                    optimizeHaulDummyFilter.CopyAllowancesFrom(settings.OptimizeHaulDefaultFilter);
+                optimizeHaulTreeFilter = new Listing_SettingsTreeThingFilter(
+                    settings.OptimizeHaul_Auto ? optimizeHaulDummyFilter : settings.OptimizeHaul_BuildingFilter, null, null, null, null,
+                    optimizeHaulSearchFilter);
+                optimizeHaulTreeFilter.Begin(viewRect);
+                optimizeHaulTreeFilter.ListCategoryChildren(optimizeHaulCategoryDef.treeNode, 1, null, viewRect);
+                optimizeHaulTreeFilter.End();
+                Widgets.EndScrollView();
+                rightList.End();
+
+                list.End();
+            }
         }
 
-        // ReSharper disable once ClassNeverInstantiated.Local
+        [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
         class Settings : ModSettings
         {
             public readonly ThingFilter OptimizeHaulDefaultFilter = new ThingFilter();
@@ -209,10 +209,12 @@ namespace JobsOfOpportunity
             public bool Enabled, HaulToInventory, HaulBeforeSupply, HaulBeforeBill, HaulBeforeBill_NeedsInitForCs, HaulToEqualPriority, SkipIfCaravan, SkipIfBleeding,
                 DrawOpportunisticJobs, OptimizeHaul_Auto;
 
-            public Hauling.HaulProximities HaulProximities;
-            public bool                    ShowVanillaParameters;
-            public float                   MaxStartToThing, MaxStartToThingPctOrigTrip, MaxStoreToJob, MaxStoreToJobPctOrigTrip, MaxTotalTripPctOrigTrip, MaxNewLegsPctOrigTrip;
-            public int                     MaxStartToThingRegionLookCount, MaxStoreToJobRegionLookCount;
+            public enum HaulProximitiesEnum { Both, Either, Ignored }
+
+            public HaulProximitiesEnum HaulProximities;
+            public bool                ShowVanillaParameters;
+            public float               MaxStartToThing, MaxStartToThingPctOrigTrip, MaxStoreToJob, MaxStoreToJobPctOrigTrip, MaxTotalTripPctOrigTrip, MaxNewLegsPctOrigTrip;
+            public int                 MaxStartToThingRegionLookCount, MaxStoreToJobRegionLookCount;
 
             // we also manually call this to restore defaults and to set them before config file exists (Scribe.mode == LoadSaveMode.Inactive)
             public override void ExposeData() {
@@ -234,7 +236,7 @@ namespace JobsOfOpportunity
                 Look(ref OptimizeHaul_Auto,              nameof(OptimizeHaul_Auto),              true);
                 Look(ref SkipIfCaravan,                  nameof(SkipIfCaravan),                  true);
                 Look(ref SkipIfBleeding,                 nameof(SkipIfBleeding),                 true);
-                Look(ref HaulProximities,                nameof(HaulProximities),                Hauling.HaulProximities.Ignored);
+                Look(ref HaulProximities,                nameof(HaulProximities),                HaulProximitiesEnum.Ignored);
                 Look(ref DrawOpportunisticJobs,          nameof(DrawOpportunisticJobs),          false);
                 Look(ref ShowVanillaParameters,          nameof(ShowVanillaParameters),          false);
                 Look(ref MaxStartToThing,                nameof(MaxStartToThing),                30f);
