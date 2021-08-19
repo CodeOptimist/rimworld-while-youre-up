@@ -116,9 +116,10 @@ namespace JobsOfOpportunity
         }
 
 
-        static Job PuahJob(SpecialHaulInfo specialHaulInfo, Pawn pawn, Thing thing, IntVec3 storeCell) {
+        static Job PuahJob(PuahWithBetterUnloading puah, Pawn pawn, Thing thing, IntVec3 storeCell) {
             if (!havePuah || !settings.HaulToInventory || !settings.Enabled) return null;
-            specialHaulInfo.Add(thing, storeCell);
+            specialHauls.SetOrAdd(pawn, puah);
+            puah.TrackThing(thing, storeCell);
             var puahWorkGiver = DefDatabase<WorkGiverDef>.GetNamed("HaulToInventory").Worker;
             return (Job)PuahJobOnThing.Invoke(puahWorkGiver, new object[] { pawn, thing, false });
         }

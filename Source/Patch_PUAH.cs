@@ -80,20 +80,23 @@ namespace JobsOfOpportunity
                 static bool SpecialHaulAwareTryFindStore(ref bool __result, Thing t, Pawn carrier, Map map, StoragePriority currentPriority,
                     Faction faction, ref IntVec3 foundCell, bool needAccurateResult) {
                     if (carrier == null || tickContext == TickContext.None || !settings.HaulToInventory || !settings.Enabled) return true;
-                    var specialHaul = specialHauls.GetValueSafe(carrier);
+                    var puah = specialHauls.GetValueSafe(carrier) as PuahWithBetterUnloading;
+                    var opportunity = puah as PuahOpportunity;
+                    var beforeCarry = puah as PuahBeforeCarry;
+
                     var skipCells = (HashSet<IntVec3>)AccessTools.DeclaredField(PuahWorkGiver_HaulToInventoryType, "skipCells").GetValue(null);
 
                     if (!TryFindBestBetterStoreCellFor_ClosestToDestCell(
                         t,
-                        specialHaul?.destCell ?? IntVec3.Invalid,
+                        beforeCarry?.destCell ?? IntVec3.Invalid,
                         carrier, map, currentPriority, faction, out foundCell,
-                        tickContext != TickContext.HaulToInventory_HasJobOnThing && Find.TickManager.CurTimeSpeed == TimeSpeed.Normal && (specialHaul?.destCell.IsValid ?? false),
+                        tickContext != TickContext.HaulToInventory_HasJobOnThing && Find.TickManager.CurTimeSpeed == TimeSpeed.Normal && (beforeCarry?.destCell.IsValid ?? false),
                         tickContext == TickContext.HaulToInventory_JobOnThing_AllocateThingAtCell ? skipCells : null)) {
                         __result = false;
                         return false;
                     }
 
-                    if (specialHaul?.haulType == SpecialHaulType.Opportunity && !Opportunity.TrackPuahThingIfOpportune(specialHaul, t, carrier, ref foundCell)) {
+                    if (opportunity != null && !Opportunity.TrackPuahThingIfOpportune(opportunity, t, carrier, ref foundCell)) {
                         __result = false;
                         return false;
                     }
@@ -101,10 +104,11 @@ namespace JobsOfOpportunity
                     __result = true;
 
                     if (tickContext == TickContext.HaulToInventory_JobOnThing_AllocateThingAtCell) {
-                        if (specialHaul == null)
-                            SpecialHaulInfo.CreateAndAdd(SpecialHaulType.None, carrier, foundCell);
-                        else
-                            specialHaul.Add(t, foundCell);
+                        if (puah == null) {
+                            puah = new PuahWithBetterUnloading();
+                            specialHauls.SetOrAdd(carrier, puah);
+                        }
+                        puah.TrackThing(t, foundCell);
                     }
 
                     return false;
@@ -118,45 +122,51 @@ namespace JobsOfOpportunity
                 static MethodBase TargetMethod() => AccessTools.DeclaredMethod(PuahJobDriver_UnloadYourHauledInventoryType, "FirstUnloadableThing");
 
                 [HarmonyPrefix]
-                static bool UseJooPuahFirstUnloadableThing(ref ThingCount __result, Pawn pawn) {
+                static bool SpecialHaulAwareFirstUnloadableThing(ref ThingCount __result, Pawn pawn) {
                     if (!settings.HaulToInventory || !settings.Enabled) return true;
-                    __result = PuahFirstUnloadableThing(pawn);
+
+                    var hauledToInventoryComp =
+                        (ThingComp)AccessTools.DeclaredMethod(typeof(ThingWithComps), "GetComp").MakeGenericMethod(PuahCompHauledToInventoryType).Invoke(pawn, null);
+                    var carriedThings = Traverse.Create(hauledToInventoryComp).Method("GetHashSet").GetValue<HashSet<Thing>>();
+
+                    IntVec3 GetStoreCell(PuahWithBetterUnloading puah_, Thing thing) {
+                        if (puah_.defHauls.TryGetValue(thing.def, out var storeCell))
+                            return storeCell;
+
+                        // should only be necessary because specialHauls aren't saved in file like CompHauledToInventory
+                        var beforeCarry = puah_ as PuahBeforeCarry;
+                        if (TryFindBestBetterStoreCellFor_ClosestToDestCell(
+                            thing, beforeCarry?.destCell ?? IntVec3.Invalid, pawn, pawn.Map, StoreUtility.CurrentStoragePriorityOf(thing), pawn.Faction, out storeCell, false))
+                            puah_.defHauls.Add(thing.def, storeCell);
+                        return storeCell; // IntVec3.Invalid is okay here
+                    }
+
+                    Thing firstThingToUnload;
+                    if (specialHauls.GetValueSafe(pawn) is PuahWithBetterUnloading puah)
+                        firstThingToUnload = carriedThings.OrderBy(t => GetStoreCell(puah, t).DistanceTo(pawn.Position)).FirstOrDefault();
+                    else
+                        firstThingToUnload = carriedThings.FirstOrDefault();
+
+                    if (firstThingToUnload == default) {
+                        __result = default;
+                        return false;
+                    }
+
+                    if (!carriedThings.Intersect(pawn.inventory.innerContainer).Contains(firstThingToUnload)) {
+                        // can't be removed from dropping / delivering, so remove now
+                        carriedThings.Remove(firstThingToUnload);
+
+                        // because of merges
+                        var thingFoundByDef = pawn.inventory.innerContainer.FirstOrDefault(t => t.def == firstThingToUnload.def);
+                        if (thingFoundByDef != default) {
+                            __result = new ThingCount(thingFoundByDef, thingFoundByDef.stackCount);
+                            return false;
+                        }
+                    }
+
+                    __result = new ThingCount(firstThingToUnload, firstThingToUnload.stackCount);
                     return false;
                 }
-            }
-
-            static ThingCount PuahFirstUnloadableThing(Pawn pawn) {
-                var hauledToInventoryComp =
-                    (ThingComp)AccessTools.DeclaredMethod(typeof(ThingWithComps), "GetComp").MakeGenericMethod(PuahCompHauledToInventoryType).Invoke(pawn, null);
-                var carriedThings = Traverse.Create(hauledToInventoryComp).Method("GetHashSet").GetValue<HashSet<Thing>>();
-
-                // should only be necessary because specialHauls aren't currently saved in file like CompHauledToInventory
-                IntVec3 GetStoreCell(SpecialHaulInfo haulTracker_, Thing thing) {
-                    if (haulTracker_.defHauls.TryGetValue(thing.def, out var storeCell))
-                        return storeCell;
-                    if (TryFindBestBetterStoreCellFor_ClosestToDestCell(
-                        thing, haulTracker_.destCell, pawn, pawn.Map, StoreUtility.CurrentStoragePriorityOf(thing), pawn.Faction, out storeCell, false))
-                        haulTracker_.defHauls.Add(thing.def, storeCell);
-                    return storeCell; // IntVec3.Invalid is okay here
-                }
-
-                var firstThingToUnload = carriedThings.FirstOrDefault();
-                if (specialHauls.TryGetValue(pawn, out var specialHaul))
-                    firstThingToUnload = carriedThings.OrderBy(t => GetStoreCell(specialHaul, t).DistanceTo(pawn.Position)).FirstOrDefault();
-                if (firstThingToUnload == default) return default;
-
-                var thingsFound = pawn.inventory.innerContainer.Where(t => carriedThings.Contains(t));
-                if (!thingsFound.Contains(firstThingToUnload)) {
-                    // can't be removed from dropping / delivering, so remove now
-                    carriedThings.Remove(firstThingToUnload);
-
-                    // because of merges
-                    var thingFoundByDef = pawn.inventory.innerContainer.FirstOrDefault(t => t.def == firstThingToUnload.def);
-                    if (thingFoundByDef != default)
-                        return new ThingCount(thingFoundByDef, thingFoundByDef.stackCount);
-                }
-
-                return new ThingCount(firstThingToUnload, firstThingToUnload.stackCount);
             }
         }
     }

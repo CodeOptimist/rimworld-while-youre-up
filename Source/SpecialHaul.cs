@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -13,75 +12,64 @@ namespace JobsOfOpportunity
 {
     partial class Mod
     {
-        public enum SpecialHaulType { None, Opportunity, HaulBeforeCarry }
+        public static readonly Dictionary<Pawn, SpecialHaul> specialHauls = new Dictionary<Pawn, SpecialHaul>();
 
-        public static readonly Dictionary<Pawn, SpecialHaulInfo> specialHauls = new Dictionary<Pawn, SpecialHaulInfo>();
-
-        public class SpecialHaulInfo
+        public class SpecialHaul
         {
-            public SpecialHaulType haulType;
+            public string reportPrefix;
 
-            // reminder that storeCell is just *some* cell in our stockpile, actual unload cell is determined at unload
-            public List<(Thing thing, IntVec3 storeCell)> hauls;    // for opportune checking (with jobCell)
-            public Dictionary<ThingDef, IntVec3>          defHauls; // for unload ordering
+            public SpecialHaul(string reportPrefix) {
+                this.reportPrefix = reportPrefix;
+            }
+        }
 
-            public IntVec3 startCell;
-            public IntVec3 jobCell  = IntVec3.Invalid; // when our haul is an opportunity on the way to a job
-            public IntVec3 destCell = IntVec3.Invalid; // when store isn't the destination (e.g. bill ingredients, blueprint supplies)
+        public class PuahWithBetterUnloading : SpecialHaul
+        {
+            public Dictionary<ThingDef, IntVec3> defHauls = new Dictionary<ThingDef, IntVec3>();
 
-            SpecialHaulInfo() {
+            public PuahWithBetterUnloading(string reportPrefix = "") : base(reportPrefix) {
             }
 
-            public static SpecialHaulInfo CreateAndAdd(SpecialHaulType haulType, Pawn pawn, IntVec3 cell) {
-                var specialHaul = new SpecialHaulInfo { haulType = haulType };
-
-                if (havePuah) {
-                    specialHaul.hauls = new List<(Thing thing, IntVec3 storeCell)>();
-                    specialHaul.defHauls = new Dictionary<ThingDef, IntVec3>();
-                }
-
-                specialHaul.startCell = pawn.Position;
-                switch (haulType) {
-                    case SpecialHaulType.Opportunity:
-                        specialHaul.jobCell = cell;
-                        break;
-                    case SpecialHaulType.HaulBeforeCarry:
-                        specialHaul.destCell = cell;
-                        break;
-                    case SpecialHaulType.None: break;
-                    default:                   throw new ArgumentOutOfRangeException(nameof(haulType), haulType, null);
-                }
-
-                specialHauls.SetOrAdd(pawn, specialHaul);
-                return specialHaul;
-            }
-
-            public string GetJobReportPrefix() {
-                switch (haulType) {
-                    case SpecialHaulType.Opportunity:     return "Opportunistically ";
-                    case SpecialHaulType.HaulBeforeCarry: return "Optimally ";
-                    default:                              return "";
-                }
-            }
-
-            public void Add(Thing thing, IntVec3 storeCell, bool isInitial = false, [CallerMemberName] string callerName = "") {
+            public void TrackThing(Thing thing, IntVec3 storeCell, bool isInitial = false, [CallerMemberName] string callerName = "") {
 #if DEBUG
                 // make deterministic, but merges and initial hauls will still fluctuate
                 storeCell = storeCell.GetSlotGroup(thing.Map).CellsList[0];
 #endif
 
-                string verb;
-                if (isInitial && hauls.FirstOrDefault().thing == thing) {
-                    hauls.RemoveAt(0);
-                    verb = "UPDATED on tracker.";
-                } else
-                    verb = isInitial ? "PREPENDED to tracker." : "Added to tracker.";
-
-                hauls.Insert(isInitial ? 0 : hauls.Count, (thing, storeCell));
                 defHauls.SetOrAdd(thing.def, storeCell);
 
+                if (this is PuahOpportunity opportunity) {
+                    if (isInitial && opportunity.hauls.FirstOrDefault().thing == thing)
+                        opportunity.hauls.RemoveAt(0);
+
+                    opportunity.hauls.Insert(isInitial ? 0 : opportunity.hauls.Count, (thing, storeCell));
+                }
+
                 if (callerName != "TrackPuahThingIfOpportune")
-                    Debug.WriteLine($"{RealTime.frameCount} {haulType} {callerName}() {thing} -> {storeCell} {verb}");
+                    Debug.WriteLine($"{RealTime.frameCount} {this} {callerName}() {thing} -> {storeCell}");
+            }
+        }
+
+        public class PuahOpportunity : PuahWithBetterUnloading
+        {
+            public IntVec3 jobCell;
+            public IntVec3 startCell;
+
+            // reminder that storeCell is just *some* cell in our stockpile, actual unload cell is determined at unload
+            public List<(Thing thing, IntVec3 storeCell)> hauls = new List<(Thing thing, IntVec3 storeCell)>();
+
+            public PuahOpportunity(Pawn pawn, IntVec3 jobCell) : base("Opportunistically ") {
+                startCell = pawn.Position;
+                this.jobCell = jobCell;
+            }
+        }
+
+        public class PuahBeforeCarry : PuahWithBetterUnloading
+        {
+            public IntVec3 destCell;
+
+            public PuahBeforeCarry(IntVec3 destCell) : base("Optimally ") {
+                this.destCell = destCell;
             }
         } // ReSharper disable UnusedType.Local
         // ReSharper disable UnusedMember.Local
@@ -107,7 +95,7 @@ namespace JobsOfOpportunity
             [HarmonyPostfix]
             static void SpecialHaulJobReport(JobDriver_HaulToCell __instance, ref string __result) {
                 if (!specialHauls.TryGetValue(__instance.pawn, out var specialHaul)) return;
-                __result = specialHaul.GetJobReportPrefix() + __result;
+                __result = specialHaul.reportPrefix + __result;
             }
         }
 
@@ -120,11 +108,14 @@ namespace JobsOfOpportunity
                 static void TrackInitialHaul(WorkGiver_Scanner __instance, Job __result, Pawn pawn, Thing thing) {
                     if (__result == null || !settings.HaulToInventory || !settings.Enabled) return;
 
-                    var specialHaul = specialHauls.GetValueSafe(pawn) ?? SpecialHaulInfo.CreateAndAdd(SpecialHaulType.None, pawn, IntVec3.Invalid);
+                    if (!(specialHauls.GetValueSafe(pawn) is PuahWithBetterUnloading puah)) {
+                        puah = new PuahWithBetterUnloading();
+                        specialHauls.SetOrAdd(pawn, puah);
+                    }
                     // thing from parameter because targetA is null because things are in queues instead
                     //  https://github.com/Mehni/PickUpAndHaul/blob/af50a05a8ae5ca64d9b95fee8f593cf91f13be3d/Source/PickUpAndHaul/WorkGiver_HaulToInventory.cs#L98
                     // JobOnThing() can run additional times (e.g. haulMoreWork toil) so don't assume this is already added if it's an Opportunity or HaulBeforeCarry
-                    specialHaul.Add(thing, __result.targetB.Cell, isInitial: true);
+                    puah.TrackThing(thing, __result.targetB.Cell, isInitial: true);
                 }
             }
 
@@ -147,10 +138,13 @@ namespace JobsOfOpportunity
                 [HarmonyPostfix]
                 static void SpecialHaulJobReport(JobDriver __instance, ref string __result) {
                     if (!settings.HaulToInventory || !settings.Enabled) return;
+
                     if (PuahJobDriver_HaulToInventoryType.IsInstanceOfType(__instance)) {
                         if (!specialHauls.TryGetValue(__instance.pawn, out var specialHaul)) return;
-                        __result = specialHaul.GetJobReportPrefix() + __result;
-                    } else if (PuahJobDriver_UnloadYourHauledInventoryType.IsInstanceOfType(__instance))
+                        __result = specialHaul.reportPrefix + __result;
+                    }
+
+                    if (PuahJobDriver_UnloadYourHauledInventoryType.IsInstanceOfType(__instance))
                         __result = "Efficiently " + __result;
                 }
             }

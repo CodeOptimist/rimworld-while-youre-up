@@ -87,8 +87,11 @@ namespace JobsOfOpportunity
                     pawn.Map.debugDrawer.FlashLine(storeCell,      destCell,       600, SimpleColor.Cyan);
                 }
 
-                var specialHaul = SpecialHaulInfo.CreateAndAdd(SpecialHaulType.HaulBeforeCarry, pawn, destCell);
-                return PuahJob(specialHaul, pawn, thing, storeCell) ?? HaulAIUtility.HaulToCellStorageJob(pawn, thing, storeCell, false);
+                var puahJob = PuahJob(new PuahBeforeCarry(destCell), pawn, thing, storeCell);
+                if (puahJob != null) return puahJob;
+
+                specialHauls.SetOrAdd(pawn, new SpecialHaul("Optimally "));
+                return HaulAIUtility.HaulToCellStorageJob(pawn, thing, storeCell, false);
             }
 
             return null;

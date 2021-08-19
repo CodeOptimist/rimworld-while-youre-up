@@ -121,20 +121,22 @@ namespace JobsOfOpportunity
                         pawn.Map.debugDrawer.FlashLine(storeCell,      jobCell,        600, SimpleColor.Green);
                     }
 
-                    var specialHaul = SpecialHaulInfo.CreateAndAdd(SpecialHaulType.Opportunity, pawn, jobCell);
-                    return PuahJob(specialHaul, pawn, thing, storeCell) ?? HaulAIUtility.HaulToCellStorageJob(pawn, thing, storeCell, false);
+                    var puahJob = PuahJob(new PuahOpportunity(pawn, jobCell), pawn, thing, storeCell);
+                    if (puahJob != null) return puahJob;
+
+                    specialHauls.SetOrAdd(pawn, new SpecialHaul("Opportunistically "));
+                    return HaulAIUtility.HaulToCellStorageJob(pawn, thing, storeCell, false);
                 }
 
                 return null;
             }
 
-            public static bool TrackPuahThingIfOpportune(SpecialHaulInfo specialHaulInfo, Thing thing, Pawn pawn, ref IntVec3 foundCell,
-                [CallerMemberName] string callerName = "") {
-                var hauls = specialHaulInfo.hauls;
-                var defHauls = specialHaulInfo.defHauls;
+            public static bool TrackPuahThingIfOpportune(PuahOpportunity opportunity, Thing thing, Pawn pawn, ref IntVec3 foundCell, [CallerMemberName] string callerName = "") {
+                var hauls = opportunity.hauls;
+                var defHauls = opportunity.defHauls;
 
                 Debug.WriteLine(
-                    $"{RealTime.frameCount} {SpecialHaulType.Opportunity} {callerName}() {thing} -> {foundCell} "
+                    $"{RealTime.frameCount} {opportunity} {callerName}() {thing} -> {foundCell} "
                     + (hauls.LastOrDefault().thing != thing ? "Added to tracker." : "UPDATED on tracker."));
 
                 // already here because a thing merged into it (or presumably from HasJobOnThing()?)
@@ -143,10 +145,10 @@ namespace JobsOfOpportunity
                     hauls.Pop();
 
                 var prevDefHaul = defHauls.GetValueSafe(thing.def);
-                specialHaulInfo.Add(thing, foundCell);
+                opportunity.TrackThing(thing, foundCell);
 
                 var startToLastThing = 0f;
-                var curPos = specialHaulInfo.startCell;
+                var curPos = opportunity.startCell;
                 foreach (var (thing_, _) in hauls) {
                     startToLastThing += curPos.DistanceTo(thing_.Position);
                     curPos = thing_.Position;
@@ -187,8 +189,8 @@ namespace JobsOfOpportunity
                 }
 
                 var lastThingToFirstStore = hauls.Last().thing.Position.DistanceTo(hauls.Last().storeCell);
-                var lastStoreToJob = haulsByUnloadOrder.Last().storeCell.DistanceTo(specialHaulInfo.jobCell);
-                var origTrip = specialHaulInfo.startCell.DistanceTo(specialHaulInfo.jobCell);
+                var lastStoreToJob = haulsByUnloadOrder.Last().storeCell.DistanceTo(opportunity.jobCell);
+                var origTrip = opportunity.startCell.DistanceTo(opportunity.jobCell);
                 var totalTrip = startToLastThing + lastThingToFirstStore + firstStoreToLastStore + lastStoreToJob;
                 var maxTotalTrip = origTrip * settings.MaxTotalTripPctOrigTrip;
                 var newLegs = startToLastThing + firstStoreToLastStore + lastStoreToJob;
@@ -211,12 +213,12 @@ namespace JobsOfOpportunity
 #if DEBUG
                 Debug.WriteLine($"APPROVED {hauls.Last()} for {pawn}");
                 Debug.WriteLine(
-                    $"\tstartToLastThing: {pawn}{specialHaulInfo.startCell}"
+                    $"\tstartToLastThing: {pawn}{opportunity.startCell}"
                     + $" -> {string.Join(" -> ", hauls.Select(x => $"{x.thing}{x.thing.Position}"))} = {startToLastThing}");
                 Debug.WriteLine($"\tlastThingToStore: {hauls.Last().thing}{hauls.Last().thing.Position} -> {hauls.Last()} = {lastThingToFirstStore}");
                 Debug.WriteLine($"\tstoreToLastStore: {string.Join(" -> ", haulsByUnloadOrder)} = {firstStoreToLastStore}");
-                Debug.WriteLine($"\tlastStoreToJob: {haulsByUnloadOrder.Last()} -> {specialHaulInfo.jobCell} = {lastStoreToJob}");
-                Debug.WriteLine($"\torigTrip: {pawn}{specialHaulInfo.startCell} -> {specialHaulInfo.jobCell} = {origTrip}");
+                Debug.WriteLine($"\tlastStoreToJob: {haulsByUnloadOrder.Last()} -> {opportunity.jobCell} = {lastStoreToJob}");
+                Debug.WriteLine($"\torigTrip: {pawn}{opportunity.startCell} -> {opportunity.jobCell} = {origTrip}");
                 Debug.WriteLine($"\ttotalTrip: {startToLastThing} + {lastThingToFirstStore} + {firstStoreToLastStore} + {lastStoreToJob}  = {totalTrip}");
                 Debug.WriteLine($"\tmaxTotalTrip: {origTrip} * {settings.MaxTotalTripPctOrigTrip} = {maxTotalTrip}");
                 Debug.WriteLine($"\tnewLegs: {startToLastThing} + {firstStoreToLastStore} + {lastStoreToJob} = {newLegs}");

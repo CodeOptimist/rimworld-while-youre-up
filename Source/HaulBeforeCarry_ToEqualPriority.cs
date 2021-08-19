@@ -24,7 +24,7 @@ namespace JobsOfOpportunity
                 [HarmonyPrefix]
                 static void HaulToEqualPriority(Pawn pawn, Thing thing) {
                     if (!settings.HaulToEqualPriority || !settings.HaulToInventory || !settings.Enabled) return;
-                    if (!specialHauls.TryGetValue(pawn, out var specialHaul) || specialHaul.haulType != SpecialHaulType.HaulBeforeCarry) return;
+                    if (!(specialHauls.GetValueSafe(pawn) is PuahBeforeCarry)) return;
                     var haulDestination = StoreUtility.CurrentHaulDestinationOf(thing);
                     if (haulDestination == null) return;
 
