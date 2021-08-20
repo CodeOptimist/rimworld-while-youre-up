@@ -79,7 +79,10 @@ namespace JobsOfOpportunity
                 [HarmonyPrefix]
                 static bool SpecialHaulAwareTryFindStore(ref bool __result, Thing t, Pawn carrier, Map map, StoragePriority currentPriority,
                     Faction faction, ref IntVec3 foundCell, bool needAccurateResult) {
-                    if (carrier == null || tickContext == TickContext.None || !settings.HaulToInventory || !settings.Enabled) return true;
+                    if (carrier == null || !settings.HaulToInventory || !settings.Enabled) return true;
+                    var isUnloadJob = carrier.CurJobDef == DefDatabase<JobDef>.GetNamed("UnloadYourHauledInventory");
+                    if (tickContext == TickContext.None && !isUnloadJob) return true;
+
                     var puah = specialHauls.GetValueSafe(carrier) as PuahWithBetterUnloading;
                     var opportunity = puah as PuahOpportunity;
                     var beforeCarry = puah as PuahBeforeCarry;
@@ -96,9 +99,11 @@ namespace JobsOfOpportunity
                         return false;
                     }
 
-                    if (opportunity != null && !Opportunity.TrackPuahThingIfOpportune(opportunity, t, carrier, ref foundCell)) {
-                        __result = false;
-                        return false;
+                    if (!isUnloadJob) {
+                        if (opportunity != null && !Opportunity.TrackPuahThingIfOpportune(opportunity, t, carrier, ref foundCell)) {
+                            __result = false;
+                            return false;
+                        }
                     }
 
                     __result = true;

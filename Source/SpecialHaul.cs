@@ -153,7 +153,8 @@ namespace JobsOfOpportunity
                     if (!settings.HaulToInventory || !settings.Enabled) return;
 
                     if (PuahJobDriver_HaulToInventoryType.IsInstanceOfType(__instance)) {
-                        if (!specialHauls.TryGetValue(__instance.pawn, out var specialHaul)) return;
+                        if (!specialHauls.TryGetValue(__instance.pawn, out var specialHaul))
+                            return;
                         __result = specialHaul.reportPrefix + __result;
                     }
 
