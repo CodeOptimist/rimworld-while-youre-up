@@ -39,10 +39,17 @@ namespace JobsOfOpportunity
                 defHauls.SetOrAdd(thing.def, storeCell);
 
                 if (this is PuahOpportunity opportunity) {
-                    if (isInitial && opportunity.hauls.FirstOrDefault().thing == thing)
-                        opportunity.hauls.RemoveAt(0);
+                    // we may run multiple times
+                    if (opportunity.hauls.LastOrDefault().thing == thing)
+                        opportunity.hauls.Pop();
 
-                    opportunity.hauls.Insert(isInitial ? 0 : opportunity.hauls.Count, (thing, storeCell));
+                    // special case
+                    if (isInitial) {
+                        if (opportunity.hauls.FirstOrDefault().thing == thing)
+                            opportunity.hauls.RemoveAt(0);
+                        opportunity.hauls.Insert(0, (thing, storeCell));
+                    } else
+                        opportunity.hauls.Add((thing, storeCell));
                 }
 
                 if (callerName != "TrackPuahThingIfOpportune")
