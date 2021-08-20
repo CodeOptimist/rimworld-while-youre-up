@@ -13,8 +13,8 @@ namespace JobsOfOpportunity
     {
         static class Opportunity
         {
-            static readonly        Dictionary<Thing, ProximityStage> thingProximityStage        = new Dictionary<Thing, ProximityStage>();
-            public static readonly Dictionary<Thing, IntVec3>        cachedOpportunityStoreCell = new Dictionary<Thing, IntVec3>();
+            static readonly        Dictionary<Thing, ProximityStage> thingProximityStage = new Dictionary<Thing, ProximityStage>();
+            public static readonly Dictionary<Thing, IntVec3>        cachedStoreCells    = new Dictionary<Thing, IntVec3>();
 
             enum ProximityCheck { Both, Either, Ignored }
 
@@ -38,7 +38,7 @@ namespace JobsOfOpportunity
 
                 var result = _TryHaul();
                 thingProximityStage.Clear();
-                cachedOpportunityStoreCell.Clear();
+                cachedStoreCells.Clear();
                 return result;
             }
 
@@ -68,7 +68,7 @@ namespace JobsOfOpportunity
                     return ProximityStage.Fail;
 
                 // we need storeCell everywhere, so cache it
-                cachedOpportunityStoreCell.SetOrAdd(thing, storeCell);
+                cachedStoreCells.SetOrAdd(thing, storeCell);
 
                 var storeToJob = storeCell.DistanceTo(jobCell);
                 if (proximityStage < ProximityStage.PawnToThingRegion) {

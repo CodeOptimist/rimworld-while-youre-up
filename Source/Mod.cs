@@ -140,10 +140,6 @@ namespace JobsOfOpportunity
 
         public static bool TryFindBestBetterStoreCellFor_ClosestToDestCell(Thing thing, IntVec3 destCell, Pawn pawn, Map map, StoragePriority currentPriority,
             Faction faction, out IntVec3 foundCell, bool needAccurateResult, HashSet<IntVec3> skipCells = null) {
-            // our addition
-            if (!destCell.IsValid && Opportunity.cachedOpportunityStoreCell.TryGetValue(thing, out foundCell))
-                return true;
-
             var closestSlot = IntVec3.Invalid;
             var closestDistSquared = (float)int.MaxValue;
             var foundPriority = currentPriority;

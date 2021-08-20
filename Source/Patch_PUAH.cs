@@ -18,7 +18,8 @@ namespace JobsOfOpportunity
         {
             static TickContext tickContext = TickContext.None;
 
-            // we can consolidate our code by keeping track of where we are like this
+            static readonly Dictionary<Thing, IntVec3> cachedStoreCells = new Dictionary<Thing, IntVec3>();
+
             enum TickContext { None, HaulToInventory_HasJobOnThing, HaulToInventory_JobOnThing, HaulToInventory_JobOnThing_AllocateThingAtCell }
 
             static void PushTickContext(out TickContext original, TickContext @new) {
@@ -26,7 +27,12 @@ namespace JobsOfOpportunity
                 tickContext = @new;
             }
 
-            static void PopTickContext(TickContext state) => tickContext = state;
+            static void PopTickContext(TickContext state) {
+                tickContext = state;
+
+                if (tickContext == TickContext.None)
+                    cachedStoreCells.Clear();
+            }
 
             [HarmonyPatch]
             static class WorkGiver_HaulToInventory__HasJobOnThing_Patch
@@ -89,7 +95,10 @@ namespace JobsOfOpportunity
 
                     var skipCells = (HashSet<IntVec3>)AccessTools.DeclaredField(PuahWorkGiver_HaulToInventoryType, "skipCells").GetValue(null);
 
-                    if (!TryFindBestBetterStoreCellFor_ClosestToDestCell(
+                    if (cachedStoreCells.Count == 0)
+                        cachedStoreCells.AddRange(Opportunity.cachedStoreCells); // inherit cache if available (will be same tick)
+
+                    if (!cachedStoreCells.TryGetValue(t, out foundCell) && !TryFindBestBetterStoreCellFor_ClosestToDestCell(
                         t,
                         beforeCarry?.destCell ?? IntVec3.Invalid,
                         carrier, map, currentPriority, faction, out foundCell,
@@ -99,14 +108,18 @@ namespace JobsOfOpportunity
                         return false;
                     }
 
-                    if (!isUnloadJob) {
-                        if (opportunity != null && !Opportunity.TrackPuahThingIfOpportune(opportunity, t, carrier, ref foundCell)) {
-                            __result = false;
-                            return false;
-                        }
+                    if (isUnloadJob) {
+                        __result = true;
+                        return false;
                     }
 
-                    __result = true;
+                    // don't use cache with unload, since it's over multiple ticks
+                    cachedStoreCells.SetOrAdd(t, foundCell);
+
+                    if (opportunity != null && !Opportunity.TrackPuahThingIfOpportune(opportunity, t, carrier, ref foundCell)) {
+                        __result = false;
+                        return false;
+                    }
 
                     if (tickContext == TickContext.HaulToInventory_JobOnThing_AllocateThingAtCell) {
                         if (puah == null) {
@@ -116,6 +129,7 @@ namespace JobsOfOpportunity
                         puah.TrackThing(t, foundCell);
                     }
 
+                    __result = true;
                     return false;
                 }
             }
