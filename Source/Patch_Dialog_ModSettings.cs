@@ -51,7 +51,8 @@ namespace JobsOfOpportunity
                         settings.HaulBeforeCarry_Bills = false;
                         //mod.WriteSettings(); // no save because we handle it best on loading
                         Messages.Message(
-                            $"[{mod.Content.Name}] Unticked setting in Jobs of Opportunity: \"Optimize hauling ingredients\". (Can't use both.)", MessageTypeDefOf.SilentInput,
+                            $"[{mod.Content.Name}] Unticked setting in Jobs of Opportunity: \"Haul extra bill ingredients closer\". (Can't use both.)",
+                            MessageTypeDefOf.SilentInput,
                             false);
                     }
                 }

@@ -50,6 +50,7 @@ namespace JobsOfOpportunity
 
         public Mod(ModContentPack content) : base(content) {
             mod = this;
+            Gui.modId = modId;
             settings = GetSettings<Settings>();
             if (!foundConfig)
                 settings.ExposeData(); // initialize to defaults
@@ -115,8 +116,8 @@ namespace JobsOfOpportunity
                     }
                 }
 
-                if (settings.Opportunity_SkipIfCaravan && job.def == JobDefOf.PrepareCaravan_GatherItems) return null;
-                if (settings.Opportunity_SkipIfBleeding && pawn.health.hediffSet.BleedRateTotal > 0.001f) return null;
+                if (job.def == JobDefOf.PrepareCaravan_GatherItems) return null;
+                if (pawn.health.hediffSet.BleedRateTotal > 0.001f) return null;
                 return JobUtility__TryStartErrorRecoverJob_Patch.CatchStanding(pawn, Opportunity.TryHaul(pawn, jobTarget));
             }
         }

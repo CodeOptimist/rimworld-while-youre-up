@@ -1,6 +1,6 @@
 ﻿#parent=..\global.yaml
 ---
-repo: &repo https://github.com/CodeOptimist/rimworld-jobs-of-opportunity
+repo: https://github.com/CodeOptimist/rimworld-jobs-of-opportunity
 
 _anchors:
   - !parent &global_ModMetaData ModMetaData
@@ -83,30 +83,25 @@ features:
   - title: Skip opportunities when bleeding
     at: 1.1.0
     desc:
-    settings:
-      - name: SkipIfBleeding
-        desc: |-
-          "Optimize hauling" features still apply since they (hopefully) expedite a job.
 
   - title: Skip opportunities when forming a caravan
     at: 2.3.0
     desc:
-    settings:
-      - name: SkipIfCaravan
 
   - title: Opportunity support for [i]Pick Up And Haul[/i]
     at: 1.4.0
     desc: |-
       [i]Pick Up And Haul[/i] is not just triggered for an opportune haulable, but modified to carefully grab only surrounding items whose unload path is also opportunistic.
 
-  - title: Optimize hauling ingredients
+  - title: Haul extra bill ingredients closer
     at: 1.6.0
-    desc: |-
+    desc:
       If hauling ingredients to storage would bring them closer to their workbench, do that first (grabbing extra).
     settings:
-      - name: HaulBeforeBill
+      - name: HaulBeforeCarry_Bills
+        desc:
 
-  - title: Optimize hauling supplies
+  - title: Haul extra construction supplies closer
     at: 1.0.0
     desc: |-
       If hauling supplies to storage would bring them closer to their blueprint, do that first (grabbing extra).
@@ -115,7 +110,8 @@ features:
 
       [img]https://i.imgur.com/G2oh7Mm.png[/img]
     settings:
-      - name: HaulBeforeSupply
+      - name: HaulBeforeCarry_Supplies
+        desc:
 
   - title: Mod compatibility via storage building filter
     at: 2.3.0
@@ -163,7 +159,7 @@ updates:
 
   - at: 2.0.0
     credit: Kellogg''s#0574
-    haul_to_equal_priority: &haulToEqualPriority Allow "optimize hauling" to same-priority
+    haul_to_equal_priority: Allow "optimize hauling" to same-priority
     desc: |-
       • [i]Optimize hauling ingredients/supplies[/i] will trigger more often:
            - Fixed hauling from existing storage, not just un-stored.
@@ -174,7 +170,7 @@ updates:
   - at: 2.0.0
     desc: |-
       • Added "Optimally" and "Efficiently unloading" job prefixes (like "Opportunistically").
-      • Updated "Draw opportunistic jobs" to include optimized hauls (magenta & cyan).
+      • Updated "Draw special hauls" to include optimized hauls (magenta & cyan).
       • Updated for RimWorld 1.3.
 
   - at: 2.1.0
@@ -183,7 +179,7 @@ updates:
         - A̶d̶d̶e̶d̶ ̶"̶S̶t̶o̶c̶k̶p̶i̶l̶e̶s̶ ̶o̶n̶l̶y̶"̶ ̶s̶e̶t̶t̶i̶n̶g̶ ̶(̶o̶n̶ ̶b̶y̶ ̶d̶e̶f̶a̶u̶l̶t̶)̶.̶
         - Switched to vanilla-style settings window (future room for a storage building allow-list).
 
-      • Setting for "Draw opportunistic & optimal jobs" is now saved.
+      • Setting for "Draw special hauls" is now saved.
           Try it out, it's fun! See tooltip for description.
 
   - at: 2.1.1
@@ -204,13 +200,77 @@ updates:
   - at: 2.1.4
     credit: https://steamcommunity.com/id/thispagesucks
     desc: |-
-      • Fixed recent "Stockpiles only" setting accidentally applying to all inventory hauling (PUAH).
+      • Fixed recent "̶S̶t̶o̶c̶k̶p̶i̶l̶e̶s̶ ̶o̶n̶l̶y̶"̶ ̶s̶e̶t̶t̶i̶n̶g̶ accidentally applying to all inventory hauling (PUAH).
       • Clarity improvements to mod settings dialog.
 
   - at: 2.3.0
     desc: |-
       • If willing, please report issues immediately via Discord link here ↗ or in Mods menu.
 
+  - at: 3.0.0
+    desc: |-
+      • Performance & future-compatibility update.
+        - Added caching to speed up Pick Up And Haul, and While You're Up (this).
+        - Re-implemented 'Allow "optimize hauling" to same-priority'.
+        - Code layout improvements for easier complex-mod compatibility.
+
+  - at: 3.0.1
+    desc: |-
+      • Fixed "Optimize hauling" grabbing extras that unload to different storage!
+
+keyed:
+  - name: Opportunity_LoadReport
+    value: &oLoad '{{ORIGINAL}} on the way to {{TARGET}}.'
+
+  - name: Opportunity_UnloadReport
+    value: *oLoad
+
+  - name: Opportunity_Tab
+    value: Hauls of Opportunity
+
+  - name: Opportunity_Intro
+    value: |-
+      Hauling on the way to a job is a vanilla feature, hence generally compatible with all mods. Some storage mods use delays, so are disallowed by default.
+
+      We skip opportunities when bleeding or forming a caravan.
+
+  - name: HaulBeforeCarry_LoadReport
+    value: '{{ORIGINAL}}, to bring closer to {{TARGET}}.'
+
+  - name: HaulBeforeCarry_UnloadReport
+    value: '{{ORIGINAL}} closer to {{TARGET}}.'
+
+  - name: HaulBeforeCarry_Tab
+    value: Supplies & Ingredients
+
+  - name: HaulBeforeCarry_Intro
+    value: |-
+      A pawn will find the closest resource, which is sometimes waiting delivery to storage near our job site. If we perform that haul first, they can grab extras to expedite future work (often their very next).
+
+  - name: HaulBeforeCarry_EqualPriority
+    value: |-
+      If a resource is already in storage of equal priority, they won't save a trip for a dedicated hauler, but can still expedite their future work.
+
+  - name: PickUpAndHaulPlus_LoadReport
+    value: '{{ORIGINAL}}.'
+
+  - name: PickUpAndHaulPlus_UnloadReport
+    value: 'Efficiently {{ORIGINAL}}.'
+
+  - name: PickUpAndHaul_Tab
+    value: Pick Up And Haul
+
+  - name: PickUpAndHaul_UpgradeText
+    value: |-
+      We significantly enhance Pick Up And Haul by unloading only once at each destination, in closest order.
+
+      We improve PUAH's performance by caching haulable destinations (when they cannot change).
+
+  - name: PickUpAndHaul_IntegrationText
+    value: |-
+      We fully integrate opportunities by ensuring our entire gather & unload path never exceeds our criteria for "opportunistic".
+
+      When hauling extra supplies or ingredients to closer storage, we only grab additions destined to the same storage.
 
 settings:
   - name: Enabled
@@ -218,39 +278,42 @@ settings:
     desc: |-
       Toggle mod without restarting.
 
-      Off is equivalent to disabling all features, resetting each vanilla parameter, and closeness set to "(vanilla)".
-
-  - name: OptimizeHaulingTo
-    title: 'Optimize hauling (supplies, ingredients) to:'
-
-  - name: HaulToInventory
+  - name: UsePickUpAndHaulPlus
     title: Use & improve Pick Up And Haul
     desc: |-
-      Enables both: efficient unloading, and using inventory for opportunistic and optimal hauls.
+      Enables: efficient unloading and using inventory for all features.
 
-  - name: HaulToEqualPriority
-    title: *haulToEqualPriority
-    desc:
+  - name: Opportunity_ToStockpiles
+    title: &toStockpiles Work with stockpiles
 
-  - name: OptimizeHaul_Auto
-    title: Automatic (updated from community feedback)
+  - name: Opportunity_AutoBuildings
+    title: &autoBuildings Auto-manage buildings (updated from feedback)
 
-  - name: HaulProximities
-    title: Closeness of haulable to *starting* position & storage to job
+  - name: HaulBeforeCarry_ToStockpiles
+    title: *toStockpiles
+
+  - name: HaulBeforeCarry_ToEqualPriority
+    title: Allow hauling extra resources to same-priority
+
+  - name: HaulBeforeCarry_AutoBuildings
+    title: *autoBuildings
+
+  - name: Opportunity_HaulProximities
+    title: Closeness of haulable to pawn *start* position & storage to job
     desc: |-
-      The primary way we improve on vanilla's opportunistic hauling.
+      The primary way we improve on vanilla's opportunistic hauling, implemented as performantly as possible.
 
       Set "required" if pawns are having difficulty with long walls, until I add a true pathfinding option.
 
-  - name: HaulProximities_Both
+  - name: Opportunity_HaulProximities_Both
     title: Require both (vanilla)
-  - name: HaulProximities_Either
+  - name: Opportunity_HaulProximities_Either
     title: Require either one
-  - name: HaulProximities_Ignored
-    title: Prefer both, but require neither (recommended)
+  - name: Opportunity_HaulProximities_Ignored
+    title: Prefer both, require neither (recommended)
 
-  - name: DrawOpportunisticJobs
-    title: Draw opportunistic & optimal jobs
+  - name: DrawSpecialHauls
+    title: Draw special hauls
     desc: |-
       Original job paths are red, new opportunistic paths are green.
 
@@ -258,31 +321,27 @@ settings:
 
       (This is sync'd to vanilla's [i]Development mode → inspector icon → Visibility → Draw Opportunistic Jobs[/i].)
 
-  - name: ShowVanillaParameters
-    title: Show vanilla's opportunity parameters…
+  - name: Opportunity_TweakVanilla
+    title: Show advanced vanilla settings...
     desc: |-
       Provided for explaining and tweaking vanilla's built-in opportunistic hauling.
 
       A value of 0 will skip a check.
 
-  - name: MaxNewLegsPctOrigTrip
+      All distances are straight-line ("as the crow flies").
+
+  - name: Opportunity_MaxNewLegsPctOrigTrip
     title: Max new legs % of original trip
-    dist: &dist |-
-      This is straight-line distance ("as the crow flies").
     desc: |-
       Max start-to-haulable + storage-to-job % of original trip.
-      {dist}
-  - name: MaxTotalTripPctOrigTrip
+  - name: Opportunity_MaxTotalTripPctOrigTrip
     title: Max total trip % of original trip
-    desc: *dist
 
-  - name: MaxStartToThing
+  - name: Opportunity_MaxStartToThing
     title: Max start-to-haulable
-    desc: *dist
-  - name: MaxStartToThingPctOrigTrip
+  - name: Opportunity_MaxStartToThingPctOrigTrip
     title: Max start-to-haulable % of original trip
-    desc: *dist
-  - name: MaxStartToThingRegionLookCount
+  - name: Opportunity_MaxStartToThingRegionLookCount
     title: Max start-to-haulable region look count
     desc: &region_look_count |-
       This parameter limits our actual pathing.
@@ -292,12 +351,10 @@ settings:
 
       It can't be calculated perfectly from distance, as regions will vary in size and neighbors. (A corridor has only forward and back, so they're explored further.)
       But in a completely open field, if a pawn must travel the distance of n=3 full-sized 12x12 regions (~36 tiles), the algorithm will explore 2(n^2+n)+1 or 25 regions.
-  - name: MaxStoreToJob
+  - name: Opportunity_MaxStoreToJob
     title: Max storage-to-job
-    desc: *dist
-  - name: MaxStoreToJobPctOrigTrip
+  - name: Opportunity_MaxStoreToJobPctOrigTrip
     title: Max storage-to-job % of original trip
-    desc: *dist
-  - name: MaxStoreToJobRegionLookCount
+  - name: Opportunity_MaxStoreToJobRegionLookCount
     title: Max storage-to-job region look count
     desc: *region_look_count
