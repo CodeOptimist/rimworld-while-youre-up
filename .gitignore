@@ -2,6 +2,7 @@
 .user
 About.xml
 Assemblies/
+Keys.xml
 Settings.xml
 Source/.vs/
 Source/bin/

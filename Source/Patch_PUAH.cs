@@ -100,9 +100,10 @@ namespace JobsOfOpportunity
 
                     if (!cachedStoreCells.TryGetValue(t, out foundCell) && !TryFindBestBetterStoreCellFor_ClosestToDestCell(
                         t,
-                        beforeCarry?.destCell ?? IntVec3.Invalid,
+                        beforeCarry?.carryTarget.Cell ?? IntVec3.Invalid,
                         carrier, map, currentPriority, faction, out foundCell,
-                        tickContext != TickContext.HaulToInventory_HasJobOnThing && Find.TickManager.CurTimeSpeed == TimeSpeed.Normal && (beforeCarry?.destCell.IsValid ?? false),
+                        tickContext != TickContext.HaulToInventory_HasJobOnThing && Find.TickManager.CurTimeSpeed == TimeSpeed.Normal
+                                                                                 && (beforeCarry?.carryTarget.IsValid ?? false),
                         tickContext == TickContext.HaulToInventory_JobOnThing_AllocateThingAtCell ? skipCells : null)) {
                         __result = false;
                         return false;
@@ -155,7 +156,9 @@ namespace JobsOfOpportunity
                         // should only be necessary because specialHauls aren't saved in file like CompHauledToInventory
                         var beforeCarry = puah_ as PuahBeforeCarry;
                         if (TryFindBestBetterStoreCellFor_ClosestToDestCell(
-                            thing, beforeCarry?.destCell ?? IntVec3.Invalid, pawn, pawn.Map, StoreUtility.CurrentStoragePriorityOf(thing), pawn.Faction, out storeCell, false))
+                            thing,
+                            beforeCarry?.carryTarget.Cell ?? IntVec3.Invalid,
+                            pawn, pawn.Map, StoreUtility.CurrentStoragePriorityOf(thing), pawn.Faction, out storeCell, false))
                             puah_.defHauls.Add(thing.def, storeCell);
                         return storeCell; // IntVec3.Invalid is okay here
                     }

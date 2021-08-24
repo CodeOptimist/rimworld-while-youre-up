@@ -16,10 +16,21 @@ namespace JobsOfOpportunity
 
         public class SpecialHaul
         {
-            public string reportPrefix;
+            readonly string reportKey;
+            LocalTargetInfo target;
 
-            public SpecialHaul(string reportPrefix) {
-                this.reportPrefix = reportPrefix;
+            protected SpecialHaul() {
+            }
+
+            public SpecialHaul(string reportKey, LocalTargetInfo target) {
+                this.reportKey = reportKey;
+                this.target = target;
+            }
+
+            public string GetReport(string text) {
+                if (this is PuahWithBetterUnloading puah)
+                    return puah.GetLoadReport(text);
+                return reportKey.ModTranslate(text.Named("ORIGINAL"), target.Label.Named("DESTINATION"));
             }
         }
 
@@ -27,8 +38,8 @@ namespace JobsOfOpportunity
         {
             public Dictionary<ThingDef, IntVec3> defHauls = new Dictionary<ThingDef, IntVec3>();
 
-            public PuahWithBetterUnloading(string reportPrefix = "") : base(reportPrefix) {
-            }
+            public virtual string GetLoadReport(string text)   => "PickUpAndHaulPlus_LoadReport".ModTranslate(text.Named("ORIGINAL"));
+            public virtual string GetUnloadReport(string text) => "PickUpAndHaulPlus_UnloadReport".ModTranslate(text.Named("ORIGINAL"));
 
             public void TrackThing(Thing thing, IntVec3 storeCell, bool isInitial = false, [CallerMemberName] string callerName = "") {
 #if DEBUG
@@ -59,25 +70,31 @@ namespace JobsOfOpportunity
 
         public class PuahOpportunity : PuahWithBetterUnloading
         {
-            public IntVec3 jobCell;
-            public IntVec3 startCell;
+            public LocalTargetInfo jobTarget;
+            public IntVec3         startCell;
 
             // reminder that storeCell is just *some* cell in our stockpile, actual unload cell is determined at unload
             public List<(Thing thing, IntVec3 storeCell)> hauls = new List<(Thing thing, IntVec3 storeCell)>();
 
-            public PuahOpportunity(Pawn pawn, IntVec3 jobCell) : base("Opportunistically ") {
+            public PuahOpportunity(Pawn pawn, LocalTargetInfo jobTarget) {
                 startCell = pawn.Position;
-                this.jobCell = jobCell;
+                this.jobTarget = jobTarget;
             }
+
+            public override string GetLoadReport(string text)   => "Opportunity_LoadReport".ModTranslate(text.Named("ORIGINAL"), jobTarget.Label.Named("DESTINATION"));
+            public override string GetUnloadReport(string text) => "Opportunity_UnloadReport".ModTranslate(text.Named("ORIGINAL"), jobTarget.Label.Named("DESTINATION"));
         }
 
         public class PuahBeforeCarry : PuahWithBetterUnloading
         {
-            public IntVec3 destCell;
+            public LocalTargetInfo carryTarget;
 
-            public PuahBeforeCarry(IntVec3 destCell) : base("Optimally ") {
-                this.destCell = destCell;
+            public PuahBeforeCarry(LocalTargetInfo carryTarget) {
+                this.carryTarget = carryTarget;
             }
+
+            public override string GetLoadReport(string text)   => "HaulBeforeCarry_LoadReport".ModTranslate(text.Named("ORIGINAL"), carryTarget.Label.Named("DESTINATION"));
+            public override string GetUnloadReport(string text) => "HaulBeforeCarry_UnloadReport".ModTranslate(text.Named("ORIGINAL"), carryTarget.Label.Named("DESTINATION"));
         } // ReSharper disable UnusedType.Local
         // ReSharper disable UnusedMember.Local
         // ReSharper disable UnusedParameter.Local
@@ -106,9 +123,9 @@ namespace JobsOfOpportunity
         static class JobDriver_HaulToCell__GetReport_Patch
         {
             [HarmonyPostfix]
-            static void SpecialHaulJobReport(JobDriver_HaulToCell __instance, ref string __result) {
+            static void SpecialHaulGetReport(JobDriver_HaulToCell __instance, ref string __result) {
                 if (!specialHauls.TryGetValue(__instance.pawn, out var specialHaul)) return;
-                __result = specialHaul.reportPrefix + __result;
+                __result = specialHaul.GetReport(__result.TrimEnd('.'));
             }
         }
 
@@ -149,17 +166,17 @@ namespace JobsOfOpportunity
                 static MethodBase TargetMethod() => AccessTools.DeclaredMethod(typeof(JobDriver), nameof(JobDriver.GetReport));
 
                 [HarmonyPostfix]
-                static void SpecialHaulJobReport(JobDriver __instance, ref string __result) {
+                static void SpecialHaulGetReport(JobDriver __instance, ref string __result) {
                     if (!settings.HaulToInventory || !settings.Enabled) return;
-
                     if (PuahJobDriver_HaulToInventoryType.IsInstanceOfType(__instance)) {
-                        if (!specialHauls.TryGetValue(__instance.pawn, out var specialHaul))
-                            return;
-                        __result = specialHaul.reportPrefix + __result;
+                        if (specialHauls.GetValueSafe(__instance.pawn) is PuahWithBetterUnloading puah)
+                            __result = puah.GetLoadReport(__result.TrimEnd('.'));
                     }
 
-                    if (PuahJobDriver_UnloadYourHauledInventoryType.IsInstanceOfType(__instance))
-                        __result = "Efficiently " + __result;
+                    if (PuahJobDriver_UnloadYourHauledInventoryType.IsInstanceOfType(__instance)) {
+                        if (specialHauls.GetValueSafe(__instance.pawn) is PuahWithBetterUnloading puah)
+                            __result = puah.GetUnloadReport(__result.TrimEnd('.'));
+                    }
                 }
             }
         }

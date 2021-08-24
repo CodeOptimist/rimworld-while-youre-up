@@ -13,9 +13,16 @@ using Debug = System.Diagnostics.Debug;
 
 namespace JobsOfOpportunity
 {
+    static class Extensions
+    {
+        public static string ModTranslate(this string key, params NamedArgument[] args) {
+            return $"{Mod.modId}_{key}".Translate(args);
+        }
+    }
+
     partial class Mod : Verse.Mod
     {
-        const           string    modId = "CodeOptimist.JobsOfOpportunity"; // explicit because PackageId may be changed e.g. "__copy__" suffix
+        public const    string    modId = "CodeOptimist.JobsOfOpportunity"; // explicit because PackageId may be changed e.g. "__copy__" suffix
         static          Verse.Mod mod;
         static          Settings  settings;
         static          bool      foundConfig;
@@ -91,7 +98,7 @@ namespace JobsOfOpportunity
                 // Debug.WriteLine($"Opportunity checking {job}");
                 var pawn = Traverse.Create(jobTracker).Field("pawn").GetValue<Pawn>();
                 if (AlreadyHauling(pawn)) return null;
-                var jobCell = job.targetA.Cell;
+                var jobTarget = job.targetA;
 
                 if (job.def == JobDefOf.DoBill && settings.HaulBeforeBill) {
                     // Debug.WriteLine($"Bill: '{job.bill}' label: '{job.bill.Label}'");
@@ -102,7 +109,7 @@ namespace JobsOfOpportunity
                         if (HaulAIUtility.PawnCanAutomaticallyHaulFast(pawn, localTargetInfo.Thing, false)) {
                             // permitted when bleeding because facilitates whatever bill is important enough to do while bleeding
                             //  may save precious time going back for ingredients... unless we want only 1 medicine ASAP; it's a trade-off
-                            var storeJob = HaulBeforeCarry(pawn, jobCell, localTargetInfo.Thing); // HaulBeforeBill
+                            var storeJob = HaulBeforeCarry(pawn, jobTarget, localTargetInfo.Thing); // HaulBeforeBill
                             if (storeJob != null) return JobUtility__TryStartErrorRecoverJob_Patch.CatchStanding(pawn, storeJob);
                         }
                     }
@@ -110,8 +117,7 @@ namespace JobsOfOpportunity
 
                 if (settings.SkipIfCaravan && job.def == JobDefOf.PrepareCaravan_GatherItems) return null;
                 if (settings.SkipIfBleeding && pawn.health.hediffSet.BleedRateTotal > 0.001f) return null;
-                // return JobUtility_TryStartErrorRecoverJob_Patch.CatchStanding(pawn, Opportunity.TryHaul(pawn, jobCell) ?? Cleaning.TryClean(pawn, jobCell));
-                return JobUtility__TryStartErrorRecoverJob_Patch.CatchStanding(pawn, Opportunity.TryHaul(pawn, jobCell));
+                return JobUtility__TryStartErrorRecoverJob_Patch.CatchStanding(pawn, Opportunity.TryHaul(pawn, jobTarget));
             }
         }
 

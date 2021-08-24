@@ -21,16 +21,16 @@ namespace JobsOfOpportunity
             // ReSharper disable once UnusedMember.Local
             enum ProximityStage { Initial, PawnToThing, StoreToJob, PawnToThingRegion, Fail, Success }
 
-            public static Job TryHaul(Pawn pawn, IntVec3 jobCell) {
+            public static Job TryHaul(Pawn pawn, LocalTargetInfo jobTarget) {
                 Job _TryHaul() {
                     switch (settings.HaulProximities) {
                         case Settings.HaulProximitiesEnum.Both:
-                            return TryHaulStage(pawn, jobCell, ProximityCheck.Both);
+                            return TryHaulStage(pawn, jobTarget, ProximityCheck.Both);
                         case Settings.HaulProximitiesEnum.Either:
-                            return TryHaulStage(pawn, jobCell, ProximityCheck.Both) ?? TryHaulStage(pawn, jobCell, ProximityCheck.Either);
+                            return TryHaulStage(pawn, jobTarget, ProximityCheck.Both) ?? TryHaulStage(pawn, jobTarget, ProximityCheck.Either);
                         case Settings.HaulProximitiesEnum.Ignored:
-                            return TryHaulStage(pawn, jobCell, ProximityCheck.Both)
-                                   ?? TryHaulStage(pawn, jobCell, ProximityCheck.Either) ?? TryHaulStage(pawn, jobCell, ProximityCheck.Ignored);
+                            return TryHaulStage(pawn, jobTarget, ProximityCheck.Both)
+                                   ?? TryHaulStage(pawn, jobTarget, ProximityCheck.Either) ?? TryHaulStage(pawn, jobTarget, ProximityCheck.Ignored);
                         default:
                             return null;
                     }
@@ -104,27 +104,27 @@ namespace JobsOfOpportunity
                 return ProximityStage.Success;
             }
 
-            static Job TryHaulStage(Pawn pawn, IntVec3 jobCell, ProximityCheck proximityCheck) {
+            static Job TryHaulStage(Pawn pawn, LocalTargetInfo jobTarget, ProximityCheck proximityCheck) {
                 foreach (var thing in pawn.Map.listerHaulables.ThingsPotentiallyNeedingHauling()) {
                     if (thingProximityStage.TryGetValue(thing, out var proximityStage) && proximityStage == ProximityStage.Fail)
                         continue;
 
-                    var newProximityStage = CanHaul(proximityStage, pawn, thing, jobCell, proximityCheck, out var storeCell);
+                    var newProximityStage = CanHaul(proximityStage, pawn, thing, jobTarget.Cell, proximityCheck, out var storeCell);
                     // Debug.WriteLine($"{pawn} for {thing} proximity stage: {proximityStage} -> {newProximityStage}");
                     thingProximityStage.SetOrAdd(thing, newProximityStage);
                     if (newProximityStage != ProximityStage.Success) continue;
 
                     if (DebugViewSettings.drawOpportunisticJobs) {
-                        pawn.Map.debugDrawer.FlashLine(pawn.Position,  jobCell,        600, SimpleColor.Red);
+                        pawn.Map.debugDrawer.FlashLine(pawn.Position,  jobTarget.Cell, 600, SimpleColor.Red);
                         pawn.Map.debugDrawer.FlashLine(pawn.Position,  thing.Position, 600, SimpleColor.Green);
                         pawn.Map.debugDrawer.FlashLine(thing.Position, storeCell,      600, SimpleColor.Green);
-                        pawn.Map.debugDrawer.FlashLine(storeCell,      jobCell,        600, SimpleColor.Green);
+                        pawn.Map.debugDrawer.FlashLine(storeCell,      jobTarget.Cell, 600, SimpleColor.Green);
                     }
 
-                    var puahJob = PuahJob(new PuahOpportunity(pawn, jobCell), pawn, thing, storeCell);
+                    var puahJob = PuahJob(new PuahOpportunity(pawn, jobTarget), pawn, thing, storeCell);
                     if (puahJob != null) return puahJob;
 
-                    specialHauls.SetOrAdd(pawn, new SpecialHaul("Opportunistically "));
+                    specialHauls.SetOrAdd(pawn, new SpecialHaul("Opportunity_LoadReport", jobTarget));
                     return HaulAIUtility.HaulToCellStorageJob(pawn, thing, storeCell, false);
                 }
 
@@ -189,8 +189,8 @@ namespace JobsOfOpportunity
                 }
 
                 var lastThingToFirstStore = hauls.Last().thing.Position.DistanceTo(hauls.Last().storeCell);
-                var lastStoreToJob = haulsByUnloadOrder.Last().storeCell.DistanceTo(opportunity.jobCell);
-                var origTrip = opportunity.startCell.DistanceTo(opportunity.jobCell);
+                var lastStoreToJob = haulsByUnloadOrder.Last().storeCell.DistanceTo(opportunity.jobTarget.Cell);
+                var origTrip = opportunity.startCell.DistanceTo(opportunity.jobTarget.Cell);
                 var totalTrip = startToLastThing + lastThingToFirstStore + firstStoreToLastStore + lastStoreToJob;
                 var maxTotalTrip = origTrip * settings.MaxTotalTripPctOrigTrip;
                 var newLegs = startToLastThing + firstStoreToLastStore + lastStoreToJob;
@@ -217,8 +217,8 @@ namespace JobsOfOpportunity
                     + $" -> {string.Join(" -> ", hauls.Select(x => $"{x.thing}{x.thing.Position}"))} = {startToLastThing}");
                 Debug.WriteLine($"\tlastThingToStore: {hauls.Last().thing}{hauls.Last().thing.Position} -> {hauls.Last()} = {lastThingToFirstStore}");
                 Debug.WriteLine($"\tstoreToLastStore: {string.Join(" -> ", haulsByUnloadOrder)} = {firstStoreToLastStore}");
-                Debug.WriteLine($"\tlastStoreToJob: {haulsByUnloadOrder.Last()} -> {opportunity.jobCell} = {lastStoreToJob}");
-                Debug.WriteLine($"\torigTrip: {pawn}{opportunity.startCell} -> {opportunity.jobCell} = {origTrip}");
+                Debug.WriteLine($"\tlastStoreToJob: {haulsByUnloadOrder.Last()} -> {opportunity.jobTarget} = {lastStoreToJob}");
+                Debug.WriteLine($"\torigTrip: {pawn}{opportunity.startCell} -> {opportunity.jobTarget} = {origTrip}");
                 Debug.WriteLine($"\ttotalTrip: {startToLastThing} + {lastThingToFirstStore} + {firstStoreToLastStore} + {lastStoreToJob}  = {totalTrip}");
                 Debug.WriteLine($"\tmaxTotalTrip: {origTrip} * {settings.MaxTotalTripPctOrigTrip} = {maxTotalTrip}");
                 Debug.WriteLine($"\tnewLegs: {startToLastThing} + {firstStoreToLastStore} + {lastStoreToJob} = {newLegs}");

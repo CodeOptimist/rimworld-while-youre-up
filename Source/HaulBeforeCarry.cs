@@ -60,7 +60,7 @@ namespace JobsOfOpportunity
             }
         }
 
-        public static Job HaulBeforeCarry(Pawn pawn, IntVec3 destCell, Thing thing) {
+        public static Job HaulBeforeCarry(Pawn pawn, LocalTargetInfo carryTarget, Thing thing) {
             // "Haul before supply" enters here, "Haul before bill" enters from TryOpportunisticJob
 
             if (thing.ParentHolder is Pawn_InventoryTracker) return null;
@@ -68,29 +68,29 @@ namespace JobsOfOpportunity
             // proper way is to re-check after grabbing everything, but here's a quick hack to at least avoid it with stone chunks
             if (MassUtility.WillBeOverEncumberedAfterPickingUp(pawn, thing, 2)) return null; // already going for 1, so 2 to check for another
             if (!TryFindBestBetterStoreCellFor_ClosestToDestCell(
-                thing, destCell, pawn, pawn.Map, StoreUtility.CurrentStoragePriorityOf(thing), pawn.Faction, out var storeCell, true)) return null;
+                thing, carryTarget.Cell, pawn, pawn.Map, StoreUtility.CurrentStoragePriorityOf(thing), pawn.Faction, out var storeCell, true)) return null;
 
-            var fromHereDist = thing.Position.DistanceTo(destCell);
-            var fromStoreDist = storeCell.DistanceTo(destCell);
+            var fromHereDist = thing.Position.DistanceTo(carryTarget.Cell);
+            var fromStoreDist = storeCell.DistanceTo(carryTarget.Cell);
             Debug.WriteLine($"Carry from here: {fromHereDist}; carry from store: {fromStoreDist}");
 
             if (fromStoreDist < fromHereDist) {
                 Debug.WriteLine(
                     $"'{pawn}' prefixed job with haul for '{thing.Label}'"
-                    + $" because '{storeCell.GetSlotGroup(pawn.Map)}' is closer to original destination '{destCell}'.");
+                    + $" because '{storeCell.GetSlotGroup(pawn.Map)}' is closer to original destination '{carryTarget} {carryTarget.Cell}'.");
 
                 if (DebugViewSettings.drawOpportunisticJobs) {
                     // ReSharper disable once RedundantArgumentDefaultValue
-                    pawn.Map.debugDrawer.FlashLine(pawn.Position,  thing.Position, 600, SimpleColor.White);
-                    pawn.Map.debugDrawer.FlashLine(thing.Position, destCell,       600, SimpleColor.Magenta);
-                    pawn.Map.debugDrawer.FlashLine(thing.Position, storeCell,      600, SimpleColor.Cyan);
-                    pawn.Map.debugDrawer.FlashLine(storeCell,      destCell,       600, SimpleColor.Cyan);
+                    pawn.Map.debugDrawer.FlashLine(pawn.Position,  thing.Position,   600, SimpleColor.White);
+                    pawn.Map.debugDrawer.FlashLine(thing.Position, carryTarget.Cell, 600, SimpleColor.Magenta);
+                    pawn.Map.debugDrawer.FlashLine(thing.Position, storeCell,        600, SimpleColor.Cyan);
+                    pawn.Map.debugDrawer.FlashLine(storeCell,      carryTarget.Cell, 600, SimpleColor.Cyan);
                 }
 
-                var puahJob = PuahJob(new PuahBeforeCarry(destCell), pawn, thing, storeCell);
+                var puahJob = PuahJob(new PuahBeforeCarry(carryTarget), pawn, thing, storeCell);
                 if (puahJob != null) return puahJob;
 
-                specialHauls.SetOrAdd(pawn, new SpecialHaul("Optimally "));
+                specialHauls.SetOrAdd(pawn, new SpecialHaul("HaulBeforeCarry_LoadReport", carryTarget));
                 return HaulAIUtility.HaulToCellStorageJob(pawn, thing, storeCell, false);
             }
 
