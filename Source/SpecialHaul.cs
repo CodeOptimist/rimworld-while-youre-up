@@ -88,9 +88,11 @@ namespace JobsOfOpportunity
         public class PuahBeforeCarry : PuahWithBetterUnloading
         {
             public LocalTargetInfo carryTarget;
+            public IntVec3         storeCell;
 
-            public PuahBeforeCarry(LocalTargetInfo carryTarget) {
+            public PuahBeforeCarry(LocalTargetInfo carryTarget, IntVec3 storeCell) {
                 this.carryTarget = carryTarget;
+                this.storeCell = storeCell;
             }
 
             public override string GetLoadReport(string text)   => "HaulBeforeCarry_LoadReport".ModTranslate(text.Named("ORIGINAL"), carryTarget.Label.Named("DESTINATION"));

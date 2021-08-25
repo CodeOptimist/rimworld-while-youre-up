@@ -116,6 +116,33 @@ namespace JobsOfOpportunity
                     if (opportunity != null && !Opportunity.TrackPuahThingIfOpportune(opportunity, t, carrier, ref foundCell))
                         return Skip(__result = false);
 
+                    if (beforeCarry != null) {
+                        var foundCellGroup = foundCell.GetSlotGroup(map);
+
+                        // only grab extra things going to the same store
+                        if (foundCellGroup != beforeCarry.storeCell.GetSlotGroup(map)) return Skip(__result = false);
+                        // Debug.WriteLine($"{t} is destined for same storage {foundCellGroup} {foundCell}");
+
+                        Debug.Assert(foundCellGroup.Settings.Priority > StoragePriority.Unstored);
+                        if (foundCellGroup.Settings.Priority == t.Position.GetSlotGroup(map)?.Settings?.Priority) {
+                            if (carrier.CurJobDef == JobDefOf.HaulToContainer && carrier.CurJob.targetC.Thing is Frame frame) {
+                                if (!frame.cachedMaterialsNeeded.Select(x => x.thingDef).Contains(t.def))
+                                    return Skip(__result = false);
+                                Debug.WriteLine(
+                                    $"APPROVED {t} {t.Position} as needed supplies for {beforeCarry.carryTarget}"
+                                    + $" headed to same-priority storage {foundCellGroup} {foundCell}.");
+                            }
+
+                            if (carrier.CurJobDef == JobDefOf.DoBill) {
+                                if (!carrier.CurJob.targetQueueB.Select(x => x.Thing?.def).Contains(t.def))
+                                    return Skip(__result = false);
+                                Debug.WriteLine(
+                                    $"APPROVED {t} {t.Position} as ingredients for {beforeCarry.carryTarget}"
+                                    + $" headed to same-priority storage {foundCellGroup} {foundCell}.");
+                            }
+                        }
+                    }
+
                     if (tickContext == TickContext.HaulToInventory_JobOnThing_AllocateThingAtCell) {
                         if (puah == null) {
                             puah = new PuahWithBetterUnloading();

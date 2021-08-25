@@ -87,7 +87,7 @@ namespace JobsOfOpportunity
                     pawn.Map.debugDrawer.FlashLine(storeCell,      carryTarget.Cell, 600, SimpleColor.Cyan);
                 }
 
-                var puahJob = PuahJob(new PuahBeforeCarry(carryTarget), pawn, thing, storeCell);
+                var puahJob = PuahJob(new PuahBeforeCarry(carryTarget, storeCell), pawn, thing, storeCell);
                 if (puahJob != null) return puahJob;
 
                 specialHauls.SetOrAdd(pawn, new SpecialHaul("HaulBeforeCarry_LoadReport", carryTarget));
