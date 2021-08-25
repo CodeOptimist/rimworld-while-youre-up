@@ -46,8 +46,8 @@ namespace JobsOfOpportunity
             [HarmonyPrefix]
             static bool IgnoreCouldNotLoadReferenceOfRemovedModStorageBuildings(string text) {
                 if (ignoreLoadReferenceErrors && text.StartsWith("Could not load reference to "))
-                    return false;
-                return true;
+                    return Skip();
+                return Original();
             }
         }
 

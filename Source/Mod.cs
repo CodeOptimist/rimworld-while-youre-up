@@ -58,6 +58,9 @@ namespace JobsOfOpportunity
             harmony.PatchAll();
         }
 
+        static bool Original(object _ = null) => true;
+        static bool Skip(object _ = null)     => false;
+
         public override string SettingsCategory() {
             return mod.Content.Name;
         }
@@ -158,12 +161,19 @@ namespace JobsOfOpportunity
                 if (slotGroup.Settings.Priority == currentPriority && !beforeCarry.IsValid) break; // our addition
 
                 // our additions
+                var stockpile = slotGroup.parent as Zone_Stockpile;
                 var buildingStorage = slotGroup.parent as Building_Storage;
-                if (opportunity.IsValid && buildingStorage != null && !settings.Opportunity_BuildingFilter.Allows(buildingStorage.def)) continue;
+
+                if (opportunity.IsValid) {
+                    if (stockpile != null && !settings.Opportunity_ToStockpiles) continue;
+                    if (buildingStorage != null && !settings.Opportunity_BuildingFilter.Allows(buildingStorage.def)) continue;
+                }
+
                 if (beforeCarry.IsValid) {
                     if (!settings.HaulBeforeCarry_ToEqualPriority && slotGroup.Settings.Priority == currentPriority) break;
                     if (settings.HaulBeforeCarry_ToEqualPriority && thing.Position.IsValid && slotGroup == map.haulDestinationManager.SlotGroupAt(thing.Position)) continue;
 
+                    if (stockpile != null && !settings.HaulBeforeCarry_ToStockpiles) continue;
                     if (buildingStorage != null) {
                         if (!settings.HaulBeforeCarry_BuildingFilter.Allows(buildingStorage.def)) continue;
                         // if we don't consider is suitable for opportunities (e.g. slow storing) we won't consider it suitable for same-priority delivery

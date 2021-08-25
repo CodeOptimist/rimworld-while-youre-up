@@ -71,7 +71,7 @@ namespace JobsOfOpportunity
                     PushTickContext(out var original, TickContext.HaulToInventory_JobOnThing_AllocateThingAtCell);
                     __result = StoreUtility.TryFindBestBetterStoreCellFor(thing, carrier, map, currentPriority, faction, out foundCell); // patched below
                     PopTickContext(original);
-                    return false;
+                    return Skip();
                 }
             }
 
@@ -85,9 +85,9 @@ namespace JobsOfOpportunity
                 [HarmonyPrefix]
                 static bool SpecialHaulAwareTryFindStore(ref bool __result, Thing t, Pawn carrier, Map map, StoragePriority currentPriority,
                     Faction faction, ref IntVec3 foundCell, bool needAccurateResult) {
-                    if (carrier == null || !settings.UsePickUpAndHaulPlus || !settings.Enabled) return true;
+                    if (carrier == null || !settings.UsePickUpAndHaulPlus || !settings.Enabled) return Original();
                     var isUnloadJob = carrier.CurJobDef == DefDatabase<JobDef>.GetNamed("UnloadYourHauledInventory");
-                    if (tickContext == TickContext.None && !isUnloadJob) return true;
+                    if (tickContext == TickContext.None && !isUnloadJob) return Original();
 
                     var puah = specialHauls.GetValueSafe(carrier) as PuahWithBetterUnloading;
                     var opportunity = puah as PuahOpportunity;
@@ -105,23 +105,16 @@ namespace JobsOfOpportunity
                         // needAccurateResult may give us a shorter path, giving special hauls a better chance
                         tickContext != TickContext.HaulToInventory_HasJobOnThing && (opportunityTarget.IsValid || beforeCarryTarget.IsValid)
                                                                                  && Find.TickManager.CurTimeSpeed == TimeSpeed.Normal,
-                        tickContext == TickContext.HaulToInventory_JobOnThing_AllocateThingAtCell ? skipCells : null)) {
-                        __result = false;
-                        return false;
-                    }
+                        tickContext == TickContext.HaulToInventory_JobOnThing_AllocateThingAtCell ? skipCells : null))
+                        return Skip(__result = false);
 
-                    if (isUnloadJob) {
-                        __result = true;
-                        return false;
-                    }
+                    if (isUnloadJob) return Skip(__result = true);
 
                     // don't use cache with unload, since it's over multiple ticks
                     cachedStoreCells.SetOrAdd(t, foundCell);
 
-                    if (opportunity != null && !Opportunity.TrackPuahThingIfOpportune(opportunity, t, carrier, ref foundCell)) {
-                        __result = false;
-                        return false;
-                    }
+                    if (opportunity != null && !Opportunity.TrackPuahThingIfOpportune(opportunity, t, carrier, ref foundCell))
+                        return Skip(__result = false);
 
                     if (tickContext == TickContext.HaulToInventory_JobOnThing_AllocateThingAtCell) {
                         if (puah == null) {
@@ -131,8 +124,7 @@ namespace JobsOfOpportunity
                         puah.TrackThing(t, foundCell);
                     }
 
-                    __result = true;
-                    return false;
+                    return Skip(__result = true);
                 }
             }
 
@@ -144,7 +136,7 @@ namespace JobsOfOpportunity
 
                 [HarmonyPrefix]
                 static bool SpecialHaulAwareFirstUnloadableThing(ref ThingCount __result, Pawn pawn) {
-                    if (!settings.UsePickUpAndHaulPlus || !settings.Enabled) return true;
+                    if (!settings.UsePickUpAndHaulPlus || !settings.Enabled) return Original();
 
                     var hauledToInventoryComp =
                         (ThingComp)AccessTools.DeclaredMethod(typeof(ThingWithComps), "GetComp").MakeGenericMethod(PuahCompHauledToInventoryType).Invoke(pawn, null);
@@ -170,10 +162,8 @@ namespace JobsOfOpportunity
                     else
                         firstThingToUnload = carriedThings.FirstOrDefault();
 
-                    if (firstThingToUnload == default) {
-                        __result = default;
-                        return false;
-                    }
+                    if (firstThingToUnload == default)
+                        return Skip(__result = default);
 
                     if (!carriedThings.Intersect(pawn.inventory.innerContainer).Contains(firstThingToUnload)) {
                         // can't be removed from dropping / delivering, so remove now
@@ -181,14 +171,11 @@ namespace JobsOfOpportunity
 
                         // because of merges
                         var thingFoundByDef = pawn.inventory.innerContainer.FirstOrDefault(t => t.def == firstThingToUnload.def);
-                        if (thingFoundByDef != default) {
-                            __result = new ThingCount(thingFoundByDef, thingFoundByDef.stackCount);
-                            return false;
-                        }
+                        if (thingFoundByDef != default)
+                            return Skip(__result = new ThingCount(thingFoundByDef, thingFoundByDef.stackCount));
                     }
 
-                    __result = new ThingCount(firstThingToUnload, firstThingToUnload.stackCount);
-                    return false;
+                    return Skip(__result = new ThingCount(firstThingToUnload, firstThingToUnload.stackCount));
                 }
             }
         }
