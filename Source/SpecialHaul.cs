@@ -86,7 +86,13 @@ namespace JobsOfOpportunity
         static class JobDriver_HaulToCell__MakeNewToils_Patch
         {
             [HarmonyPostfix]
-            static void ClearSpecialHaulOnFinish(JobDriver __instance) => __instance.AddFinishAction(() => specialHauls.Remove(__instance.pawn));
+            static void ClearSpecialHaulOnFinish(JobDriver __instance) =>
+                __instance.AddFinishAction(
+                    () => {
+                        // puah special will be removed after unloading
+                        if (specialHauls.TryGetValue(__instance.pawn, out var specialHaul) && !(specialHaul is PuahWithBetterUnloading))
+                            specialHauls.Remove(__instance.pawn);
+                    });
         }
 
         [HarmonyPatch(typeof(JobDriver_HaulToCell), nameof(JobDriver_HaulToCell.GetReport))]
