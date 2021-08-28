@@ -60,6 +60,20 @@ namespace JobsOfOpportunity
             }
         }
 
+        public class PuahBeforeCarry : PuahWithBetterUnloading
+        {
+            public LocalTargetInfo carryTarget;
+            public IntVec3         storeCell;
+
+            public PuahBeforeCarry(LocalTargetInfo carryTarget, IntVec3 storeCell) {
+                this.carryTarget = carryTarget;
+                this.storeCell = storeCell;
+            }
+
+            public override string GetLoadReport(string text)   => "HaulBeforeCarry_LoadReport".ModTranslate(text.Named("ORIGINAL"), carryTarget.Label.Named("DESTINATION"));
+            public override string GetUnloadReport(string text) => "HaulBeforeCarry_UnloadReport".ModTranslate(text.Named("ORIGINAL"), carryTarget.Label.Named("DESTINATION"));
+        }
+
         public static Job HaulBeforeCarry(Pawn pawn, LocalTargetInfo carryTarget, Thing thing) {
             // "Haul before supply" enters here, "Haul before bill" enters from TryOpportunisticJob
 
@@ -85,6 +99,10 @@ namespace JobsOfOpportunity
                     pawn.Map.debugDrawer.FlashLine(thing.Position, carryTarget.Cell, 600, SimpleColor.Magenta);
                     pawn.Map.debugDrawer.FlashLine(thing.Position, storeCell,        600, SimpleColor.Cyan);
                     pawn.Map.debugDrawer.FlashLine(storeCell,      carryTarget.Cell, 600, SimpleColor.Cyan);
+#if DEBUG
+                    // if (!Find.Selector.SelectedPawns.Any())
+                    //     CameraJumper.TrySelect(pawn);
+#endif
                 }
 
                 var puahJob = PuahJob(new PuahBeforeCarry(carryTarget, storeCell), pawn, thing, storeCell);

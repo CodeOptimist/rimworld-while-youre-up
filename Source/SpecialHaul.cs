@@ -67,20 +67,6 @@ namespace JobsOfOpportunity
                 if (callerName != "TrackThingIfOpportune")
                     Debug.WriteLine($"{RealTime.frameCount} {this} {callerName}: {thing} -> {storeCell}");
             }
-        }
-
-        public class PuahBeforeCarry : PuahWithBetterUnloading
-        {
-            public LocalTargetInfo carryTarget;
-            public IntVec3         storeCell;
-
-            public PuahBeforeCarry(LocalTargetInfo carryTarget, IntVec3 storeCell) {
-                this.carryTarget = carryTarget;
-                this.storeCell = storeCell;
-            }
-
-            public override string GetLoadReport(string text)   => "HaulBeforeCarry_LoadReport".ModTranslate(text.Named("ORIGINAL"), carryTarget.Label.Named("DESTINATION"));
-            public override string GetUnloadReport(string text) => "HaulBeforeCarry_UnloadReport".ModTranslate(text.Named("ORIGINAL"), carryTarget.Label.Named("DESTINATION"));
         } // ReSharper disable UnusedType.Local
         // ReSharper disable UnusedMember.Local
         // ReSharper disable UnusedParameter.Local
