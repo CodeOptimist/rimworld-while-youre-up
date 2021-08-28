@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using HarmonyLib;
@@ -168,32 +169,48 @@ namespace JobsOfOpportunity
                     var hauledToInventoryComp =
                         (ThingComp)AccessTools.DeclaredMethod(typeof(ThingWithComps), "GetComp").MakeGenericMethod(PuahCompHauledToInventoryType).Invoke(pawn, null);
                     var carriedThings = Traverse.Create(hauledToInventoryComp).Method("GetHashSet").GetValue<HashSet<Thing>>();
+                    if (!carriedThings.Any()) return Skip(__result = default);
 
-                    IntVec3 GetStoreCell(PuahWithBetterUnloading puah_, Thing thing) {
+                    (Thing thing, IntVec3 storeCell) GetDefHaul(PuahWithBetterUnloading puah_, Thing thing) {
+                        // It's completely possible storage has changed, that's fine. This is just a guess for order.
                         if (puah_.defHauls.TryGetValue(thing.def, out var storeCell))
-                            return storeCell;
+                            return (thing, storeCell);
 
-                        // should only be necessary because specialHauls aren't saved in file like CompHauledToInventory
+                        // should only be necessary after loading because specialHauls aren't saved in game file like CompHauledToInventory
                         if (TryFindBestBetterStoreCellFor_ClosestToTarget(
                             thing,
                             (puah_ as PuahOpportunity)?.jobTarget ?? IntVec3.Invalid,
                             (puah_ as PuahBeforeCarry)?.carryTarget ?? IntVec3.Invalid,
-                            pawn, pawn.Map, StoreUtility.CurrentStoragePriorityOf(thing), pawn.Faction, out storeCell, false))
+                            pawn, pawn.Map, StoreUtility.CurrentStoragePriorityOf(thing), pawn.Faction, out storeCell, false)) {
+                            // add for next
                             puah_.defHauls.Add(thing.def, storeCell);
-                        return storeCell; // IntVec3.Invalid is okay here
+                        }
+                        return (thing, storeCell);
                     }
 
-                    Thing firstThingToUnload;
-                    if (specialHauls.GetValueSafe(pawn) is PuahWithBetterUnloading puah)
-                        firstThingToUnload = carriedThings.OrderBy(t => GetStoreCell(puah, t).DistanceTo(pawn.Position)).FirstOrDefault();
-                    else
-                        firstThingToUnload = carriedThings.FirstOrDefault();
+                    // just loaded game, or half-state from toggling settings, etc.
+                    if (!(specialHauls.GetValueSafe(pawn) is PuahWithBetterUnloading puah)) {
+                        puah = new PuahWithBetterUnloading();
+                        specialHauls.SetOrAdd(pawn, puah);
+                    }
 
-                    if (firstThingToUnload == default)
-                        return Skip(__result = default);
+                    Thing firstThingToUnload = null;
+                    try {
+                        var closestHaul = carriedThings.Select(t => GetDefHaul(puah, t)).Where(x => x.storeCell.IsValid).MinBy(x => x.storeCell.DistanceTo(pawn.Position));
+                        var closestSlotGroup = closestHaul.storeCell.GetSlotGroup(pawn.Map);
+                        firstThingToUnload = closestSlotGroup == null
+                            ? closestHaul.thing
+                            : carriedThings.Select(t => GetDefHaul(puah, t)).Where(x => x.storeCell.GetSlotGroup(pawn.Map) == closestSlotGroup)
+                                .MinBy(x => (x.thing.def.FirstThingCategory?.index, x.thing.def.defName)).thing;
+                    } catch (InvalidOperationException) {
+                        // MinBy() empty sequence exception if all cells are invalid; rare but possible
+                    }
+
+                    if (firstThingToUnload == null)
+                        firstThingToUnload = carriedThings.MinBy(t => (t.def.FirstThingCategory?.index, t.def.defName));
 
                     if (!carriedThings.Intersect(pawn.inventory.innerContainer).Contains(firstThingToUnload)) {
-                        // can't be removed from dropping / delivering, so remove now
+                        // can't be removed by dropping / delivering, so remove now
                         carriedThings.Remove(firstThingToUnload);
 
                         // because of merges
