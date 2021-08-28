@@ -41,21 +41,22 @@ namespace JobsOfOpportunity
             public virtual string GetLoadReport(string text)   => "PickUpAndHaulPlus_LoadReport".ModTranslate(text.Named("ORIGINAL"));
             public virtual string GetUnloadReport(string text) => "PickUpAndHaulPlus_UnloadReport".ModTranslate(text.Named("ORIGINAL"));
 
-            public void TrackThing(Thing thing, IntVec3 storeCell, bool isInitial = false, [CallerMemberName] string callerName = "") {
+            public void TrackThing(Thing thing, IntVec3 storeCell, bool prepend = false, bool trackDef = true, [CallerMemberName] string callerName = "") {
 #if DEBUG
                 // make deterministic, but merges and initial hauls will still fluctuate
                 storeCell = storeCell.GetSlotGroup(thing.Map).CellsList[0];
 #endif
-
-                defHauls.SetOrAdd(thing.def, storeCell);
+                if (trackDef)
+                    defHauls.SetOrAdd(thing.def, storeCell);
 
                 if (this is PuahOpportunity opportunity) {
-                    // we may run multiple times
+                    // already here because a thing merged into it, or duplicate from HasJobOnThing()
+                    // we want to recalculate with the newer store cell since some time has passed
                     if (opportunity.hauls.LastOrDefault().thing == thing)
                         opportunity.hauls.Pop();
 
                     // special case
-                    if (isInitial) {
+                    if (prepend) {
                         if (opportunity.hauls.FirstOrDefault().thing == thing)
                             opportunity.hauls.RemoveAt(0);
                         opportunity.hauls.Insert(0, (thing, storeCell));
@@ -63,26 +64,9 @@ namespace JobsOfOpportunity
                         opportunity.hauls.Add((thing, storeCell));
                 }
 
-                if (callerName != "TrackPuahThingIfOpportune")
-                    Debug.WriteLine($"{RealTime.frameCount} {this} {callerName}() {thing} -> {storeCell}");
+                if (callerName != "TrackThingIfOpportune")
+                    Debug.WriteLine($"{RealTime.frameCount} {this} {callerName}: {thing} -> {storeCell}");
             }
-        }
-
-        public class PuahOpportunity : PuahWithBetterUnloading
-        {
-            public LocalTargetInfo jobTarget;
-            public IntVec3         startCell;
-
-            // reminder that storeCell is just *some* cell in our stockpile, actual unload cell is determined at unload
-            public List<(Thing thing, IntVec3 storeCell)> hauls = new List<(Thing thing, IntVec3 storeCell)>();
-
-            public PuahOpportunity(Pawn pawn, LocalTargetInfo jobTarget) {
-                startCell = pawn.Position;
-                this.jobTarget = jobTarget;
-            }
-
-            public override string GetLoadReport(string text)   => "Opportunity_LoadReport".ModTranslate(text.Named("ORIGINAL"), jobTarget.Label.Named("DESTINATION"));
-            public override string GetUnloadReport(string text) => "Opportunity_UnloadReport".ModTranslate(text.Named("ORIGINAL"), jobTarget.Label.Named("DESTINATION"));
         }
 
         public class PuahBeforeCarry : PuahWithBetterUnloading
@@ -147,7 +131,7 @@ namespace JobsOfOpportunity
                     // thing from parameter because targetA is null because things are in queues instead
                     //  https://github.com/Mehni/PickUpAndHaul/blob/af50a05a8ae5ca64d9b95fee8f593cf91f13be3d/Source/PickUpAndHaul/WorkGiver_HaulToInventory.cs#L98
                     // JobOnThing() can run additional times (e.g. haulMoreWork toil) so don't assume this is already added if it's an Opportunity or HaulBeforeCarry
-                    puah.TrackThing(thing, __result.targetB.Cell, isInitial: true);
+                    puah.TrackThing(thing, __result.targetB.Cell, prepend: true);
                 }
             }
 

@@ -113,7 +113,7 @@ namespace JobsOfOpportunity
                     // don't use cache with unload, since it's over multiple ticks
                     cachedStoreCells.SetOrAdd(t, foundCell);
 
-                    if (opportunity != null && !Opportunity.TrackPuahThingIfOpportune(opportunity, t, carrier, ref foundCell))
+                    if (opportunity != null && !opportunity.TrackThingIfOpportune(t, carrier, ref foundCell))
                         return Skip(__result = false);
 
                     if (beforeCarry != null) {
