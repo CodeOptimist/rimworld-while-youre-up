@@ -23,7 +23,7 @@ namespace JobsOfOpportunity
 
             public static Job TryHaul(Pawn pawn, LocalTargetInfo jobTarget) {
                 Job _TryHaul() {
-                    switch (settings.HaulProximities) {
+                    switch (settings.Opportunity_HaulProximities) {
                         case Settings.HaulProximitiesEnum.Both:
                             return TryHaulStage(pawn, jobTarget, ProximityCheck.Both);
                         case Settings.HaulProximitiesEnum.Either:
@@ -48,8 +48,8 @@ namespace JobsOfOpportunity
 
                 var pawnToThing = pawn.Position.DistanceTo(thing.Position);
                 if (proximityStage < ProximityStage.StoreToJob) {
-                    var atMax = settings.MaxStartToThing > 0 && pawnToThing > settings.MaxStartToThing;
-                    var atMaxPct = settings.MaxStartToThingPctOrigTrip > 0 && pawnToThing > pawnToJob * settings.MaxStartToThingPctOrigTrip;
+                    var atMax = settings.Opportunity_MaxStartToThing > 0 && pawnToThing > settings.Opportunity_MaxStartToThing;
+                    var atMaxPct = settings.Opportunity_MaxStartToThingPctOrigTrip > 0 && pawnToThing > pawnToJob * settings.Opportunity_MaxStartToThingPctOrigTrip;
                     var pawnToThingFail = atMax || atMaxPct;
                     switch (proximityCheck) {
                         case ProximityCheck.Both when pawnToThingFail: return ProximityStage.PawnToThing;
@@ -57,7 +57,8 @@ namespace JobsOfOpportunity
 
                     var thingToJob = thing.Position.DistanceTo(jobCell);
                     // if this one exceeds the maximum the next maxTotalTripPctOrigTrip check certainly will
-                    if (settings.MaxTotalTripPctOrigTrip > 0 && pawnToThing + thingToJob > pawnToJob * settings.MaxTotalTripPctOrigTrip) return ProximityStage.Fail;
+                    if (settings.Opportunity_MaxTotalTripPctOrigTrip > 0 && pawnToThing + thingToJob > pawnToJob * settings.Opportunity_MaxTotalTripPctOrigTrip)
+                        return ProximityStage.Fail;
                     if (pawn.Map.reservationManager.FirstRespectedReserver(thing, pawn) != null) return ProximityStage.Fail;
                     if (thing.IsForbidden(pawn)) return ProximityStage.Fail;
                     if (!HaulAIUtility.PawnCanAutomaticallyHaulFast(pawn, thing, false)) return ProximityStage.Fail;
@@ -72,8 +73,8 @@ namespace JobsOfOpportunity
 
                 var storeToJob = storeCell.DistanceTo(jobCell);
                 if (proximityStage < ProximityStage.PawnToThingRegion) {
-                    var atMax2 = settings.MaxStoreToJob > 0 && storeToJob > settings.MaxStoreToJob;
-                    var atMaxPct2 = settings.MaxStoreToJobPctOrigTrip > 0 && storeToJob > pawnToJob * settings.MaxStoreToJobPctOrigTrip;
+                    var atMax2 = settings.Opportunity_MaxStoreToJob > 0 && storeToJob > settings.Opportunity_MaxStoreToJob;
+                    var atMaxPct2 = settings.Opportunity_MaxStoreToJobPctOrigTrip > 0 && storeToJob > pawnToJob * settings.Opportunity_MaxStoreToJobPctOrigTrip;
                     var storeToJobFail = atMax2 || atMaxPct2;
                     switch (proximityCheck) {
                         case ProximityCheck.Both when storeToJobFail:                                                   return ProximityStage.StoreToJob;
@@ -81,18 +82,20 @@ namespace JobsOfOpportunity
                     }
 
                     var thingToStore = thing.Position.DistanceTo(storeCell);
-                    if (settings.MaxTotalTripPctOrigTrip > 0 && pawnToThing + thingToStore + storeToJob > pawnToJob * settings.MaxTotalTripPctOrigTrip) return ProximityStage.Fail;
-                    if (settings.MaxNewLegsPctOrigTrip > 0 && pawnToThing + storeToJob > pawnToJob * settings.MaxNewLegsPctOrigTrip) return ProximityStage.Fail;
+                    if (settings.Opportunity_MaxTotalTripPctOrigTrip > 0 && pawnToThing + thingToStore + storeToJob > pawnToJob * settings.Opportunity_MaxTotalTripPctOrigTrip)
+                        return ProximityStage.Fail;
+                    if (settings.Opportunity_MaxNewLegsPctOrigTrip > 0 && pawnToThing + storeToJob > pawnToJob * settings.Opportunity_MaxNewLegsPctOrigTrip)
+                        return ProximityStage.Fail;
                 }
 
                 bool PawnToThingRegionFail() {
-                    return settings.MaxStartToThingRegionLookCount > 0 && !pawn.Position.WithinRegions(
-                        thing.Position, pawn.Map, settings.MaxStartToThingRegionLookCount, TraverseParms.For(pawn));
+                    return settings.Opportunity_MaxStartToThingRegionLookCount > 0 && !pawn.Position.WithinRegions(
+                        thing.Position, pawn.Map, settings.Opportunity_MaxStartToThingRegionLookCount, TraverseParms.For(pawn));
                 }
 
                 bool StoreToJobRegionFail(IntVec3 _storeCell) {
-                    return settings.MaxStoreToJobRegionLookCount > 0 && !_storeCell.WithinRegions(
-                        jobCell, pawn.Map, settings.MaxStoreToJobRegionLookCount, TraverseParms.For(pawn));
+                    return settings.Opportunity_MaxStoreToJobRegionLookCount > 0 && !_storeCell.WithinRegions(
+                        jobCell, pawn.Map, settings.Opportunity_MaxStoreToJobRegionLookCount, TraverseParms.For(pawn));
                 }
 
                 switch (proximityCheck) {
@@ -192,11 +195,11 @@ namespace JobsOfOpportunity
                 var lastStoreToJob = haulsByUnloadOrder.Last().storeCell.DistanceTo(opportunity.jobTarget.Cell);
                 var origTrip = opportunity.startCell.DistanceTo(opportunity.jobTarget.Cell);
                 var totalTrip = startToLastThing + lastThingToFirstStore + firstStoreToLastStore + lastStoreToJob;
-                var maxTotalTrip = origTrip * settings.MaxTotalTripPctOrigTrip;
+                var maxTotalTrip = origTrip * settings.Opportunity_MaxTotalTripPctOrigTrip;
                 var newLegs = startToLastThing + firstStoreToLastStore + lastStoreToJob;
-                var maxNewLegs = origTrip * settings.MaxNewLegsPctOrigTrip;
-                var exceedsMaxTrip = settings.MaxTotalTripPctOrigTrip > 0 && totalTrip > maxTotalTrip;
-                var exceedsMaxNewLegs = settings.MaxNewLegsPctOrigTrip > 0 && newLegs > maxNewLegs;
+                var maxNewLegs = origTrip * settings.Opportunity_MaxNewLegsPctOrigTrip;
+                var exceedsMaxTrip = settings.Opportunity_MaxTotalTripPctOrigTrip > 0 && totalTrip > maxTotalTrip;
+                var exceedsMaxNewLegs = settings.Opportunity_MaxNewLegsPctOrigTrip > 0 && newLegs > maxNewLegs;
                 var isRejected = exceedsMaxTrip || exceedsMaxNewLegs;
 
                 if (isRejected) {
@@ -220,9 +223,9 @@ namespace JobsOfOpportunity
                 Debug.WriteLine($"\tlastStoreToJob: {haulsByUnloadOrder.Last()} -> {opportunity.jobTarget} = {lastStoreToJob}");
                 Debug.WriteLine($"\torigTrip: {pawn}{opportunity.startCell} -> {opportunity.jobTarget} = {origTrip}");
                 Debug.WriteLine($"\ttotalTrip: {startToLastThing} + {lastThingToFirstStore} + {firstStoreToLastStore} + {lastStoreToJob}  = {totalTrip}");
-                Debug.WriteLine($"\tmaxTotalTrip: {origTrip} * {settings.MaxTotalTripPctOrigTrip} = {maxTotalTrip}");
+                Debug.WriteLine($"\tmaxTotalTrip: {origTrip} * {settings.Opportunity_MaxTotalTripPctOrigTrip} = {maxTotalTrip}");
                 Debug.WriteLine($"\tnewLegs: {startToLastThing} + {firstStoreToLastStore} + {lastStoreToJob} = {newLegs}");
-                Debug.WriteLine($"\tmaxNewLegs: {origTrip} * {settings.MaxNewLegsPctOrigTrip} = {maxNewLegs}");
+                Debug.WriteLine($"\tmaxNewLegs: {origTrip} * {settings.Opportunity_MaxNewLegsPctOrigTrip} = {maxNewLegs}");
                 Debug.WriteLine("");
 
                 Debug.WriteLine("Hauls:");

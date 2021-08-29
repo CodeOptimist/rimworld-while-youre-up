@@ -136,7 +136,7 @@ namespace JobsOfOpportunity
             {
                 [HarmonyPostfix]
                 static void TrackInitialHaul(WorkGiver_Scanner __instance, Job __result, Pawn pawn, Thing thing) {
-                    if (__result == null || !settings.HaulToInventory || !settings.Enabled) return;
+                    if (__result == null || !settings.UsePickUpAndHaulPlus || !settings.Enabled) return;
 
                     if (!(specialHauls.GetValueSafe(pawn) is PuahWithBetterUnloading puah)) {
                         puah = new PuahWithBetterUnloading();
@@ -167,7 +167,7 @@ namespace JobsOfOpportunity
 
                 [HarmonyPostfix]
                 static void SpecialHaulGetReport(JobDriver __instance, ref string __result) {
-                    if (!settings.HaulToInventory || !settings.Enabled) return;
+                    if (!settings.UsePickUpAndHaulPlus || !settings.Enabled) return;
                     if (PuahJobDriver_HaulToInventoryType.IsInstanceOfType(__instance)) {
                         if (specialHauls.GetValueSafe(__instance.pawn) is PuahWithBetterUnloading puah)
                             __result = puah.GetLoadReport(__result.TrimEnd('.'));

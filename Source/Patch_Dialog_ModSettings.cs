@@ -21,7 +21,7 @@ namespace JobsOfOpportunity
             }
 
             [HarmonyPostfix]
-            static void SyncDrawSettingToVanilla() => settings.DrawOpportunisticJobs = DebugViewSettings.drawOpportunisticJobs;
+            static void SyncDrawSettingToVanilla() => settings.DrawSpecialHauls = DebugViewSettings.drawOpportunisticJobs;
         }
 
         [HarmonyPatch]
@@ -40,7 +40,7 @@ namespace JobsOfOpportunity
                     : AccessTools.DeclaredField(typeof(Dialog_ModSettings),        "selMod");
                 var selMod = selModField.GetValue(__instance);
 
-                if (settings.HaulBeforeBill && haveCommonSense && (bool)CsHaulingOverBillsSetting.GetValue(null)) {
+                if (settings.HaulBeforeCarry_Bills && haveCommonSense && (bool)CsHaulingOverBillsSetting.GetValue(null)) {
                     var csMod = LoadedModManager.GetMod(CsModType);
                     if (selMod == mod) {
                         CsHaulingOverBillsSetting.SetValue(null, false);
@@ -48,7 +48,7 @@ namespace JobsOfOpportunity
                         Messages.Message(
                             $"[{mod.Content.Name}] Unticked setting in CommonSense: \"haul ingredients for a bill\". (Can't use both.)", MessageTypeDefOf.SilentInput, false);
                     } else if (selMod == csMod) {
-                        settings.HaulBeforeBill = false;
+                        settings.HaulBeforeCarry_Bills = false;
                         //mod.WriteSettings(); // no save because we handle it best on loading
                         Messages.Message(
                             $"[{mod.Content.Name}] Unticked setting in Jobs of Opportunity: \"Optimize hauling ingredients\". (Can't use both.)", MessageTypeDefOf.SilentInput,

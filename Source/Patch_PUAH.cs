@@ -85,7 +85,7 @@ namespace JobsOfOpportunity
                 [HarmonyPrefix]
                 static bool SpecialHaulAwareTryFindStore(ref bool __result, Thing t, Pawn carrier, Map map, StoragePriority currentPriority,
                     Faction faction, ref IntVec3 foundCell, bool needAccurateResult) {
-                    if (carrier == null || !settings.HaulToInventory || !settings.Enabled) return true;
+                    if (carrier == null || !settings.UsePickUpAndHaulPlus || !settings.Enabled) return true;
                     var isUnloadJob = carrier.CurJobDef == DefDatabase<JobDef>.GetNamed("UnloadYourHauledInventory");
                     if (tickContext == TickContext.None && !isUnloadJob) return true;
 
@@ -143,7 +143,7 @@ namespace JobsOfOpportunity
 
                 [HarmonyPrefix]
                 static bool SpecialHaulAwareFirstUnloadableThing(ref ThingCount __result, Pawn pawn) {
-                    if (!settings.HaulToInventory || !settings.Enabled) return true;
+                    if (!settings.UsePickUpAndHaulPlus || !settings.Enabled) return true;
 
                     var hauledToInventoryComp =
                         (ThingComp)AccessTools.DeclaredMethod(typeof(ThingWithComps), "GetComp").MakeGenericMethod(PuahCompHauledToInventoryType).Invoke(pawn, null);

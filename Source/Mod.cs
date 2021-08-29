@@ -100,7 +100,7 @@ namespace JobsOfOpportunity
                 if (AlreadyHauling(pawn)) return null;
                 var jobTarget = job.targetA;
 
-                if (job.def == JobDefOf.DoBill && settings.HaulBeforeBill) {
+                if (job.def == JobDefOf.DoBill && settings.HaulBeforeCarry_Bills) {
                     // Debug.WriteLine($"Bill: '{job.bill}' label: '{job.bill.Label}'");
                     // Debug.WriteLine($"Recipe: '{job.bill.recipe}' workerClass: '{job.bill.recipe.workerClass}'");
                     foreach (var localTargetInfo in job.targetQueueB) {
@@ -115,15 +115,15 @@ namespace JobsOfOpportunity
                     }
                 }
 
-                if (settings.SkipIfCaravan && job.def == JobDefOf.PrepareCaravan_GatherItems) return null;
-                if (settings.SkipIfBleeding && pawn.health.hediffSet.BleedRateTotal > 0.001f) return null;
+                if (settings.Opportunity_SkipIfCaravan && job.def == JobDefOf.PrepareCaravan_GatherItems) return null;
+                if (settings.Opportunity_SkipIfBleeding && pawn.health.hediffSet.BleedRateTotal > 0.001f) return null;
                 return JobUtility__TryStartErrorRecoverJob_Patch.CatchStanding(pawn, Opportunity.TryHaul(pawn, jobTarget));
             }
         }
 
 
         static Job PuahJob(PuahWithBetterUnloading puah, Pawn pawn, Thing thing, IntVec3 storeCell) {
-            if (!havePuah || !settings.HaulToInventory || !settings.Enabled) return null;
+            if (!havePuah || !settings.UsePickUpAndHaulPlus || !settings.Enabled) return null;
             specialHauls.SetOrAdd(pawn, puah);
             puah.TrackThing(thing, storeCell);
             var puahWorkGiver = DefDatabase<WorkGiverDef>.GetNamed("HaulToInventory").Worker;
@@ -158,10 +158,10 @@ namespace JobsOfOpportunity
                 // our addition
                 if (thing.Position.IsValid && destCell.IsValid) {
                     // specialHaul.haulType == SpecialHaulType.HaulBeforeCarry
-                    if (!settings.HaulToEqualPriority && slotGroup.Settings.Priority == currentPriority) break;
-                    var optimizeHaulFilter = settings.OptimizeHaul_Auto ? settings.OptimizeHaulDefaultFilter : settings.OptimizeHaul_BuildingFilter;
+                    if (!settings.HaulBeforeCarry_ToEqualPriority && slotGroup.Settings.Priority == currentPriority) break;
+                    var optimizeHaulFilter = settings.HaulBeforeCarry_AutoBuildings ? settings.HaulBeforeCarry_DefaultBuildingFilter : settings.HaulBeforeCarry_BuildingFilter;
                     if (slotGroup.parent is Building_Storage buildingStorage && !optimizeHaulFilter.Allows(buildingStorage.def)) continue;
-                    if (settings.HaulToEqualPriority && slotGroup == map.haulDestinationManager.SlotGroupAt(thing.Position)) continue;
+                    if (settings.HaulBeforeCarry_ToEqualPriority && slotGroup == map.haulDestinationManager.SlotGroupAt(thing.Position)) continue;
                 }
 
                 if (!slotGroup.parent.Accepts(thing)) continue;

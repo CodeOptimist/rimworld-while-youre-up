@@ -55,7 +55,7 @@ namespace JobsOfOpportunity
             }
 
             static Job HaulBeforeSupply(Pawn pawn, Thing constructible, Thing th) {
-                if (!settings.HaulBeforeSupply || !settings.Enabled || AlreadyHauling(pawn)) return null;
+                if (!settings.HaulBeforeCarry_Supplies || !settings.Enabled || AlreadyHauling(pawn)) return null;
                 return JobUtility__TryStartErrorRecoverJob_Patch.CatchStanding(pawn, HaulBeforeCarry(pawn, constructible.Position, th));
             }
         }
