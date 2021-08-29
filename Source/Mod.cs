@@ -165,9 +165,6 @@ namespace JobsOfOpportunity
 
                 // destCell stuff is our addition
                 var position = destCell.IsValid ? destCell : thing.SpawnedOrAnyParentSpawned ? thing.PositionHeld : pawn.PositionHeld;
-                // our addition
-                if (Find.TickManager.CurTimeSpeed > TimeSpeed.Normal)
-                    needAccurateResult = false;
                 var maxCheckedCells = needAccurateResult ? (int)Math.Floor((double)slotGroup.CellsList.Count * Rand.Range(0.005f, 0.018f)) : 0;
                 for (var i = 0; i < slotGroup.CellsList.Count; i++) {
                     var cell = slotGroup.CellsList[i];
@@ -185,6 +182,8 @@ namespace JobsOfOpportunity
             }
 
             foundCell = closestSlot;
+            if (foundCell.IsValid && skipCells != null)
+                skipCells.Add(foundCell);
             return foundCell.IsValid;
         }
     }

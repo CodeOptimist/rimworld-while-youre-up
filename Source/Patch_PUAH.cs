@@ -17,33 +17,27 @@ namespace JobsOfOpportunity
     {
         static partial class Patch_PUAH
         {
-            static bool inPuah;
+            static TickContext tickContext = TickContext.None;
+
+            // we can consolidate our code by keeping track of where we are like this
+            enum TickContext { None, HaulToInventory_HasJobOnThing, HaulToInventory_JobOnThing, HaulToInventory_JobOnThing_AllocateThingAtCell }
+
+            static void PushTickContext(out TickContext original, TickContext @new) {
+                original = tickContext;
+                tickContext = @new;
+            }
+
+            static void PopTickContext(TickContext state) => tickContext = state;
 
             [HarmonyPatch]
             static class WorkGiver_HaulToInventory__HasJobOnThing_Patch
             {
+                // because of PUAH's haulMoreWork toil
                 static bool       Prepare()      => havePuah;
                 static MethodBase TargetMethod() => AccessTools.DeclaredMethod(PuahWorkGiver_HaulToInventoryType, "HasJobOnThing");
 
-                // we need to patch PUAH's use of vanilla TryFindBestBetterStoreCellFor within HasJobOnThing for the haulMoreWork toil
-                [HarmonyTranspiler]
-                static IEnumerable<CodeInstruction> UseJooPuahHasJobOnThing_HasStore(IEnumerable<CodeInstruction> instructions) {
-                    return instructions.MethodReplacer(
-                        AccessTools.DeclaredMethod(typeof(StoreUtility), nameof(StoreUtility.TryFindBestBetterStoreCellFor)),
-                        AccessTools.DeclaredMethod(typeof(Patch_PUAH),   nameof(PuahHasJobOnThing_HasStore)));
-                }
-            }
-
-            public static bool PuahHasJobOnThing_HasStore(Thing thing, Pawn pawn, Map map, StoragePriority currentPriority, Faction faction, out IntVec3 foundCell,
-                bool needAccurateResult) {
-                if (!settings.HaulToInventory || !settings.Enabled)
-                    return StoreUtility.TryFindBestBetterStoreCellFor(thing, pawn, map, currentPriority, faction, out foundCell, needAccurateResult);
-
-                var specialHaul = specialHauls.GetValueSafe(pawn);
-                // use our version for the haul to equal priority setting
-                if (!TryFindBestBetterStoreCellFor_ClosestToDestCell(
-                    thing, specialHaul?.destCell ?? IntVec3.Invalid, pawn, map, currentPriority, faction, out foundCell, false)) return false;
-                return specialHaul == null || specialHaul.haulType != SpecialHaulType.Opportunity || Opportunity.TrackPuahThingIfOpportune(specialHaul, thing, pawn, ref foundCell);
+                static void Prefix(out TickContext __state) => PushTickContext(out __state, TickContext.HaulToInventory_HasJobOnThing);
+                static void Postfix(TickContext __state)    => PopTickContext(__state);
             }
 
             [HarmonyPatch]
@@ -52,9 +46,14 @@ namespace JobsOfOpportunity
                 static bool       Prepare()      => havePuah;
                 static MethodBase TargetMethod() => AccessTools.DeclaredMethod(PuahWorkGiver_HaulToInventoryType, "JobOnThing");
 
+                [HarmonyPriority(Priority.High)]
+                static void Prefix(out TickContext __state) => PushTickContext(out __state, TickContext.HaulToInventory_JobOnThing);
+
+                [HarmonyPriority(Priority.Low)]
+                static void Postfix(TickContext __state) => PopTickContext(__state);
+
                 [HarmonyPrefix]
                 static void TempReduceStoragePriorityForHaulBeforeCarry(WorkGiver_Scanner __instance, ref bool __state, Pawn pawn, Thing thing) {
-                    inPuah = true;
                     if (!settings.HaulToInventory || !settings.Enabled) return;
                     if (!settings.HaulToEqualPriority) return;
 
@@ -72,7 +71,6 @@ namespace JobsOfOpportunity
 
                 [HarmonyPostfix]
                 static void TrackInitialHaul(WorkGiver_Scanner __instance, bool __state, Job __result, Pawn pawn, Thing thing) {
-                    inPuah = false;
                     // restore storage priority
                     if (__state)
                         StoreUtility.CurrentHaulDestinationOf(thing).GetStoreSettings().Priority += 1;
@@ -94,26 +92,13 @@ namespace JobsOfOpportunity
                 static bool       Prepare()      => havePuah;
                 static MethodBase TargetMethod() => AccessTools.DeclaredMethod(PuahWorkGiver_HaulToInventoryType, "TryFindBestBetterStoreCellFor");
 
-                // PUAH uses its own TryFindBestBetterStoreCellFor using skipCells and that doesn't care about distance (gets first valid)
-                // we replace it with one that cares about distance to destination cell, else distance to pawn (like vanilla)
                 [HarmonyPrefix]
-                static bool UseSpecialHaulAwareTryFindStore(ref bool __result, Thing thing, Pawn carrier, Map map, StoragePriority currentPriority, Faction faction,
-                    ref IntVec3 foundCell) {
-                    if (carrier == null || !settings.HaulToInventory || !settings.Enabled) return true;
-                    var skipCells = (HashSet<IntVec3>)AccessTools.DeclaredField(PuahWorkGiver_HaulToInventoryType, "skipCells").GetValue(null);
-                    var specialHaul = specialHauls.GetValueSafe(carrier) ?? SpecialHaulInfo.CreateAndAdd(SpecialHaulType.None, carrier, IntVec3.Invalid);
-                    if (!TryFindBestBetterStoreCellFor_ClosestToDestCell(
-                        thing, specialHaul.destCell, carrier, map, currentPriority, faction, out foundCell, specialHaul.destCell.IsValid, skipCells))
-                        __result = false;
-                    else {
-                        skipCells.Add(foundCell);
-                        if (specialHaul.haulType == SpecialHaulType.Opportunity)
-                            __result = Opportunity.TrackPuahThingIfOpportune(specialHaul, thing, carrier, ref foundCell);
-                        else {
-                            specialHaul.Add(thing, foundCell);
-                            __result = true;
-                        }
-                    }
+                static bool UseSpecialHaulAwareTryFindStore(out bool __result, Thing thing, Pawn carrier, Map map, StoragePriority currentPriority, Faction faction,
+                    out IntVec3 foundCell) {
+                    // have PUAH use vanilla's to keep our code in one place
+                    PushTickContext(out var original, TickContext.HaulToInventory_JobOnThing_AllocateThingAtCell);
+                    __result = StoreUtility.TryFindBestBetterStoreCellFor(thing, carrier, map, currentPriority, faction, out foundCell); // patched below
+                    PopTickContext(original);
                     return false;
                 }
             }
@@ -128,14 +113,34 @@ namespace JobsOfOpportunity
                 [HarmonyPrefix]
                 static bool SpecialHaulAwareTryFindStore(ref bool __result, Thing t, Pawn carrier, Map map, StoragePriority currentPriority,
                     Faction faction, ref IntVec3 foundCell, bool needAccurateResult) {
-                    if (!inPuah) return true;
-                    if (!settings.HaulToInventory || !settings.Enabled) return true;
-
-                    if (carrier == null) return true;
+                    if (carrier == null || tickContext == TickContext.None || !settings.HaulToInventory || !settings.Enabled) return true;
                     var specialHaul = specialHauls.GetValueSafe(carrier);
+                    var skipCells = (HashSet<IntVec3>)AccessTools.DeclaredField(PuahWorkGiver_HaulToInventoryType, "skipCells").GetValue(null);
 
-                    __result = TryFindBestBetterStoreCellFor_ClosestToDestCell(
-                        t, specialHaul?.destCell ?? IntVec3.Invalid, carrier, map, currentPriority, faction, out foundCell, specialHaul?.destCell.IsValid ?? false);
+                    if (!TryFindBestBetterStoreCellFor_ClosestToDestCell(
+                        t,
+                        specialHaul?.destCell ?? IntVec3.Invalid,
+                        carrier, map, currentPriority, faction, out foundCell,
+                        tickContext != TickContext.HaulToInventory_HasJobOnThing && Find.TickManager.CurTimeSpeed == TimeSpeed.Normal && (specialHaul?.destCell.IsValid ?? false),
+                        tickContext == TickContext.HaulToInventory_JobOnThing_AllocateThingAtCell ? skipCells : null)) {
+                        __result = false;
+                        return false;
+                    }
+
+                    if (specialHaul?.haulType == SpecialHaulType.Opportunity && !Opportunity.TrackPuahThingIfOpportune(specialHaul, t, carrier, ref foundCell)) {
+                        __result = false;
+                        return false;
+                    }
+
+                    __result = true;
+
+                    if (tickContext == TickContext.HaulToInventory_JobOnThing_AllocateThingAtCell) {
+                        if (specialHaul == null)
+                            SpecialHaulInfo.CreateAndAdd(SpecialHaulType.None, carrier, foundCell);
+                        else
+                            specialHaul.Add(t, foundCell);
+                    }
+
                     return false;
                 }
             }
