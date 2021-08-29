@@ -114,6 +114,21 @@ namespace JobsOfOpportunity
         static partial class Patch_PUAH
         {
             [HarmonyPatch]
+            static partial class WorkGiver_HaulToInventory__JobOnThing_Patch
+            {
+                [HarmonyPostfix]
+                static void TrackInitialHaul(WorkGiver_Scanner __instance, Job __result, Pawn pawn, Thing thing) {
+                    if (__result == null || !settings.HaulToInventory || !settings.Enabled) return;
+
+                    var specialHaul = specialHauls.GetValueSafe(pawn) ?? SpecialHaulInfo.CreateAndAdd(SpecialHaulType.None, pawn, IntVec3.Invalid);
+                    // thing from parameter because targetA is null because things are in queues instead
+                    //  https://github.com/Mehni/PickUpAndHaul/blob/af50a05a8ae5ca64d9b95fee8f593cf91f13be3d/Source/PickUpAndHaul/WorkGiver_HaulToInventory.cs#L98
+                    // JobOnThing() can run additional times (e.g. haulMoreWork toil) so don't assume this is already added if it's an Opportunity or HaulBeforeCarry
+                    specialHaul.Add(thing, __result.targetB.Cell, isInitial: true);
+                }
+            }
+
+            [HarmonyPatch]
             static class JobDriver_UnloadYourHauledInventory__MakeNewToils_Patch
             {
                 static bool       Prepare()      => havePuah;

@@ -3,8 +3,7 @@ using System.Linq;
 using System.Reflection;
 using HarmonyLib;
 using RimWorld;
-using Verse;
-using Verse.AI; // ReSharper disable once RedundantUsingDirective
+using Verse; // ReSharper disable once RedundantUsingDirective
 using Debug = System.Diagnostics.Debug;
 
 // ReSharper disable UnusedType.Local
@@ -41,7 +40,7 @@ namespace JobsOfOpportunity
             }
 
             [HarmonyPatch]
-            static class WorkGiver_HaulToInventory__JobOnThing_Patch
+            static partial class WorkGiver_HaulToInventory__JobOnThing_Patch
             {
                 static bool       Prepare()      => havePuah;
                 static MethodBase TargetMethod() => AccessTools.DeclaredMethod(PuahWorkGiver_HaulToInventoryType, "JobOnThing");
@@ -51,39 +50,6 @@ namespace JobsOfOpportunity
 
                 [HarmonyPriority(Priority.Low)]
                 static void Postfix(TickContext __state) => PopTickContext(__state);
-
-                [HarmonyPrefix]
-                static void TempReduceStoragePriorityForHaulBeforeCarry(WorkGiver_Scanner __instance, ref bool __state, Pawn pawn, Thing thing) {
-                    if (!settings.HaulToInventory || !settings.Enabled) return;
-                    if (!settings.HaulToEqualPriority) return;
-
-                    if (!specialHauls.TryGetValue(pawn, out var specialHaul) || specialHaul.haulType != SpecialHaulType.HaulBeforeCarry) return;
-
-                    var currentHaulDestination = StoreUtility.CurrentHaulDestinationOf(thing);
-                    if (currentHaulDestination == null) return;
-
-                    var storeSettings = currentHaulDestination.GetStoreSettings();
-                    if (storeSettings.Priority > StoragePriority.Unstored) {
-                        storeSettings.Priority -= 1;
-                        __state = true;
-                    }
-                }
-
-                [HarmonyPostfix]
-                static void TrackInitialHaul(WorkGiver_Scanner __instance, bool __state, Job __result, Pawn pawn, Thing thing) {
-                    // restore storage priority
-                    if (__state)
-                        StoreUtility.CurrentHaulDestinationOf(thing).GetStoreSettings().Priority += 1;
-
-                    if (__result == null) return;
-                    if (!settings.HaulToInventory || !settings.Enabled) return;
-
-                    var specialHaul = specialHauls.GetValueSafe(pawn) ?? SpecialHaulInfo.CreateAndAdd(SpecialHaulType.None, pawn, IntVec3.Invalid);
-                    // thing from parameter because targetA is null because things are in queues instead
-                    //  https://github.com/Mehni/PickUpAndHaul/blob/af50a05a8ae5ca64d9b95fee8f593cf91f13be3d/Source/PickUpAndHaul/WorkGiver_HaulToInventory.cs#L98
-                    // JobOnThing() can run additional times (e.g. haulMoreWork toil) so don't assume this is already added if it's an Opportunity or HaulBeforeCarry
-                    specialHaul.Add(thing, __result.targetB.Cell, isInitial: true);
-                }
             }
 
             [HarmonyPatch]
