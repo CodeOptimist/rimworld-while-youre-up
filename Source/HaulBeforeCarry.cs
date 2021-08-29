@@ -67,8 +67,8 @@ namespace JobsOfOpportunity
             // try to avoid haul-before-carry when there are no extras to grab
             // proper way is to re-check after grabbing everything, but here's a quick hack to at least avoid it with stone chunks
             if (MassUtility.WillBeOverEncumberedAfterPickingUp(pawn, thing, 2)) return null; // already going for 1, so 2 to check for another
-            if (!TryFindBestBetterStoreCellFor_ClosestToDestCell(
-                thing, carryTarget.Cell, pawn, pawn.Map, StoreUtility.CurrentStoragePriorityOf(thing), pawn.Faction, out var storeCell, true)) return null;
+            if (!TryFindBestBetterStoreCellFor_ClosestToTarget(
+                thing, IntVec3.Invalid, carryTarget, pawn, pawn.Map, StoreUtility.CurrentStoragePriorityOf(thing), pawn.Faction, out var storeCell, true)) return null;
 
             var fromHereDist = thing.Position.DistanceTo(carryTarget.Cell);
             var fromStoreDist = storeCell.DistanceTo(carryTarget.Cell);

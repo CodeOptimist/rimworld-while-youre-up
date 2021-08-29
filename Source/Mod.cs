@@ -145,7 +145,8 @@ namespace JobsOfOpportunity
             return false;
         }
 
-        public static bool TryFindBestBetterStoreCellFor_ClosestToDestCell(Thing thing, IntVec3 destCell, Pawn pawn, Map map, StoragePriority currentPriority,
+        public static bool TryFindBestBetterStoreCellFor_ClosestToTarget(Thing thing, LocalTargetInfo opportunity, LocalTargetInfo beforeCarry, Pawn pawn, Map map,
+            StoragePriority currentPriority,
             Faction faction, out IntVec3 foundCell, bool needAccurateResult, HashSet<IntVec3> skipCells = null) {
             var closestSlot = IntVec3.Invalid;
             var closestDistSquared = (float)int.MaxValue;
@@ -153,21 +154,29 @@ namespace JobsOfOpportunity
 
             foreach (var slotGroup in map.haulDestinationManager.AllGroupsListInPriorityOrder) {
                 if (slotGroup.Settings.Priority < foundPriority) break;
-                if (slotGroup.Settings.Priority < currentPriority) break;                       // '<=' in original
-                if (slotGroup.Settings.Priority == currentPriority && !destCell.IsValid) break; // our addition
+                if (slotGroup.Settings.Priority < currentPriority) break;                          // '<=' in original
+                if (slotGroup.Settings.Priority == currentPriority && !beforeCarry.IsValid) break; // our addition
 
-                // our addition
-                if (thing.Position.IsValid && destCell.IsValid) {
-                    // specialHaul.haulType == SpecialHaulType.HaulBeforeCarry
+                // our additions
+                var buildingStorage = slotGroup.parent as Building_Storage;
+                if (opportunity.IsValid && buildingStorage != null && !settings.Opportunity_BuildingFilter.Allows(buildingStorage.def)) continue;
+                if (beforeCarry.IsValid) {
                     if (!settings.HaulBeforeCarry_ToEqualPriority && slotGroup.Settings.Priority == currentPriority) break;
-                    if (slotGroup.parent is Building_Storage buildingStorage && !settings.HaulBeforeCarry_BuildingFilter.Allows(buildingStorage.def)) continue;
-                    if (settings.HaulBeforeCarry_ToEqualPriority && slotGroup == map.haulDestinationManager.SlotGroupAt(thing.Position)) continue;
+                    if (settings.HaulBeforeCarry_ToEqualPriority && thing.Position.IsValid && slotGroup == map.haulDestinationManager.SlotGroupAt(thing.Position)) continue;
+
+                    if (buildingStorage != null) {
+                        if (!settings.HaulBeforeCarry_BuildingFilter.Allows(buildingStorage.def)) continue;
+                        // if we don't consider is suitable for opportunities (e.g. slow storing) we won't consider it suitable for same-priority delivery
+                        if (slotGroup.Settings.Priority == currentPriority && !settings.Opportunity_BuildingFilter.Allows(buildingStorage.def)) continue;
+                    }
                 }
 
                 if (!slotGroup.parent.Accepts(thing)) continue;
 
-                // destCell stuff is our addition
-                var position = destCell.IsValid ? destCell : thing.SpawnedOrAnyParentSpawned ? thing.PositionHeld : pawn.PositionHeld;
+                // our modification
+                var position = opportunity.IsValid  ? opportunity.Cell :
+                    beforeCarry.IsValid             ? beforeCarry.Cell :
+                    thing.SpawnedOrAnyParentSpawned ? thing.PositionHeld : pawn.PositionHeld;
                 var maxCheckedCells = needAccurateResult ? (int)Math.Floor((double)slotGroup.CellsList.Count * Rand.Range(0.005f, 0.018f)) : 0;
                 for (var i = 0; i < slotGroup.CellsList.Count; i++) {
                     var cell = slotGroup.CellsList[i];

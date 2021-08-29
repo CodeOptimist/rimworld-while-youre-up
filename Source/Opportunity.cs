@@ -42,9 +42,9 @@ namespace JobsOfOpportunity
                 return result;
             }
 
-            static ProximityStage CanHaul(ProximityStage proximityStage, Pawn pawn, Thing thing, IntVec3 jobCell, ProximityCheck proximityCheck, out IntVec3 storeCell) {
+            static ProximityStage CanHaul(ProximityStage proximityStage, Pawn pawn, Thing thing, LocalTargetInfo jobTarget, ProximityCheck proximityCheck, out IntVec3 storeCell) {
                 storeCell = IntVec3.Invalid;
-                var pawnToJob = pawn.Position.DistanceTo(jobCell);
+                var pawnToJob = pawn.Position.DistanceTo(jobTarget.Cell);
 
                 var pawnToThing = pawn.Position.DistanceTo(thing.Position);
                 if (proximityStage < ProximityStage.StoreToJob) {
@@ -55,7 +55,7 @@ namespace JobsOfOpportunity
                         case ProximityCheck.Both when pawnToThingFail: return ProximityStage.PawnToThing;
                     }
 
-                    var thingToJob = thing.Position.DistanceTo(jobCell);
+                    var thingToJob = thing.Position.DistanceTo(jobTarget.Cell);
                     // if this one exceeds the maximum the next maxTotalTripPctOrigTrip check certainly will
                     if (settings.Opportunity_MaxTotalTripPctOrigTrip > 0 && pawnToThing + thingToJob > pawnToJob * settings.Opportunity_MaxTotalTripPctOrigTrip)
                         return ProximityStage.Fail;
@@ -65,13 +65,14 @@ namespace JobsOfOpportunity
                 }
 
                 var currentPriority = StoreUtility.CurrentStoragePriorityOf(thing);
-                if (!TryFindBestBetterStoreCellFor_ClosestToDestCell(thing, IntVec3.Invalid, pawn, pawn.Map, currentPriority, pawn.Faction, out storeCell, true))
+                if (!cachedStoreCells.TryGetValue(thing, out storeCell)
+                    && !TryFindBestBetterStoreCellFor_ClosestToTarget(thing, jobTarget, IntVec3.Invalid, pawn, pawn.Map, currentPriority, pawn.Faction, out storeCell, true))
                     return ProximityStage.Fail;
 
                 // we need storeCell everywhere, so cache it
                 cachedStoreCells.SetOrAdd(thing, storeCell);
 
-                var storeToJob = storeCell.DistanceTo(jobCell);
+                var storeToJob = storeCell.DistanceTo(jobTarget.Cell);
                 if (proximityStage < ProximityStage.PawnToThingRegion) {
                     var atMax2 = settings.Opportunity_MaxStoreToJob > 0 && storeToJob > settings.Opportunity_MaxStoreToJob;
                     var atMaxPct2 = settings.Opportunity_MaxStoreToJobPctOrigTrip > 0 && storeToJob > pawnToJob * settings.Opportunity_MaxStoreToJobPctOrigTrip;
@@ -95,7 +96,7 @@ namespace JobsOfOpportunity
 
                 bool StoreToJobRegionFail(IntVec3 _storeCell) {
                     return settings.Opportunity_MaxStoreToJobRegionLookCount > 0 && !_storeCell.WithinRegions(
-                        jobCell, pawn.Map, settings.Opportunity_MaxStoreToJobRegionLookCount, TraverseParms.For(pawn));
+                        jobTarget.Cell, pawn.Map, settings.Opportunity_MaxStoreToJobRegionLookCount, TraverseParms.For(pawn));
                 }
 
                 switch (proximityCheck) {
@@ -112,7 +113,7 @@ namespace JobsOfOpportunity
                     if (thingProximityStage.TryGetValue(thing, out var proximityStage) && proximityStage == ProximityStage.Fail)
                         continue;
 
-                    var newProximityStage = CanHaul(proximityStage, pawn, thing, jobTarget.Cell, proximityCheck, out var storeCell);
+                    var newProximityStage = CanHaul(proximityStage, pawn, thing, jobTarget, proximityCheck, out var storeCell);
                     // Debug.WriteLine($"{pawn} for {thing} proximity stage: {proximityStage} -> {newProximityStage}");
                     thingProximityStage.SetOrAdd(thing, newProximityStage);
                     if (newProximityStage != ProximityStage.Success) continue;
