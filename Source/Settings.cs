@@ -54,18 +54,18 @@ namespace JobsOfOpportunity
         [StaticConstructorOnStartup]
         public static class SettingsWindow
         {
-            public static Vector2                         hbcScrollPosition;
-            public static Listing_SettingsTreeThingFilter hbcTreeFilter;
-            public static QuickSearchFilter               hbcSearchFilter = new QuickSearchFilter();
-            public static QuickSearchWidget               hbcSearchWidget = new QuickSearchWidget();
-            public static ThingFilter                     hbcDummyFilter  = new ThingFilter();
+            static          Vector2                         hbcScrollPosition;
+            static          Listing_SettingsTreeThingFilter hbcTreeFilter;
+            static readonly QuickSearchFilter               hbcSearchFilter = new QuickSearchFilter();
+            static readonly QuickSearchWidget               hbcSearchWidget = new QuickSearchWidget();
+            static readonly ThingFilter                     hbcDummyFilter  = new ThingFilter();
 
-            public static ThingCategoryDef storageBuildingCategoryDef;
+            static readonly ThingCategoryDef storageBuildingCategoryDef;
 
             static SettingsWindow() {
                 // now that defs are loaded this will work
                 Log__Error_Patch.SuppressLoadReferenceErrors(
-                    () => settings.HaulBeforeCarry_BuildingFilter = ScribeExtractor.SaveableFromNode<ThingFilter>(settings.hbcBuildingFilterXmlNode, null));
+                    () => settings.hbcBuildingFilter = ScribeExtractor.SaveableFromNode<ThingFilter>(settings.hbcBuildingFilterXmlNode, null));
                 hbcSearchWidget.filter = hbcSearchFilter;
 
                 var storageBuildingTypes = typeof(Building_Storage).AllSubclassesNonAbstract();
@@ -84,21 +84,23 @@ namespace JobsOfOpportunity
                 storageBuildingCategoryDef.PostLoad();
                 storageBuildingCategoryDef.ResolveReferences();
 
-                ResetModFilter(storageBuildingCategoryDef, settings.HaulBeforeCarry_DefaultBuildingFilter);
-                if (settings.HaulBeforeCarry_BuildingFilter == null) {
-                    settings.HaulBeforeCarry_BuildingFilter = new ThingFilter();
-                    settings.HaulBeforeCarry_BuildingFilter?.CopyAllowancesFrom(settings.HaulBeforeCarry_DefaultBuildingFilter);
+                ResetFilters();
+
+                if (settings.hbcBuildingFilter == null) {
+                    settings.hbcBuildingFilter = new ThingFilter();
+                    settings.hbcBuildingFilter?.CopyAllowancesFrom(settings.hbcDefaultBuildingFilter);
                 }
             }
 
-            public static void ResetModFilter(ThingCategoryDef thingCategoryDef, ThingFilter thingFilter) {
-                thingFilter.SetDisallowAll();
+            [SuppressMessage("ReSharper", "StringLiteralTypo")]
+            public static void ResetFilters() {
+                settings.hbcDefaultBuildingFilter.SetDisallowAll();
 
-                foreach (var modCategoryDef in thingCategoryDef.childCategories) {
+                foreach (var modCategoryDef in storageBuildingCategoryDef.childCategories) {
                     modCategoryDef.treeNode.SetOpen(1, false);
 
+                    // todo move to XML? postpone that probably
                     var mod = LoadedModManager.RunningModsListForReading.FirstOrDefault(x => x.Name == modCategoryDef.label);
-                    Debug.WriteLine($"{mod?.PackageId}, {mod?.Name}");
                     switch (mod?.PackageId) {
                         case "ludeon.rimworld": // Core
                             modCategoryDef.treeNode.SetOpen(1, true);
@@ -111,7 +113,7 @@ namespace JobsOfOpportunity
                         case "solaris.furniturebase":    // GloomyFurniture
                         case "jangodsoul.simplestorage": // [JDS] Simple Storage
                         case "sixdd.littlestorage2":     // Little Storage 2
-                            thingFilter.SetAllow(modCategoryDef, true);
+                            settings.hbcDefaultBuildingFilter.SetAllow(modCategoryDef, true);
                             break;
                     }
                 }
@@ -162,7 +164,7 @@ namespace JobsOfOpportunity
                 if (Widgets.ButtonText(leftList.GetRect(30f).LeftHalf(), "RestoreToDefaultSettings".Translate())) {
                     settings.ExposeData(); // restore defaults
                     hbcSearchWidget.Reset();
-                    ResetModFilter(storageBuildingCategoryDef, settings.HaulBeforeCarry_BuildingFilter);
+                    ResetFilters();
                 }
                 leftList.End();
 
@@ -185,7 +187,7 @@ namespace JobsOfOpportunity
                 var viewRect = new Rect(0f, 0f, outRect.width - 20f, hbcTreeFilter?.CurHeight ?? 10000f);
                 Widgets.BeginScrollView(outRect, ref hbcScrollPosition, viewRect);
                 if (settings.HaulBeforeCarry_AutoBuildings)
-                    hbcDummyFilter.CopyAllowancesFrom(settings.HaulBeforeCarry_DefaultBuildingFilter);
+                    hbcDummyFilter.CopyAllowancesFrom(settings.hbcDefaultBuildingFilter);
                 hbcTreeFilter = new Listing_SettingsTreeThingFilter(
                     settings.HaulBeforeCarry_AutoBuildings ? hbcDummyFilter : settings.HaulBeforeCarry_BuildingFilter, null, null, null, null,
                     hbcSearchFilter);
@@ -218,9 +220,10 @@ namespace JobsOfOpportunity
 
             public bool HaulBeforeCarry_Supplies, HaulBeforeCarry_Bills, HaulBeforeCarry_Bills_NeedsInitForCs, HaulBeforeCarry_ToEqualPriority, HaulBeforeCarry_AutoBuildings;
 
-            public readonly ThingFilter HaulBeforeCarry_DefaultBuildingFilter = new ThingFilter();
-            public          ThingFilter HaulBeforeCarry_BuildingFilter;
-            internal        XmlNode     hbcBuildingFilterXmlNode;
+            internal readonly ThingFilter hbcDefaultBuildingFilter = new ThingFilter();
+            internal          ThingFilter hbcBuildingFilter;
+            internal          XmlNode     hbcBuildingFilterXmlNode;
+            public            ThingFilter HaulBeforeCarry_BuildingFilter => HaulBeforeCarry_AutoBuildings ? hbcDefaultBuildingFilter : hbcBuildingFilter;
 
             // we also manually call this to restore defaults and to set them before config file exists (Scribe.mode == LoadSaveMode.Inactive)
             public override void ExposeData() {
@@ -255,9 +258,11 @@ namespace JobsOfOpportunity
                 Look(ref HaulBeforeCarry_AutoBuildings,              nameof(HaulBeforeCarry_AutoBuildings),              true);
 
                 if (Scribe.mode == LoadSaveMode.Saving)
-                    Scribe_Deep.Look(ref HaulBeforeCarry_BuildingFilter, nameof(HaulBeforeCarry_BuildingFilter));
-                if (Scribe.mode == LoadSaveMode.LoadingVars)
-                    hbcBuildingFilterXmlNode = Scribe.loader.curXmlParent[nameof(HaulBeforeCarry_BuildingFilter)]; // so we can load later after Defs
+                    Scribe_Deep.Look(ref hbcBuildingFilter, nameof(hbcBuildingFilter));
+                if (Scribe.mode == LoadSaveMode.LoadingVars) {
+                    // so we can load after Defs
+                    hbcBuildingFilterXmlNode = Scribe.loader.curXmlParent[nameof(hbcBuildingFilter)];
+                }
 
                 if (Scribe.mode == LoadSaveMode.LoadingVars || Scribe.mode == LoadSaveMode.Saving)
                     DebugViewSettings.drawOpportunisticJobs = DrawSpecialHauls;
