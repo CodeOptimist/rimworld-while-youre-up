@@ -154,7 +154,7 @@ namespace JobsOfOpportunity
                 if (slotGroup.Settings.Priority == currentPriority && !destCell.IsValid) break; // our addition
 
                 // our addition
-                if (destCell.IsValid) {
+                if (thing.Position.IsValid && destCell.IsValid) {
                     // specialHaul.haulType == SpecialHaulType.HaulBeforeCarry
                     if (!settings.HaulToEqualPriority && slotGroup.Settings.Priority == currentPriority) break;
                     var optimizeHaulFilter = settings.OptimizeHaul_Auto ? settings.OptimizeHaulDefaultFilter : settings.OptimizeHaul_BuildingFilter;
