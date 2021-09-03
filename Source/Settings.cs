@@ -121,21 +121,36 @@ namespace JobsOfOpportunity
                     // todo move to XML? postpone that probably
                     var mod = LoadedModManager.RunningModsListForReading.FirstOrDefault(x => x.Name == modCategoryDef.label);
                     switch (mod?.PackageId) {
+                        // most of these are from ZzZombo#9297, blame him for everything. 🙃
+                        case "buddy1913.expandedstorageboxes":      // Buddy's Expanded Storage Boxes
+                        case "im.skye.rimworld.deepstorageplus":    // Deep Storage Plus
+                        case "jangodsoul.simplestorage":            // [JDS] Simple Storage
+                        case "jangodsoul.simplestorage.ref":        // [JDS] Simple Storage - Refrigeration
+                        case "mlie.displaycases":                   // Display Cases (Continued)
+                        case "mlie.eggincubator":                   // Egg Incubator
+                        case "mlie.extendedstorage":                // Extended Storage (Continued)
+                        case "mlie.fireextinguisher":               // Fire Extinguisher (Continued)
+                        case "mlie.functionalvanillaexpandedprops": // Functional Vanilla Expanded Props (Continued)
+                        case "mlie.tobesdiningroom":                // Tobe's Dining Room (Continued)
+                        case "ogliss.thewhitecrayon.quarry":        // Quarry
+                        case "primitivestorage.velcroboy333":       // Primitive Storage
+                        case "proxyer.smallshelf":                  // Small Shelf
+                        case "rimfridge.kv.rw":                     // [KV] RimFridge
+                        case "sixdd.littlestorage2":                // Little Storage 2
+                        case "skullywag.extendedstorage":           // Extended Storage
+                        case "solaris.furniturebase":               // GloomyFurniture
+                        case "vanillaexpanded.vfecore":             // Vanilla Furniture Expanded
+                        case "vanillaexpanded.vfeart":              // Vanilla Furniture Expanded - Art
+                        case "vanillaexpanded.vfefarming":          // Vanilla Furniture Expanded - Farming
+                        case "vanillaexpanded.vfespacer":           // Vanilla Furniture Expanded - Spacer Module
+                        case "vanillaexpanded.vfesecurity":         // Vanilla Furniture Expanded - Security
+                            settings.hbcDefaultBuildingFilter.SetAllow(modCategoryDef, true);
+                            break;
                         case "ludeon.rimworld": // Core
                             modCategoryDef.treeNode.SetOpen(1, true);
                             goto case "vanillaexpanded.vfecore";
-                        case "vanillaexpanded.vfecore":   // Vanilla Furniture Expanded
-                        case "skullywag.extendedstorage": // Extended Storage
-                        case "mlie.extendedstorage":      // Extended Storage (Continued)
-                        case "rimfridge.kv.rw":           // [KV] RimFridge
-                        case "solaris.furniturebase":     // GloomyFurniture
-                        case "jangodsoul.simplestorage":  // [JDS] Simple Storage
-                        case "sixdd.littlestorage2":      // Little Storage 2
-                            settings.hbcDefaultBuildingFilter.SetAllow(modCategoryDef, true);
-                            break;
                         case "lwm.deepstorage": // LWM's Deep Storage
-                            // todo commented out for beta testing
-                            // settings.opportunityDefaultBuildingFilter.SetAllow(modCategoryDef, false);
+                            settings.opportunityDefaultBuildingFilter.SetAllow(modCategoryDef, false);
                             settings.hbcDefaultBuildingFilter.SetAllow(modCategoryDef, true);
                             break;
                     }
