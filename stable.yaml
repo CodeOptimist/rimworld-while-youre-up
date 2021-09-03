@@ -25,8 +25,8 @@ published_file_id: 2034960453
 preview_from_path: '{out_dir}\..\JoO.png'
 
 intro: |-
-  [b]Opportunistic hauling and [i]Pick Up And Haul[/i] upgrades.[/b]
-  Compatible with existing saves. Any load order.
+  [b]Opportunistic hauling; [i]Pick Up And Haul[/i] updates.[/b]
+  A must-have with PUAH. Compatible with existing saves. Any load order.
 
 steam_intro: |-
   {intro}
@@ -36,7 +36,7 @@ steam_intro: |-
 header: |-
   [b]A pawn's job will say "on the way to", "closer to", or "Efficiently unloading", otherwise it's a different mod[/b] (e.g. normal hauling; normal hauling with [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1279012058]Pick Up And Haul[/url], or triggered by [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1561769193]Common Sense[/url]).
 
-  [i]Pick Up And Haul[/i] is optional and installed separately.
+  80% of this mod is improving [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1279012058]Pick Up And Haul[/url] (optional; installed separately), if you already use PUAH, you want this mod too.
 
   "But my pawns are walking farther!"
   Yes. A slightly longer journey now to avoid a [i]much[/i] longer journey next time.
@@ -69,56 +69,71 @@ footer: |-
   I intended to [url=https://gist.github.com/CodeOptimist/5a740dd803fc370ec43f22ffa8bc953d#file-utils-cs-L48]fork[/url] [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1544626521]While You're Up[/url], until I saw [url=https://github.com/CodeOptimist/rimworld-jobs-of-opportunity/blob/29391b0a075a1dd77d4788777b0137e26390328c/Source/Patch_TryOpportunisticJob.cs]RimWorld 1.0 added it[/url]. This mod improves vanilla's integration, and so is a spiritual successor to [i]While You're Up[/i] 💜.
 
 features:
-  - title: Better unloading for [i]Pick Up And Haul[/i]
-    at: 2.0.0
-    desc: |-
-      [i]Pick Up And Haul[/i] is modified so pawns will no longer unload back-and-forth between stockpiles, but choose an efficient path. This is all hauls, not just opportunities!
+  - desc: &v2_0_0 |-
+      [u][i]Pick Up And Haul+[/i]: Better unloading[/u]
+      We enhance all inventory hauling by unloading only once at each destination, in closest order.
+  - desc: &v3_0_0_puah |-
+      We improve performance by caching haulable destinations.
+  - desc: ''
 
-  - title: Opportunistic hauls
-    at: 1.0.0
-    desc: |-
-      Vanilla has support for opportunities, but with limitations: haulable near your [b]start[/b] position, and stockpile near your job.
+  - desc: &v1_0_0 |-
+      [u]Opportunistic hauls[/u]
+      Vanilla has support for opportunities, but with limitations: haulable near your [b]start[/b] position, and storage near your job.
       We prefer these, but drop them as requirements to include hauls along the path.
+  - desc: ''
+  - desc: &v1_1_0 |-
+      We skip opportunities when bleeding or forming a caravan.
+  - desc: ''
 
-  - title: Skip opportunities when bleeding
-    at: 1.1.0
-    desc:
+  - desc: |-
+      [i]Pick Up And Haul+[/i]
+  - desc: &v1_4_0 |-
+      Modified to grab only surrounding things whose unload path is also opportunistic.
+  - desc: ''
 
-  - title: Skip opportunities when forming a caravan
-    at: 2.3.0
-    desc:
-
-  - title: Opportunity support for [i]Pick Up And Haul[/i]
-    at: 1.4.0
-    desc: |-
-      [i]Pick Up And Haul[/i] is not just triggered for an opportune haulable, but modified to carefully grab only surrounding items whose unload path is also opportunistic.
-
-  - title: Haul extra supplies & ingredients closer
-    desc: |-
+  - desc: |-
+      [u]Haul extra supplies & ingredients closer[/u]
       If hauling resources to storage would bring them closer to their job, do that first (grabbing extra).
-      Other items will be grabbed if going to the same storage.
+  - desc: ''
     steam: |-
       Your builder will never again cross the map to retrieve a [b]single[/b] component.
 
       [img]https://i.imgur.com/G2oh7Mm.png[/img]
 
-  - title: Mod compatibility via storage building filters
-    at: 2.3.0
-    desc: |-
+  - desc: |-
+      [i]Pick Up And Haul+[/i]
+  - desc: &v3_0_0_hbc_puah |-
+      Modified to grab extra things headed to the same storage (when higher priority).
+      Grab extra supplies & ingredients headed to the same storage (when equal priority).
+  - desc: ''
+
+  - desc: &v2_3_0 |-
+      [u]Mod compatibility via storage building filters[/u]
       Permit or deny for any storage building through settings, or leave automatically managed with mod updates.
+
 
 updates:
   - at: 1.0.0
-    desc: |-
-      • Support for [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1279012058][i]Mehni's[/i] Pick Up And Haul[/url]!
+    desc: !join
+      - "\n"
+      -
+        - *v1_0_0
+        - ' '
+        - |-
+          • Triggers [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1279012058][i]Mehni's[/i] Pick Up And Haul[/url].
 
-      Haul extra construction supplies closer
-      If hauling supplies to storage would bring them closer to their blueprint, do that first (grabbing extra).
+          Haul extra construction supplies closer
+          If hauling supplies to storage would bring them closer to their blueprint, do that first (grabbing extra).
 
   - at: 1.1.0
-    desc: |-
-      • Updated [i]Haul extra resources[/i]
-      Now works as expected: instead of denying the inefficient supply job so [i]some[/i] hauler [i]eventually[/i] hauls, the builder themselves will.
+    desc: !join
+      - "\n"
+      -
+        - *v1_1_0
+        - ' '
+        - |-
+          • Updated [i]Haul extra resources[/i]
+          Now works as expected: instead of denying the inefficient supply job so [i]some[/i] hauler [i]eventually[/i] hauls, the builder themselves will.
 
   - at: 1.2.0
     desc: |-
@@ -126,6 +141,14 @@ updates:
       (I've integrated the very last vanilla pathing check into this mod's magic.)
 
       • Setting tooltips updated with detailed descriptions.
+
+  - at: 1.4.0
+    desc: !join
+      - "\n"
+      -
+        - |-
+          Pick Up And Haul+: Opportunities
+        - *v1_4_0
 
   - at: 1.5.0
     desc: |-
@@ -155,11 +178,16 @@ updates:
 
   - at: 2.0.0
     credit: Kellogg''s#0574
-    desc: |-
-      • [i]Haul extra resources[/i] will trigger more often:
-           - Fixed hauling from existing storage, not just un-stored.
-           - New [i]from same-priority storage[/i] setting.
-           - Checks closest storage (to destination, not item) for closeness to destination.
+    desc: !join
+      - "\n"
+      -
+        - *v2_0_0
+        - ' '
+        - |-
+          • [i]Haul extra resources[/i] will trigger more often:
+            - Fixed hauling from existing storage, not just un-stored.
+            - New [i]from same-priority storage[/i] setting.
+            - Checks closest storage (to destination, not thing) for closeness to destination.
 
   # wrapping issues in HugsLib news from e.g. "Prefix " instead of "Prefix"
   - at: 2.0.0
@@ -198,26 +226,44 @@ updates:
       • Fixed recent "̶S̶t̶o̶c̶k̶p̶i̶l̶e̶s̶ ̶o̶n̶l̶y̶"̶ ̶s̶e̶t̶t̶i̶n̶g̶ accidentally applying to all inventory hauling (PUAH).
       • Clarity improvements to mod settings dialog.
 
-  - at: 3.0.2
-    desc: |-
-      • BETA 3.0 RELEASE! BUG FIXES & UI!
-        If willing, please report issues immediately via Discord link here ↗ or in Mods menu.
+  - at: 2.3.0
+    desc: !join
+      - "\n"
+      -
+        - *v2_3_0
+        - ' '
+        - |-
+          Skip opportunities when forming a caravan
 
-      • Opportunities
-        - Now prefer highest storage closest to job, not to thing.
-        - Added stockpile checkbox and building filters.
-        - New job report: "on the way to [TARGET]"
+  - at: 3.0.0
+    desc: !join
+      - ""
+      -
+        - |-
+          BUG FIXES & UI UPDATE
+          If willing, please report issues immediately via Discord link here ↗ or in Mods menu.
 
-      • Supplies & Ingredients
-        - Will only grab extra things headed to the same storage.
-        - If from same-priority storage, only resources - no generic things.
-        - New job report: "closer to [TARGET]"
+          • Opportunities
+            - Now prefer highest storage closest to job, not to thing.
+            - Added stockpile checkbox and building filters.
+            - New job report: "on the way to [TARGET]"
 
-      • REDESIGNED SETTINGS DIALOG.
-      • Added caching to speed up Pick Up And Haul (all inventory hauling).
-      • Fixed unloading to choose closer storage with our hauls.
-      • Put job strings in XML for easier translation.
-      • Many code quality improvements that made all of this much easier.
+          • Supplies & Ingredients
+            - Added stockpile checkbox.
+            - New job report: "closer to [TARGET]"
+        - "\n"
+        - "  - Pick Up And Haul+:"
+        - !join ["\n    - ", [' ', !split ["\n", *v3_0_0_hbc_puah]]]
+        - "\n\n"
+        - |-
+          • Pick Up And Haul+:
+            - Fixed unloading storage choice to match calculation for haul.
+            - After closest storage, will unload by thing category like original PUAH.
+            - Improved performance by caching haulable destinations.
+          
+          • Redesigned settings dialog.
+          • Put job strings in XML for easier translation.
+          • Many code quality improvements that made all of this much easier.
 
 
 keyed:
@@ -232,7 +278,7 @@ keyed:
 
   - name: Opportunity_Intro
     value: |-
-      Hauling on the way to a job is a vanilla feature, hence generally compatible with all mods. Some storage mods use delays, so are disallowed by default (EXCEPT IN THIS BETA).
+      Hauling on the way to a job is a vanilla feature, hence generally compatible with all mods. Some storage mods use delays, so are disallowed by default.
 
       We skip opportunities when bleeding or forming a caravan.
 
@@ -247,11 +293,11 @@ keyed:
 
   - name: HaulBeforeCarry_Intro
     value: |-
-      A pawn will find the closest resource, which is sometimes waiting delivery to storage near our job site. If we perform that haul first, they can grab extras to expedite future work (often their very next).
+      A pawn will find the closest resource, which is sometimes waiting delivery to storage near our job site. If we perform that haul first, they can grab extras headed to the same storage.
 
   - name: HaulBeforeCarry_EqualPriority
     value: |-
-      If a resource is already in storage of equal priority, they won't save a trip for a dedicated hauler, but can still expedite their future work.
+      If a resource is already in storage of equal priority, they won't save a trip for a dedicated hauler, but can still grab resources that expedite their future work.
 
   - name: PickUpAndHaulPlus_LoadReport
     value: '{{ORIGINAL}}.'
@@ -260,16 +306,19 @@ keyed:
     value: 'Efficiently {{ORIGINAL}}.'
 
   - name: PickUpAndHaulPlus_Tab
-    value: Pick Up And Haul
+    value: Pick Up And Haul+
 
   - name: PickUpAndHaulPlus_UpgradeTitle
     value: Pick Up And Haul+
 
   - name: PickUpAndHaulPlus_UpgradeText
-    value: |-
-      We significantly enhance Pick Up And Haul by unloading only once at each destination, in closest order.
-
-      We improve PUAH's performance by caching haulable destinations (when they cannot change).
+    value: !join
+      - "\n"
+      -
+        - |-
+          We significantly enhance Pick Up And Haul by unloading only once at each destination, in closest order.
+        - ' '
+        - *v3_0_0_puah
 
   - name: PickUpAndHaulPlus_IntegrationTitle
     value: Jobs of Opportunity
@@ -278,7 +327,8 @@ keyed:
     value: |-
       We fully integrate opportunities by ensuring our entire gather & unload path never exceeds our criteria for "opportunistic".
 
-      When hauling extra supplies or ingredients to closer storage, we only grab additions destined to the same storage.
+      When hauling extra supplies or ingredients to closer storage, we grab extra random things headed to the same higher-priority storage.
+
 
 settings:
   - name: Enabled
@@ -363,7 +413,7 @@ settings:
     title: Haul extra bill ingredients closer
 
   - name: HaulBeforeCarry_ToEqualPriority
-    title: Haul closer from same-priority storage
+    title: Haul extra resources closer from same-priority storage
 
   - name: HaulBeforeCarry_ToStockpiles
     title: *toStockpiles
