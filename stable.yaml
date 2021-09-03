@@ -8,7 +8,7 @@ _anchors:
 ModMetaData: !merge
   <: *global_ModMetaData
   url: '{discord}'
-  name: Jobs of Opportunity (While You're Up)
+  name: While You're Up / PUAH+
   packageId: CodeOptimist.JobsOfOpportunity
   supportedVersions:
     - 1.1
@@ -21,6 +21,7 @@ ModMetaData: !merge
     v1.3:
       - Mlie.PickUpAndHaul
 
+key_prefix: 'CodeOptimist.WhileYoureUp'
 published_file_id: 2034960453
 preview_from_path: '{out_dir}\..\JoO.png'
 
@@ -265,8 +266,17 @@ updates:
           • Put job strings in XML for easier translation.
           • Many code quality improvements that made all of this much easier.
 
+  - at: 3.0.1
+    desc: |-
+      Renamed mod to ^ from: Jobs of Opportunity (While You're Up)
 
 keyed:
+  - name: PickUpAndHaul_Missing
+    value: Pick Up And Haul is not installed
+
+  - name: PickUpAndHaul_Tooltip
+    value: PUAH is optional, but will be enhanced if installed.
+
   - name: Opportunity_LoadReport
     value: '{{ORIGINAL}} on the way to {{DESTINATION}}.'
 
@@ -321,7 +331,7 @@ keyed:
         - *v3_0_0_puah
 
   - name: PickUpAndHaulPlus_IntegrationTitle
-    value: Jobs of Opportunity
+    value: While You're Up
 
   - name: PickUpAndHaulPlus_IntegrationText
     value: |-

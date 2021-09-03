@@ -22,7 +22,7 @@ namespace JobsOfOpportunity
 
     partial class Mod : Verse.Mod
     {
-        public const    string    modId = "CodeOptimist.JobsOfOpportunity"; // explicit because PackageId may be changed e.g. "__copy__" suffix
+        public const    string    modId = "CodeOptimist.WhileYoureUp"; // explicit because PackageId may be changed e.g. "__copy__" suffix
         static          Verse.Mod mod;
         static          Settings  settings;
         static          bool      foundConfig;

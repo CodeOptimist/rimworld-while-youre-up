@@ -164,14 +164,15 @@ namespace JobsOfOpportunity
 
                 windowTripleStd.Begin(windowRect);
                 windowTripleStd.DrawBool(ref settings.Enabled, nameof(settings.Enabled));
+                windowTripleStd.NewColumn();
+                windowTripleStd.DrawBool(ref settings.DrawSpecialHauls, nameof(settings.DrawSpecialHauls));
+                windowTripleStd.NewColumn();
                 if (ModLister.HasActiveModWithName("Pick Up And Haul")) {
-                    windowTripleStd.NewColumn();
                     windowTripleStd.DrawBool(ref settings.UsePickUpAndHaulPlus, nameof(settings.UsePickUpAndHaulPlus));
                     if (tab == Tab.PickUpAndHaul && !settings.UsePickUpAndHaulPlus)
                         tab = Tab.HaulBeforeCarry;
-                }
-                windowTripleStd.NewColumn();
-                windowTripleStd.DrawBool(ref settings.DrawSpecialHauls, nameof(settings.DrawSpecialHauls));
+                } else
+                    windowTripleStd.Label("PickUpAndHaul_Missing".ModTranslate(), Text.LineHeight, "PickUpAndHaul_Tooltip".ModTranslate());
 
                 // todo actually implement Deep Storage defaults
                 tabsList.Clear();
