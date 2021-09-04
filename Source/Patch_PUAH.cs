@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Reflection.Emit;
+using CodeOptimist;
 using HarmonyLib;
 using RimWorld;
 using Verse; // ReSharper disable once RedundantUsingDirective
@@ -17,21 +19,27 @@ namespace JobsOfOpportunity
     {
         static partial class Patch_PUAH
         {
-            static TickContext tickContext = TickContext.None;
+            static readonly List<MethodBase> callStack = new List<MethodBase>();
 
-            static readonly Dictionary<Thing, IntVec3> cachedStoreCells = new Dictionary<Thing, IntVec3>();
+            static readonly Dictionary<Thing, IntVec3> cachedStoreCells          = new Dictionary<Thing, IntVec3>();
+            static readonly MethodInfo                 hasJobOnThingMethod       = AccessTools.DeclaredMethod(PuahWorkGiver_HaulToInventoryType, "HasJobOnThing");
+            static readonly MethodInfo                 jobOnThingMethod          = AccessTools.DeclaredMethod(PuahWorkGiver_HaulToInventoryType, "JobOnThing");
+            static readonly MethodInfo                 allocateThingAtCellMethod = AccessTools.DeclaredMethod(PuahWorkGiver_HaulToInventoryType, "AllocateThingAtCell");
 
-            enum TickContext { None, HaulToInventory_HasJobOnThing, HaulToInventory_JobOnThing, HaulToInventory_JobOnThing_AllocateThingAtCell }
+            static readonly MethodInfo allocateThingFirstStoreMethod = AccessTools.DeclaredMethod(
+                typeof(WorkGiver_HaulToInventory__AllocateThingAtCell_Patch), nameof(WorkGiver_HaulToInventory__AllocateThingAtCell_Patch.FirstTryFindStore));
 
-            static void PushTickContext(out TickContext original, TickContext @new) {
-                original = tickContext;
-                tickContext = @new;
-            }
+            static readonly MethodInfo allocateThingSecondStoreMethod = AccessTools.DeclaredMethod(
+                typeof(WorkGiver_HaulToInventory__AllocateThingAtCell_Patch), nameof(WorkGiver_HaulToInventory__AllocateThingAtCell_Patch.SecondTryFindStore));
 
-            static void PopTickContext(TickContext state) {
-                tickContext = state;
+            static void PushMethod(MethodBase method) => callStack.Add(method);
 
-                if (tickContext == TickContext.None)
+            static void PopMethod() {
+                // shouldn't happen unless another mod skipped one of our Prefix PushMethods (breaking our mod)
+                if (!callStack.Any()) return;
+
+                callStack.Pop();
+                if (!callStack.Any())
                     cachedStoreCells.Clear();
             }
 
@@ -40,39 +48,64 @@ namespace JobsOfOpportunity
             {
                 // because of PUAH's haulMoreWork toil
                 static bool       Prepare()      => havePuah;
-                static MethodBase TargetMethod() => AccessTools.DeclaredMethod(PuahWorkGiver_HaulToInventoryType, "HasJobOnThing");
+                static MethodBase TargetMethod() => hasJobOnThingMethod;
 
-                static void Prefix(out TickContext __state) => PushTickContext(out __state, TickContext.HaulToInventory_HasJobOnThing);
-                static void Postfix(TickContext __state)    => PopTickContext(__state);
+                static void Prefix(MethodBase __originalMethod) => PushMethod(__originalMethod);
+                static void Postfix()                           => PopMethod();
             }
 
             [HarmonyPatch]
             static partial class WorkGiver_HaulToInventory__JobOnThing_Patch
             {
                 static bool       Prepare()      => havePuah;
-                static MethodBase TargetMethod() => AccessTools.DeclaredMethod(PuahWorkGiver_HaulToInventoryType, "JobOnThing");
+                static MethodBase TargetMethod() => jobOnThingMethod;
 
                 [HarmonyPriority(Priority.High)]
-                static void Prefix(out TickContext __state) => PushTickContext(out __state, TickContext.HaulToInventory_JobOnThing);
+                static void Prefix(MethodBase __originalMethod) => PushMethod(__originalMethod);
 
                 [HarmonyPriority(Priority.Low)]
-                static void Postfix(TickContext __state) => PopTickContext(__state);
+                static void Postfix() => PopMethod();
             }
 
             [HarmonyPatch]
-            static class WorkGiver_HaulToInventory__TryFindBestBetterStoreCellFor_Patch
+            static class WorkGiver_HaulToInventory__AllocateThingAtCell_Patch
             {
                 static bool       Prepare()      => havePuah;
-                static MethodBase TargetMethod() => AccessTools.DeclaredMethod(PuahWorkGiver_HaulToInventoryType, "TryFindBestBetterStoreCellFor");
+                static MethodBase TargetMethod() => allocateThingAtCellMethod;
 
-                [HarmonyPrefix]
-                static bool UseSpecialHaulAwareTryFindStore(out bool __result, Thing thing, Pawn carrier, Map map, StoragePriority currentPriority, Faction faction,
-                    out IntVec3 foundCell) {
-                    // have PUAH use vanilla's to keep our code in one place
-                    PushTickContext(out var original, TickContext.HaulToInventory_JobOnThing_AllocateThingAtCell);
-                    __result = StoreUtility.TryFindBestBetterStoreCellFor(thing, carrier, map, currentPriority, faction, out foundCell); // patched below
-                    PopTickContext(original);
-                    return Skip();
+                static void Prefix(MethodBase __originalMethod) => PushMethod(__originalMethod);
+                static void Postfix()                           => PopMethod();
+
+                [HarmonyTranspiler]
+                static IEnumerable<CodeInstruction> _AllocateThingAtCell(IEnumerable<CodeInstruction> _codes, MethodBase __originalMethod) {
+                    var t = new Transpiler(_codes, __originalMethod);
+                    var puahTryFindStore = AccessTools.DeclaredMethod(PuahWorkGiver_HaulToInventoryType, "TryFindBestBetterStoreCellFor");
+                    var firstCallIdx = t.TryFindCodeIndex(code => code.Calls(puahTryFindStore));
+
+                    t.TryInsertCodes(
+                        0,
+                        (i, codes) => i == firstCallIdx,
+                        (i, codes) => new List<CodeInstruction> {
+                            new CodeInstruction(OpCodes.Call, AccessTools.DeclaredMethod(typeof(WorkGiver_HaulToInventory__AllocateThingAtCell_Patch), nameof(FirstTryFindStore))),
+                        }, true);
+                    t.codes.RemoveAt(t.MatchIdx);
+
+                    return t.GetFinalCodes().MethodReplacer(
+                        puahTryFindStore, AccessTools.DeclaredMethod(typeof(WorkGiver_HaulToInventory__AllocateThingAtCell_Patch), nameof(SecondTryFindStore)));
+                }
+
+                internal static bool FirstTryFindStore(Thing thing, Pawn carrier, Map map, StoragePriority currentPriority, Faction faction, out IntVec3 foundCell) {
+                    PushMethod(MethodBase.GetCurrentMethod());
+                    var result = StoreUtility.TryFindBestBetterStoreCellFor(thing, carrier, map, currentPriority, faction, out foundCell); // patched below
+                    PopMethod();
+                    return result;
+                }
+
+                internal static bool SecondTryFindStore(Thing thing, Pawn carrier, Map map, StoragePriority currentPriority, Faction faction, out IntVec3 foundCell) {
+                    PushMethod(MethodBase.GetCurrentMethod());
+                    var result = StoreUtility.TryFindBestBetterStoreCellFor(thing, carrier, map, currentPriority, faction, out foundCell); // patched below
+                    PopMethod();
+                    return result;
                 }
             }
 
@@ -85,10 +118,21 @@ namespace JobsOfOpportunity
 
                 [HarmonyPrefix]
                 static bool SpecialHaulAwareTryFindStore(ref bool __result, Thing t, Pawn carrier, Map map, StoragePriority currentPriority,
-                    Faction faction, ref IntVec3 foundCell, bool needAccurateResult) {
+                    Faction faction, out IntVec3 foundCell, bool needAccurateResult) {
+                    foundCell = IntVec3.Invalid;
+
                     if (carrier == null || !settings.UsePickUpAndHaulPlus || !settings.Enabled) return Original();
                     var isUnloadJob = carrier.CurJobDef == DefDatabase<JobDef>.GetNamed("UnloadYourHauledInventory");
-                    if (tickContext == TickContext.None && !isUnloadJob) return Original();
+                    if (!callStack.Any() && !isUnloadJob) return Original();
+
+                    // unload job happens over multiple ticks, and the second TryFindStore within AllocateThingAtCell is in a while loop
+                    var canCache = !isUnloadJob && !callStack.Contains(allocateThingSecondStoreMethod);
+                    if (canCache) {
+                        if (cachedStoreCells.Count == 0)
+                            cachedStoreCells.AddRange(Opportunity.cachedStoreCells); // inherit cache if available (will be same tick)
+                        if (!cachedStoreCells.TryGetValue(t, out foundCell))
+                            foundCell = IntVec3.Invalid;
+                    }
 
                     var puah = specialHauls.GetValueSafe(carrier) as PuahWithBetterUnloading;
                     var opportunity = puah as PuahOpportunity;
@@ -96,23 +140,20 @@ namespace JobsOfOpportunity
 
                     var skipCells = (HashSet<IntVec3>)AccessTools.DeclaredField(PuahWorkGiver_HaulToInventoryType, "skipCells").GetValue(null);
 
-                    if (cachedStoreCells.Count == 0)
-                        cachedStoreCells.AddRange(Opportunity.cachedStoreCells); // inherit cache if available (will be same tick)
-
                     var opportunityTarget = opportunity?.jobTarget ?? IntVec3.Invalid;
                     var beforeCarryTarget = beforeCarry?.carryTarget ?? IntVec3.Invalid;
-                    if (!cachedStoreCells.TryGetValue(t, out foundCell) && !TryFindBestBetterStoreCellFor_ClosestToTarget(
+                    if (foundCell == IntVec3.Invalid && !TryFindBestBetterStoreCellFor_ClosestToTarget(
                         t, opportunityTarget, beforeCarryTarget, carrier, map, currentPriority, faction, out foundCell,
                         // needAccurateResult may give us a shorter path, giving special hauls a better chance
-                        tickContext != TickContext.HaulToInventory_HasJobOnThing && (opportunityTarget.IsValid || beforeCarryTarget.IsValid)
-                                                                                 && Find.TickManager.CurTimeSpeed == TimeSpeed.Normal,
-                        tickContext == TickContext.HaulToInventory_JobOnThing_AllocateThingAtCell ? skipCells : null))
+                        !callStack.Contains(hasJobOnThingMethod) && (opportunityTarget.IsValid || beforeCarryTarget.IsValid) && Find.TickManager.CurTimeSpeed == TimeSpeed.Normal,
+                        callStack.Contains(allocateThingAtCellMethod) ? skipCells : null))
                         return Skip(__result = false);
 
-                    if (isUnloadJob) return Skip(__result = true);
+                    if (canCache)
+                        cachedStoreCells.SetOrAdd(t, foundCell);
 
-                    // don't use cache with unload, since it's over multiple ticks
-                    cachedStoreCells.SetOrAdd(t, foundCell);
+                    if (isUnloadJob)
+                        return Skip(__result = true);
 
                     if (opportunity != null && !opportunity.TrackThingIfOpportune(t, carrier, ref foundCell))
                         return Skip(__result = false);
@@ -144,7 +185,7 @@ namespace JobsOfOpportunity
                         }
                     }
 
-                    if (tickContext == TickContext.HaulToInventory_JobOnThing_AllocateThingAtCell) {
+                    if (callStack.Contains(allocateThingAtCellMethod)) {
                         if (puah == null) {
                             puah = new PuahWithBetterUnloading();
                             specialHauls.SetOrAdd(carrier, puah);
