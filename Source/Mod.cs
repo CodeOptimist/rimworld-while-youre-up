@@ -107,15 +107,22 @@ namespace JobsOfOpportunity
                 if (job.def == JobDefOf.DoBill && settings.HaulBeforeCarry_Bills) {
                     // Debug.WriteLine($"Bill: '{job.bill}' label: '{job.bill.Label}'");
                     // Debug.WriteLine($"Recipe: '{job.bill.recipe}' workerClass: '{job.bill.recipe.workerClass}'");
-                    foreach (var localTargetInfo in job.targetQueueB) {
-                        if (localTargetInfo.Thing == null) continue;
+                    for (var i = 0; i < job.targetQueueB.Count; i++) {
+                        var ingredient = job.targetQueueB[i];
+                        if (ingredient.Thing == null) continue;
 
-                        if (HaulAIUtility.PawnCanAutomaticallyHaulFast(pawn, localTargetInfo.Thing, false)) {
-                            // permitted when bleeding because facilitates whatever bill is important enough to do while bleeding
-                            //  may save precious time going back for ingredients... unless we want only 1 medicine ASAP; it's a trade-off
-                            var storeJob = HaulBeforeCarry(pawn, jobTarget, localTargetInfo.Thing); // HaulBeforeBill
-                            if (storeJob != null) return JobUtility__TryStartErrorRecoverJob_Patch.CatchStanding(pawn, storeJob);
+                        // too difficult to know in advance if there are no extras for PUAH
+                        if (!havePuah || !settings.UsePickUpAndHaulPlus) {
+                            if (ingredient.Thing.stackCount <= job.countQueue[i])
+                                continue; // there are no extras
                         }
+
+                        if (!HaulAIUtility.PawnCanAutomaticallyHaulFast(pawn, ingredient.Thing, false)) continue;
+
+                        // permitted when bleeding because facilitates whatever bill is important enough to do while bleeding
+                        //  may save precious time going back for ingredients... unless we want only 1 medicine ASAP; it's a trade-off
+                        var storeJob = HaulBeforeCarry(pawn, jobTarget, ingredient.Thing); // HaulBeforeBill
+                        if (storeJob != null) return JobUtility__TryStartErrorRecoverJob_Patch.CatchStanding(pawn, storeJob);
                     }
                 }
 
