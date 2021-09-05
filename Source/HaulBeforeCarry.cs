@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using CodeOptimist;
@@ -22,31 +23,38 @@ namespace JobsOfOpportunity
             static IEnumerable<CodeInstruction> _HaulBeforeSupply(IEnumerable<CodeInstruction> _codes, ILGenerator generator, MethodBase __originalMethod) {
                 var t = new Transpiler(_codes, __originalMethod);
 
-                var nearbyResourcesIdx =
+                var afterNearbyIdx =
                     t.TryFindCodeIndex(code => code.Calls(AccessTools.DeclaredMethod(typeof(WorkGiver_ConstructDeliverResources), "FindAvailableNearbyResources")));
-                var foundResIdx = t.TryFindCodeLastIndex(nearbyResourcesIdx, code => code.opcode == OpCodes.Brfalse) + 1;
-                var foundRes = generator.DefineLabel();
-                t.codes[foundResIdx].labels.Add(foundRes);
-                var returnJobIdx = t.TryFindCodeIndex(foundResIdx, code => code.opcode == OpCodes.Ret);
+                afterNearbyIdx += 1;
+                var foundResIdx = t.TryFindCodeLastIndex(afterNearbyIdx, code => code.opcode == OpCodes.Brfalse) + 1;
+                var afterNearby = generator.DefineLabel();
+                t.codes[afterNearbyIdx].labels.Add(afterNearby);
+
+                var needField = AccessTools.FindIncludingInnerTypes(typeof(WorkGiver_ConstructDeliverResources), ty => AccessTools.DeclaredField(ty, "need"));
+                var needObjIdx = t.TryFindCodeIndex(code => code.Is(OpCodes.Newobj, AccessTools.DeclaredConstructor(needField.DeclaringType)));
+
+                var returnJobIdx = t.TryFindCodeIndex(afterNearbyIdx, code => code.opcode == OpCodes.Ret);
                 var jobVar = t.codes[returnJobIdx - 1].operand;
 
                 t.TryInsertCodes(
                     0,
-                    (i, codes) => i == foundResIdx,
+                    (i, codes) => i == afterNearbyIdx,
                     (i, codes) => new List<CodeInstruction> {
                         // job = HaulBeforeSupply(pawn, (Thing) c, foundRes);
-                        new CodeInstruction(OpCodes.Ldarg_1),                  // Pawn pawn
-                        new CodeInstruction(OpCodes.Ldarg_2),                  // IConstructible c
-                        new CodeInstruction(OpCodes.Castclass, typeof(Thing)), // (Thing) c
-                        codes[i + 1].Clone(),                                  // Thing foundRes
-                        codes[i + 2].Clone(),                                  // Thing foundRes
+                        new CodeInstruction(OpCodes.Ldarg_1),                                // Pawn pawn
+                        new CodeInstruction(OpCodes.Ldloc_S, codes[needObjIdx + 1].operand), // ThingDefCountClass <>c__DisplayClass9_1
+                        new CodeInstruction(OpCodes.Ldfld,   needField),                     //                                        .need
+                        new CodeInstruction(OpCodes.Ldarg_2),                                // IConstructible c
+                        new CodeInstruction(OpCodes.Castclass, typeof(Thing)),               // (Thing) c
+                        codes[foundResIdx + 1].Clone(),                                      // Thing foundRes
+                        codes[foundResIdx + 2].Clone(),                                      // Thing foundRes
                         new CodeInstruction(
                             OpCodes.Call, AccessTools.DeclaredMethod(typeof(WorkGiver_ConstructDeliverResources__ResourceDeliverJobFor_Patch), nameof(HaulBeforeSupply))),
                         new CodeInstruction(OpCodes.Stloc_S, jobVar),
 
                         // if (job != null) return job;
                         new CodeInstruction(OpCodes.Ldloc_S,   jobVar),
-                        new CodeInstruction(OpCodes.Brfalse_S, foundRes),
+                        new CodeInstruction(OpCodes.Brfalse_S, afterNearby),
                         new CodeInstruction(OpCodes.Ldloc_S,   jobVar),
                         new CodeInstruction(OpCodes.Ret),
                     });
@@ -54,9 +62,15 @@ namespace JobsOfOpportunity
                 return t.GetFinalCodes();
             }
 
-            static Job HaulBeforeSupply(Pawn pawn, Thing constructible, Thing th) {
+            static Job HaulBeforeSupply(Pawn pawn, ThingDefCountClass need, Thing constructible, Thing th) {
                 if (!settings.HaulBeforeCarry_Supplies || !settings.Enabled || AlreadyHauling(pawn)) return null;
-                return JobUtility__TryStartErrorRecoverJob_Patch.CatchStanding(pawn, HaulBeforeCarry(pawn, constructible.Position, th));
+
+                var mostThing = WorkGiver_ConstructDeliverResources.resourcesAvailable.DefaultIfEmpty().MaxBy(x => x.stackCount);
+                // too difficult to know in advance if there are no extras for PUAH
+                if (!havePuah || !settings.UsePickUpAndHaulPlus)
+                    if (mostThing.stackCount <= need.count)
+                        return null; // there are no extras
+                return JobUtility__TryStartErrorRecoverJob_Patch.CatchStanding(pawn, HaulBeforeCarry(pawn, constructible.Position, mostThing ?? th));
             }
         }
 
@@ -81,6 +95,7 @@ namespace JobsOfOpportunity
             // try to avoid haul-before-carry when there are no extras to grab
             // proper way is to re-check after grabbing everything, but here's a quick hack to at least avoid it with stone chunks
             if (MassUtility.WillBeOverEncumberedAfterPickingUp(pawn, thing, 2)) return null; // already going for 1, so 2 to check for another
+
             if (!TryFindBestBetterStoreCellFor_ClosestToTarget(
                 thing, IntVec3.Invalid, carryTarget, pawn, pawn.Map, StoreUtility.CurrentStoragePriorityOf(thing), pawn.Faction, out var storeCell, true)) return null;
 
