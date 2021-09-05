@@ -71,6 +71,21 @@ namespace JobsOfOpportunity
         // ReSharper disable UnusedMember.Local
         // ReSharper disable UnusedParameter.Local
 
+        [HarmonyPatch(typeof(WorkGiver_Scanner), nameof(WorkGiver_Scanner.HasJobOnThing))]
+        static class WorkGiver_Scanner__HasJobOnThing_Patch
+        {
+            [HarmonyPrefix]
+            static void CheckForSpecialHaul(out bool __state, Pawn pawn) {
+                __state = specialHauls.ContainsKey(pawn);
+            }
+
+            [HarmonyPostfix]
+            static void ClearTempSpecialHaul(bool __state, Pawn pawn) {
+                if (!__state && specialHauls.ContainsKey(pawn))
+                    specialHauls.Remove(pawn);
+            }
+        }
+
         [HarmonyPatch(typeof(Pawn_JobTracker), nameof(Pawn_JobTracker.ClearQueuedJobs))]
         static class Pawn_JobTracker__ClearQueuedJobs_Patch
         {
