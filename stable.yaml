@@ -25,28 +25,22 @@ key_prefix: 'CodeOptimist.WhileYoureUp'
 published_file_id: 2034960453
 preview_from_path: '{out_dir}\..\JoO.png'
 
+is_stable: True
 intro: |-
   [b]Opportunistic hauling; haul-to-inventory improvements (if [i]Pick Up And Haul[/i] is installed).[/b]
   A must-have with PUAH. Compatible with existing saves. Any load order.
 
-steam_intro: |-
-  {intro}
-
-  [img]https://i.imgur.com/tbpLbha.gif[/img]
-
 header: |-
   Recognizing this mod: "on the way to", "closer to", "Efficiently unloading".
-
-  [img]https://i.imgur.com/MJzgkiK.png[/img]
-
+  {is_steam?=
+  [img]https&#58;//i.imgur.com/MJzgkiK.png[/img]
+  }
   80% of this mod is improving [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1279012058]Pick Up And Haul[/url] (optional; installed separately). If you already use PUAH, you want this mod too.
 
   "But my pawns are walking farther!"
   Yes. A slightly longer journey now to avoid a [i]much[/i] longer journey next time.
 
 footer: |-
-
-
   [h1]Compatibility[/h1]
   [i]Common Sense?[/i] Yes. (I prevent incompatible settings from being on at the same time.)
 
@@ -71,51 +65,49 @@ footer: |-
   [h1]History[/h1]
   I intended to [url=https://gist.github.com/CodeOptimist/5a740dd803fc370ec43f22ffa8bc953d#file-utils-cs-L48]fork[/url] [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1544626521]While You're Up[/url], until I saw [url=https://github.com/CodeOptimist/rimworld-jobs-of-opportunity/blob/29391b0a075a1dd77d4788777b0137e26390328c/Source/Patch_TryOpportunisticJob.cs]RimWorld 1.0 added it[/url]. This mod improves vanilla's integration, and so is a spiritual successor to [i]While You're Up[/i] 💜.
 
-features:
-  - desc: &v2_0_0 |-
-      [u][i]Pick Up And Haul+[/i]: Better unloading[/u]
-      We enhance all inventory hauling by unloading only once at each storage destination, in closest order.
-  - desc: &v3_0_0_puah |-
-      We improve performance by caching haulable destinations.
-  - desc: ''
+features: !join
+  - "\n"
+  -
+    - &v2_0_0 |-
+        [u][i]Pick Up And Haul+[/i]: Better unloading[/u]
+        We enhance all inventory hauling by unloading only once at each storage destination, in closest order.
+    - &v3_0_0_puah |-
+        We improve performance by caching haulable destinations.
+    -
+    - &v1_0_0 |-
+        [u]Opportunistic hauls[/u]
+        Vanilla has support for opportunities, but with limitations: haulable near your [b]start[/b] position, and storage near your job.
+        We prefer these, but drop them as requirements to include hauls along the path.
+    -
+    - &v1_1_0 |-
+        We skip opportunities when bleeding or forming a caravan.
+    -
+    - |-
+        [i]Pick Up And Haul+[/i]
+    - &v1_4_0 |-
+        Modified to grab only surrounding things whose unload path is also opportunistic.
+    -
+    - |-
+        [u]Haul extra supplies & ingredients closer[/u]
+        If hauling resources to storage would bring them closer to their job, do that first (grabbing extra).
+        {is_steam?=
+        [i]Your builder will never again cross the map to retrieve a [b]single[/b] component.[/i]
 
-  - desc: &v1_0_0 |-
-      [u]Opportunistic hauls[/u]
-      Vanilla has support for opportunities, but with limitations: haulable near your [b]start[/b] position, and storage near your job.
-      We prefer these, but drop them as requirements to include hauls along the path.
-  - desc: ''
-  - desc: &v1_1_0 |-
-      We skip opportunities when bleeding or forming a caravan.
-  - desc: ''
+        [img]https&#58;//i.imgur.com/7O9IcfD.png[/img]
+        }
+#       https://app.code2flow.com/flowcharts/5f56f00cadae889d9e80df8f
+    - |-
+        [i]Pick Up And Haul+[/i]
+    - &v3_0_0_hbc_puah |-
+        Modified to grab extra things headed to the same storage (when higher priority).
+        Grab extra supplies & ingredients headed to the same storage (when equal priority).
+    -
+    - &v2_3_0 |-
+        [u]Storage building filters for mod compatibility[/u]
+        Permit or deny for any storage building through settings, or leave automatically managed with mod updates.{is_steam?=
 
-  - desc: |-
-      [i]Pick Up And Haul+[/i]
-  - desc: &v1_4_0 |-
-      Modified to grab only surrounding things whose unload path is also opportunistic.
-  - desc: ''
-
-  - desc: |-
-      [u]Haul extra supplies & ingredients closer[/u]
-      If hauling resources to storage would bring them closer to their job, do that first (grabbing extra).
-  - desc: ''
-    steam: |-
-      Your builder will never again cross the map to retrieve a [b]single[/b] component.
-
-      [img]https://i.imgur.com/7O9IcfD.png[/img]
-
-  - desc: |-
-      [i]Pick Up And Haul+[/i]
-  - desc: &v3_0_0_hbc_puah |-
-      Modified to grab extra things headed to the same storage (when higher priority).
-      Grab extra supplies & ingredients headed to the same storage (when equal priority).
-  - desc: ''
-
-  - desc: &v2_3_0 |-
-      [u]Storage building filters for mod compatibility[/u]
-      Permit or deny for any storage building through settings, or leave automatically managed with mod updates.
-    steam: |-
-
-      [img]https://i.imgur.com/CmFpxJU.png[/img]
+        [img]https&#58;//i.imgur.com/CmFpxJU.png[/img]
+        }
 
 
 updates:
@@ -163,7 +155,7 @@ updates:
       • Improved settings and descriptions.
 
   - at: 1.5.1
-    credit: '"Saken" https://steamcommunity.com/id/SakenW'
+    credit: '"Saken" https://steamcommunity.com/id/SakenW '
     desc: |-
       • Compatibility with [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1233893175][i]KV's[/i] Infinite Storage[/url]: [i]Haul extra resources[/i] should now work instead of looping on storage and retrieval.
 
@@ -212,22 +204,22 @@ updates:
           Try it out, it's fun! See tooltip for description.
 
   - at: 2.1.1
-    credit: '"FeistyTroglodyte" https://steamcommunity.com/profiles/76561198110437158'
+    credit: '"FeistyTroglodyte" https://steamcommunity.com/profiles/76561198110437158 '
     desc: |-
       • Fixed hauling loop issue with PUAH, chunks, and multiple dumping stockpiles.
 
   - at: 2.1.2
-    credit: '"Macbuk" https://steamcommunity.com/id/macbuk'
+    credit: '"Macbuk" https://steamcommunity.com/id/macbuk '
     desc: |-
       • Fixed inventory hauling check to work with non-Pawns (e.g. [i]Misc. Robots[/i] mod).
 
   - at: 2.1.3
-    credit: '"Kosh" https://steamcommunity.com/profiles/76561197971649772'
+    credit: '"Kosh" https://steamcommunity.com/profiles/76561197971649772 '
     desc: |-
       • Fixed [i]Extra resource[/i] hauls occasionally being recalculated many times in 1 tick.
 
   - at: 2.1.4
-    credit: '"IcePlum" https://steamcommunity.com/id/thispagesucks'
+    credit: '"IcePlum" https://steamcommunity.com/id/thispagesucks '
     desc: |-
       • Fixed recent "̶S̶t̶o̶c̶k̶p̶i̶l̶e̶s̶ ̶o̶n̶l̶y̶"̶ ̶s̶e̶t̶t̶i̶n̶g̶ accidentally applying to all inventory hauling (PUAH).
       • Clarity improvements to mod settings dialog.
@@ -265,7 +257,7 @@ updates:
             - Fixed unloading storage choice to match calculation for haul.
             - After closest storage, will unload by thing category like original PUAH.
             - Improved performance by caching haulable destinations.
-          
+
           • Redesigned settings dialog.
           • Put job strings in XML for easier translation.
           • Many code quality improvements that made all of this much easier.
@@ -275,13 +267,13 @@ updates:
       • Renamed mod to ^ from: Jobs of Opportunity (While You're Up)
 
   - at: 3.0.2
-    credit: [xeotrel2#0743, '"tuk0z" https://steamcommunity.com/profiles/76561198827752749']
+    credit: [xeotrel2#0743, '"tuk0z" https://steamcommunity.com/profiles/76561198827752749 ']
     desc: |-
       • Fixed a v3.0 crash related to storage capacity with PUAH.
       (I was making PUAH cache haul destinations where it shouldn't: in a loop!)
 
   - at: 3.1.0
-    credit: '"Seriously Unserious" https://steamcommunity.com/profiles/76561198089138903'
+    credit: '"Seriously Unserious" https://steamcommunity.com/profiles/76561198089138903 '
     desc: |-
       • Improvements for non-[i]Pick Up And Haul[/i] users (PUAH is too complex for these)
         - Only haul an ingredient to storage if there are extras
@@ -289,6 +281,8 @@ updates:
           - Haul largest nearby supply stack instead of absolute closest
 
   - at: 3.1.1
+    desc: |-
+      • Fixed [i]Haul extra supplies[/i] accidentally disabled since v2.1.3
 
   - at: 3.1.2
     credit: '"SetArk <Nyanverick 07>" https://steamcommunity.com/profiles/76561198000445040 '
@@ -440,10 +434,10 @@ settings:
     desc: *region_look_count
 
   - name: Opportunity_ToStockpiles
-    title: &toStockpiles Work with stockpiles
+    title: &to_stockpiles Work with stockpiles
 
   - name: Opportunity_AutoBuildings
-    title: &autoBuildings Auto-manage buildings (updated from feedback)
+    title: &auto_buildings Auto-manage buildings (updated from feedback)
 
   - name: HaulBeforeCarry_Supplies
     title: Haul extra construction supplies closer
@@ -455,7 +449,7 @@ settings:
     title: Haul extra resources closer from same-priority storage
 
   - name: HaulBeforeCarry_ToStockpiles
-    title: *toStockpiles
+    title: *to_stockpiles
 
   - name: HaulBeforeCarry_AutoBuildings
-    title: *autoBuildings
+    title: *auto_buildings
