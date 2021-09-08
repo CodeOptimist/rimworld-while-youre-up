@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -235,17 +234,17 @@ namespace JobsOfOpportunity
                         specialHauls.SetOrAdd(pawn, puah);
                     }
 
-                    Thing firstThingToUnload = null;
-                    try {
-                        var closestHaul = carriedThings.Select(t => GetDefHaul(puah, t)).Where(x => x.storeCell.IsValid).MinBy(x => x.storeCell.DistanceTo(pawn.Position));
-                        var closestSlotGroup = closestHaul.storeCell.GetSlotGroup(pawn.Map);
-                        firstThingToUnload = closestSlotGroup == null
-                            ? closestHaul.thing
-                            : carriedThings.Select(t => GetDefHaul(puah, t)).Where(x => x.storeCell.GetSlotGroup(pawn.Map) == closestSlotGroup)
-                                .MinBy(x => (x.thing.def.FirstThingCategory?.index, x.thing.def.defName)).thing;
-                    } catch (InvalidOperationException) {
-                        // MinBy() empty sequence exception if all cells are invalid; rare but possible
-                    }
+                    var closestHaul = carriedThings.Select(t => GetDefHaul(puah, t))
+                        .Where(x => x.storeCell.IsValid).DefaultIfEmpty()
+                        .MinBy(x => x.storeCell.DistanceTo(pawn.Position));
+                    var closestSlotGroup = closestHaul.storeCell.IsValid ? closestHaul.storeCell.GetSlotGroup(pawn.Map) : null;
+
+                    var firstThingToUnload = closestSlotGroup == null
+                        ? closestHaul.thing
+                        : carriedThings.Select(t => GetDefHaul(puah, t))
+                            .Where(x => x.storeCell.IsValid && x.storeCell.GetSlotGroup(pawn.Map) == closestSlotGroup)
+                            .DefaultIfEmpty() // should at least find closestHaul, but guard against future changes
+                            .MinBy(x => (x.thing.def.FirstThingCategory?.index, x.thing.def.defName)).thing;
 
                     if (firstThingToUnload == null)
                         firstThingToUnload = carriedThings.MinBy(t => (t.def.FirstThingCategory?.index, t.def.defName));

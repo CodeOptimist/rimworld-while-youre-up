@@ -289,11 +289,14 @@ updates:
           - Haul largest nearby supply stack instead of absolute closest
 
   - at: 3.1.1
+
+  - at: 3.1.2
+    credit: '"SetArk <Nyanverick 07>" https://steamcommunity.com/profiles/76561198000445040 '
     desc: |-
       If willing, please report issues immediately via Discord link here ↗ or in Mods menu.
 
-      • Fixed [i]Haul extra supplies[/i] accidentally disabled since v2.1.3
-      (better fix for this than in 3.1.0)
+      • PUAH unloading
+        - Fix potential IndexOutOfRange error; performance improvement.
 
 
 keyed:
