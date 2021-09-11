@@ -1,8 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Reflection.Emit;
-using CodeOptimist;
 using HarmonyLib;
 using RimWorld;
 using Verse; // ReSharper disable once RedundantUsingDirective
@@ -22,14 +20,7 @@ namespace JobsOfOpportunity
 
             static readonly Dictionary<Thing, IntVec3> cachedStoreCells          = new Dictionary<Thing, IntVec3>();
             static readonly MethodInfo                 hasJobOnThingMethod       = AccessTools.DeclaredMethod(PuahWorkGiver_HaulToInventoryType, "HasJobOnThing");
-            static readonly MethodInfo                 jobOnThingMethod          = AccessTools.DeclaredMethod(PuahWorkGiver_HaulToInventoryType, "JobOnThing");
             static readonly MethodInfo                 allocateThingAtCellMethod = AccessTools.DeclaredMethod(PuahWorkGiver_HaulToInventoryType, "AllocateThingAtCell");
-
-            static readonly MethodInfo allocateThingFirstStoreMethod = AccessTools.DeclaredMethod(
-                typeof(WorkGiver_HaulToInventory__AllocateThingAtCell_Patch), nameof(WorkGiver_HaulToInventory__AllocateThingAtCell_Patch.FirstTryFindStore));
-
-            static readonly MethodInfo allocateThingSecondStoreMethod = AccessTools.DeclaredMethod(
-                typeof(WorkGiver_HaulToInventory__AllocateThingAtCell_Patch), nameof(WorkGiver_HaulToInventory__AllocateThingAtCell_Patch.SecondTryFindStore));
 
             static void PushMethod(MethodBase method) => callStack.Add(method);
 
@@ -57,7 +48,7 @@ namespace JobsOfOpportunity
             static partial class WorkGiver_HaulToInventory__JobOnThing_Patch
             {
                 static bool       Prepare()      => havePuah;
-                static MethodBase TargetMethod() => jobOnThingMethod;
+                static MethodBase TargetMethod() => AccessTools.DeclaredMethod(PuahWorkGiver_HaulToInventoryType, "JobOnThing");
 
                 [HarmonyPriority(Priority.High)]
                 static void Prefix(MethodBase __originalMethod) => PushMethod(__originalMethod);
@@ -74,37 +65,21 @@ namespace JobsOfOpportunity
 
                 static void Prefix(MethodBase __originalMethod) => PushMethod(__originalMethod);
                 static void Postfix()                           => PopMethod();
+            }
 
-                [HarmonyTranspiler]
-                static IEnumerable<CodeInstruction> _AllocateThingAtCell(IEnumerable<CodeInstruction> _codes, MethodBase __originalMethod) {
-                    var t = new Transpiler(_codes, __originalMethod);
-                    var puahTryFindStore = AccessTools.DeclaredMethod(PuahWorkGiver_HaulToInventoryType, "TryFindBestBetterStoreCellFor");
-                    var firstCallIdx = t.TryFindCodeIndex(code => code.Calls(puahTryFindStore));
+            [HarmonyPatch]
+            static class WorkGiver_HaulToInventory__TryFindBestBetterStoreCellFor_Patch
+            {
+                static bool       Prepare()      => havePuah;
+                static MethodBase TargetMethod() => AccessTools.DeclaredMethod(PuahWorkGiver_HaulToInventoryType, "TryFindBestBetterStoreCellFor");
 
-                    t.TryInsertCodes(
-                        0,
-                        (i, codes) => i == firstCallIdx,
-                        (i, codes) => new List<CodeInstruction> {
-                            new CodeInstruction(OpCodes.Call, AccessTools.DeclaredMethod(typeof(WorkGiver_HaulToInventory__AllocateThingAtCell_Patch), nameof(FirstTryFindStore))),
-                        }, true);
-                    t.codes.RemoveAt(t.MatchIdx);
-
-                    return t.GetFinalCodes().MethodReplacer(
-                        puahTryFindStore, AccessTools.DeclaredMethod(typeof(WorkGiver_HaulToInventory__AllocateThingAtCell_Patch), nameof(SecondTryFindStore)));
-                }
-
-                internal static bool FirstTryFindStore(Thing thing, Pawn carrier, Map map, StoragePriority currentPriority, Faction faction, out IntVec3 foundCell) {
-                    PushMethod(MethodBase.GetCurrentMethod());
-                    var result = StoreUtility.TryFindBestBetterStoreCellFor(thing, carrier, map, currentPriority, faction, out foundCell); // patched below
-                    PopMethod();
-                    return result;
-                }
-
-                internal static bool SecondTryFindStore(Thing thing, Pawn carrier, Map map, StoragePriority currentPriority, Faction faction, out IntVec3 foundCell) {
-                    PushMethod(MethodBase.GetCurrentMethod());
-                    var result = StoreUtility.TryFindBestBetterStoreCellFor(thing, carrier, map, currentPriority, faction, out foundCell); // patched below
-                    PopMethod();
-                    return result;
+                [HarmonyPrefix]
+                static bool UseSpecialHaulAwareTryFindStore(ref bool __result, Thing thing, Pawn carrier, Map map, StoragePriority currentPriority, Faction faction,
+                    ref IntVec3 foundCell) {
+                    if (!settings.UsePickUpAndHaulPlus || !settings.Enabled) return Original();
+                    // have PUAH use vanilla's to keep our code in one place
+                    __result = StoreUtility.TryFindBestBetterStoreCellFor(thing, carrier, map, currentPriority, faction, out foundCell); // patched below
+                    return Skip();
                 }
             }
 
@@ -124,28 +99,37 @@ namespace JobsOfOpportunity
                     var isUnloadJob = carrier.CurJobDef == DefDatabase<JobDef>.GetNamed("UnloadYourHauledInventory");
                     if (!callStack.Any() && !isUnloadJob) return Original();
 
-                    // unload job happens over multiple ticks, and the second TryFindStore within AllocateThingAtCell is in a while loop
-                    var canCache = !isUnloadJob && !callStack.Contains(allocateThingSecondStoreMethod);
+                    var skipCells = (HashSet<IntVec3>)AccessTools.DeclaredField(PuahWorkGiver_HaulToInventoryType, "skipCells").GetValue(null);
+                    var hasSkipCells = callStack.Contains(allocateThingAtCellMethod);
+
+                    // unload job happens over multiple ticks
+                    var canCache = !isUnloadJob;
                     if (canCache) {
                         if (cachedStoreCells.Count == 0)
                             cachedStoreCells.AddRange(Opportunity.cachedStoreCells); // inherit cache if available (will be same tick)
                         if (!cachedStoreCells.TryGetValue(t, out foundCell))
                             foundCell = IntVec3.Invalid;
+
+                        // we reproduce PUAH's skipCells in our own TryFindStore but we also need it here with caching
+                        if (foundCell.IsValid && hasSkipCells) {
+                            if (skipCells.Contains(foundCell))
+                                foundCell = IntVec3.Invalid; // cache is no good, skipCells will be used below
+                            else                             // successful cache hit
+                                skipCells.Add(foundCell);    // not used below, but the next SpecialHaulAwareTryFindStore(), like PUAH
+                        }
                     }
 
                     var puah = specialHauls.GetValueSafe(carrier) as PuahWithBetterUnloading;
                     var opportunity = puah as PuahOpportunity;
                     var beforeCarry = puah as PuahBeforeCarry;
 
-                    var skipCells = (HashSet<IntVec3>)AccessTools.DeclaredField(PuahWorkGiver_HaulToInventoryType, "skipCells").GetValue(null);
-
                     var opportunityTarget = opportunity?.jobTarget ?? IntVec3.Invalid;
                     var beforeCarryTarget = beforeCarry?.carryTarget ?? IntVec3.Invalid;
-                    if (foundCell == IntVec3.Invalid && !TryFindBestBetterStoreCellFor_ClosestToTarget(
+                    if (!foundCell.IsValid && !TryFindBestBetterStoreCellFor_ClosestToTarget(
                         t, opportunityTarget, beforeCarryTarget, carrier, map, currentPriority, faction, out foundCell,
                         // needAccurateResult may give us a shorter path, giving special hauls a better chance
                         !callStack.Contains(hasJobOnThingMethod) && (opportunityTarget.IsValid || beforeCarryTarget.IsValid) && Find.TickManager.CurTimeSpeed == TimeSpeed.Normal,
-                        callStack.Contains(allocateThingAtCellMethod) ? skipCells : null))
+                        hasSkipCells ? skipCells : null))
                         return Skip(__result = false);
 
                     if (canCache)
