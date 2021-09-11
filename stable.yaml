@@ -51,10 +51,14 @@ footer: |-
   Likewise we aggressively cache all haul destination lookups for all features, even base Pick Up And Haul.
 
   [h1]Known Issues[/h1]
-  [i]Pawns not taking into account travel time around walls.[/i]
+  [i]• Pawns not taking into account travel time around walls.[/i]
   Unfortunately this is a consequence of the straight-line "as the crow flies" math in the vanilla code for opportunities. If this is a huge problem for your map, set [i]Haulable & storage initial closeness[/i] to a stricter setting. Your pawns will find less opportunities.
   This is how vanilla mitigates the problem while still being performant. A good solution is for me to add an option for true pathfinding for those whose machines can handle it.
   Alternatively, build a door. 😉
+
+  [i]• Hauling resources to storage despite no extras.[/i]
+  Only an issue with Pick Up And Haul. Unfortunately predicting what PUAH will find or altering it when it doesn't find extras requires complex and ugly hacks.
+  A true solution requires replacing (rather than patching) PUAH.
 
   [h1]Report Bugs[/h1]
   1. Please save a game when it occurs, then reload to verify it reoccurs.
@@ -314,6 +318,8 @@ keyed:
 
   - name: Opportunity_Intro
     value: |-
+      Job report: "... on the way to ..."
+
       Hauling on the way to a job is a vanilla feature, hence generally compatible with all mods. Some storage mods use delays, so are disallowed by default.
 
       We skip opportunities when bleeding or forming a caravan.
@@ -329,6 +335,8 @@ keyed:
 
   - name: HaulBeforeCarry_Intro
     value: |-
+      Job report: "... closer to ..."
+
       A pawn will find the closest resource, which is sometimes waiting delivery to storage near our job site. If we perform that haul first, they can grab extras headed to the same storage.
 
   - name: HaulBeforeCarry_EqualPriority
