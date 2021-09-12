@@ -299,6 +299,11 @@ updates:
     desc: |-
       • A simpler, more complete fix than v3.0.2 for a PUAH-performance-boost related crash.
 
+  - at: 3.1.4
+    desc: |-
+      • Fixed [i]Haul extra supplies[/i] to check incapable of [i]dumb labor[/i] etc.
+      (Like [i]opportunities[/i] and [i]ingredients[/i].)
+
 
 keyed:
   - name: PickUpAndHaul_Missing

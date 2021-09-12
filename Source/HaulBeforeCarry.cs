@@ -64,6 +64,7 @@ namespace JobsOfOpportunity
 
             static Job HaulBeforeSupply(Pawn pawn, ThingDefCountClass need, Thing constructible, Thing th) {
                 if (!settings.HaulBeforeCarry_Supplies || !settings.Enabled || AlreadyHauling(pawn)) return null;
+                if (pawn.WorkTagIsDisabled(WorkTags.ManualDumb | WorkTags.Hauling | WorkTags.AllWork)) return null; // like TryOpportunisticJob()
 
                 var mostThing = WorkGiver_ConstructDeliverResources.resourcesAvailable.DefaultIfEmpty().MaxBy(x => x.stackCount);
                 // too difficult to know in advance if there are no extras for PUAH
