@@ -165,6 +165,7 @@ namespace JobsOfOpportunity
             foreach (var slotGroup in map.haulDestinationManager.AllGroupsListInPriorityOrder) {
                 if (slotGroup.Settings.Priority < foundPriority) break;
                 if (slotGroup.Settings.Priority < currentPriority) break;                          // '<=' in original
+                if (slotGroup.Settings.Priority == StoragePriority.Unstored) break;                // our addition
                 if (slotGroup.Settings.Priority == currentPriority && !beforeCarry.IsValid) break; // our addition
 
                 // our additions

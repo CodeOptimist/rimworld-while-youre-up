@@ -148,7 +148,6 @@ namespace JobsOfOpportunity
                         if (foundCellGroup != beforeCarry.storeCell.GetSlotGroup(map)) return Skip(__result = false);
                         // Debug.WriteLine($"{t} is destined for same storage {foundCellGroup} {foundCell}");
 
-                        Debug.Assert(foundCellGroup.Settings.Priority > StoragePriority.Unstored);
                         if (foundCellGroup.Settings.Priority == t.Position.GetSlotGroup(map)?.Settings?.Priority) {
                             if (carrier.CurJobDef == JobDefOf.HaulToContainer && carrier.CurJob.targetC.Thing is Frame frame) {
                                 if (!frame.cachedMaterialsNeeded.Select(x => x.thingDef).Contains(t.def))
