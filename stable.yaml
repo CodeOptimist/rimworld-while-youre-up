@@ -51,14 +51,14 @@ footer: |-
   Likewise we aggressively cache all haul destination lookups for all features, even base Pick Up And Haul.
 
   [h1]Known Issues[/h1]
-  [i]• Pawns not taking into account travel time around walls.[/i]
-  Unfortunately this is a consequence of the straight-line "as the crow flies" math in the vanilla code for opportunities. If this is a huge problem for your map, set [i]Haulable & storage initial closeness[/i] to a stricter setting. Your pawns will find less opportunities.
-  This is how vanilla mitigates the problem while still being performant. A good solution is for me to add an option for true pathfinding for those whose machines can handle it.
+  [i]• Not taking into account travel time around walls.[/i]
+  An unfortunate consequence of vanilla's straight-line distance checks for opportunities.
+  If this is a huge problem for your map, set [i]Haulable & storage initial closeness[/i] to a stricter setting. Your pawns will find less opportunities. This is how vanilla mitigates the problem while still being performant.
+  I may eventually add a CPU-intensive true-pathfinding option.
   Alternatively, build a door. 😉
 
-  [i]• Hauling resources to storage despite no extras.[/i]
-  Only an issue with Pick Up And Haul. Unfortunately predicting what PUAH will find or altering it when it doesn't find extras requires complex and ugly hacks.
-  A true solution requires replacing (rather than patching) PUAH.
+  [i]• Hauling resources to storage ("closer to") despite no extras.[/i]
+  Will occasionally happen with Pick Up And Haul. Not easily fixed.
 
   [h1]Report Bugs[/h1]
   1. Please save a game when it occurs, then reload to verify it reoccurs.
@@ -71,57 +71,55 @@ footer: |-
 
 features: !join
   - "\n"
-  -
-    - &v2_0_0 |-
-        [u][i]Pick Up And Haul+[/i]: Better unloading[/u]
-        We enhance all inventory hauling by unloading only once at each storage destination, in closest order.
+  - - &v2_0_0 |-
+      [u][i]Pick Up And Haul+[/i]: Better unloading[/u]
+      We enhance all inventory hauling by unloading only once at each storage destination, in closest order.
     - &v3_0_0_puah |-
-        We improve performance by caching haulable destinations.
+      We improve performance by caching haulable destinations.
     -
     - &v1_0_0 |-
-        [u]Opportunistic hauls[/u]
-        Vanilla has support for opportunities, but with limitations: haulable near your [b]start[/b] position, and storage near your job.
-        We prefer these, but drop them as requirements to include hauls along the path.
+      [u]Opportunistic hauls[/u]
+      Vanilla has support for opportunities, but with limitations: haulable near your [b]start[/b] position, and storage near your job.
+      We prefer these, but drop them as requirements to include hauls along the path.
     -
     - &v1_1_0 |-
-        We skip opportunities when bleeding or forming a caravan.
+      We skip opportunities when bleeding or forming a caravan.
     -
     - |-
-        [i]Pick Up And Haul+[/i]
+      [i]Pick Up And Haul+[/i]
     - &v1_4_0 |-
-        Modified to grab only surrounding things whose unload path is also opportunistic.
+      Modified to grab only surrounding things whose unload path is also opportunistic.
     -
     - |-
-        [u]Haul extra supplies & ingredients closer[/u]
-        If hauling resources to storage would bring them closer to their job, do that first (grabbing extra).
-        {is_steam?=
-        [i]Your builder will never again cross the map to retrieve a [b]single[/b] component.[/i]
+      [u]Haul extra supplies & ingredients closer[/u]
+      If hauling resources to storage would bring them closer to their job, do that first (grabbing extra).
+      {is_steam?=
+      [i]Your builder will never again cross the map to retrieve a [b]single[/b] component.[/i]
 
-        [img]https&#58;//i.imgur.com/7O9IcfD.png[/img]
-        }
-#       https://app.code2flow.com/flowcharts/5f56f00cadae889d9e80df8f
+      [img]https&#58;//i.imgur.com/7O9IcfD.png[/img]
+      }
+    #       https://app.code2flow.com/flowcharts/5f56f00cadae889d9e80df8f
     - |-
-        [i]Pick Up And Haul+[/i]
+      [i]Pick Up And Haul+[/i]
     - &v3_0_0_hbc_puah |-
-        Modified to grab extra things headed to the same storage (when higher priority).
-        Grab extra supplies & ingredients headed to the same storage (when equal priority).
+      Modified to grab extra things headed to the same storage (when higher priority).
+      Grab extra supplies & ingredients headed to the same storage (when equal priority).
     -
     - &v2_3_0 |-
-        [u]Storage building filters for mod compatibility[/u]
-        Permit or deny for any storage building through settings, or leave automatically managed with mod updates.{is_steam?=
+      [u]Storage building filters for mod compatibility[/u]
+      Permit or deny for any storage building through settings, or leave automatically managed with mod updates.{is_steam?=
 
-        [img]https&#58;//i.imgur.com/CmFpxJU.png[/img]
-        }
+      [img]https&#58;//i.imgur.com/CmFpxJU.png[/img]
+      }
 
 
 updates:
   - at: 1.0.0
     desc: !join
       - "\n"
-      -
-        - *v1_0_0
-        - ' '
+      - - *v1_0_0
         - |-
+
           • Triggers [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1279012058][i]Mehni's[/i] Pick Up And Haul[/url].
 
           Haul extra construction supplies closer
@@ -130,10 +128,9 @@ updates:
   - at: 1.1.0
     desc: !join
       - "\n"
-      -
-        - *v1_1_0
-        - ' '
+      - - *v1_1_0
         - |-
+
           • Updated [i]Haul extra resources[/i]
           Now works as expected: instead of denying the inefficient supply job so [i]some[/i] hauler [i]eventually[/i] hauls, the builder themselves will.
 
@@ -147,8 +144,7 @@ updates:
   - at: 1.4.0
     desc: !join
       - "\n"
-      -
-        - |-
+      - - |-
           Pick Up And Haul+: Opportunities
         - *v1_4_0
 
@@ -182,10 +178,9 @@ updates:
     credit: Kellogg''s#0574
     desc: !join
       - "\n"
-      -
-        - *v2_0_0
-        - ' '
+      - - *v2_0_0
         - |-
+
           • [i]Haul extra resources[/i] will trigger more often:
             - Fixed hauling from existing storage, not just un-stored.
             - New [i]from same-priority storage[/i] setting.
@@ -231,17 +226,15 @@ updates:
   - at: 2.3.0
     desc: !join
       - "\n"
-      -
-        - *v2_3_0
-        - ' '
+      - - *v2_3_0
         - |-
+
           Skip opportunities when forming a caravan
 
   - at: 3.0.0
     desc: !join
       - ""
-      -
-        - |-
+      - - |-
           BUG FIXES & UI UPDATE
 
           • Opportunities
@@ -254,7 +247,7 @@ updates:
             - New job report: "closer to [TARGET]"
         - "\n"
         - "  - Pick Up And Haul+:"
-        - !join ["\n    - ", [' ', !split ["\n", *v3_0_0_hbc_puah]]]
+        - !join [ "\n    - ", [ ' ', !split [ "\n", *v3_0_0_hbc_puah ] ] ]
         - "\n\n"
         - |-
           • Pick Up And Haul+:
@@ -271,7 +264,7 @@ updates:
       • Renamed mod to ^ from: Jobs of Opportunity (While You're Up)
 
   - at: 3.0.2
-    credit: [xeotrel2#0743, '"tuk0z" https://steamcommunity.com/profiles/76561198827752749 ']
+    credit: [ xeotrel2#0743, '"tuk0z" https://steamcommunity.com/profiles/76561198827752749 ' ]
     desc: |-
       • Fixed a v3.0 crash related to storage capacity with PUAH.
       (I was making PUAH cache haul destinations where it shouldn't: in a loop!)
@@ -363,10 +356,9 @@ keyed:
   - name: PickUpAndHaulPlus_UpgradeText
     value: !join
       - "\n"
-      -
-        - |-
+      - - |
           We significantly enhance Pick Up And Haul by unloading only once at each destination, in closest order.
-        - ' '
+
         - *v3_0_0_puah
 
   - name: PickUpAndHaulPlus_IntegrationTitle
