@@ -3,7 +3,8 @@ using System.Linq;
 using System.Reflection;
 using HarmonyLib;
 using RimWorld;
-using Verse; // ReSharper disable once RedundantUsingDirective
+using Verse;
+// ReSharper disable once RedundantUsingDirective
 using Debug = System.Diagnostics.Debug;
 
 // ReSharper disable UnusedType.Local
@@ -126,10 +127,11 @@ namespace JobsOfOpportunity
                     var opportunityTarget = opportunity?.jobTarget ?? IntVec3.Invalid;
                     var beforeCarryTarget = beforeCarry?.carryTarget ?? IntVec3.Invalid;
                     if (!foundCell.IsValid && !TryFindBestBetterStoreCellFor_ClosestToTarget(
-                        t, opportunityTarget, beforeCarryTarget, carrier, map, currentPriority, faction, out foundCell,
-                        // needAccurateResult may give us a shorter path, giving special hauls a better chance
-                        !callStack.Contains(hasJobOnThingMethod) && (opportunityTarget.IsValid || beforeCarryTarget.IsValid) && Find.TickManager.CurTimeSpeed == TimeSpeed.Normal,
-                        hasSkipCells ? skipCells : null))
+                            t, opportunityTarget, beforeCarryTarget, carrier, map, currentPriority, faction, out foundCell,
+                            // needAccurateResult may give us a shorter path, giving special hauls a better chance
+                            !callStack.Contains(hasJobOnThingMethod) && (opportunityTarget.IsValid || beforeCarryTarget.IsValid)
+                                                                     && Find.TickManager.CurTimeSpeed == TimeSpeed.Normal,
+                            hasSkipCells ? skipCells : null))
                         return Skip(__result = false);
 
                     if (canCache)
@@ -201,10 +203,10 @@ namespace JobsOfOpportunity
 
                         // should only be necessary after loading because specialHauls aren't saved in game file like CompHauledToInventory
                         if (TryFindBestBetterStoreCellFor_ClosestToTarget(
-                            thing,
-                            (puah_ as PuahOpportunity)?.jobTarget ?? IntVec3.Invalid,
-                            (puah_ as PuahBeforeCarry)?.carryTarget ?? IntVec3.Invalid,
-                            pawn, pawn.Map, StoreUtility.CurrentStoragePriorityOf(thing), pawn.Faction, out storeCell, false)) {
+                                thing,
+                                (puah_ as PuahOpportunity)?.jobTarget ?? IntVec3.Invalid,
+                                (puah_ as PuahBeforeCarry)?.carryTarget ?? IntVec3.Invalid,
+                                pawn, pawn.Map, StoreUtility.CurrentStoragePriorityOf(thing), pawn.Faction, out storeCell, false)) {
                             // add for next
                             puah_.defHauls.Add(thing.def, storeCell);
                         }

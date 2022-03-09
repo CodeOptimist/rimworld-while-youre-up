@@ -7,7 +7,8 @@ using CodeOptimist;
 using HarmonyLib;
 using RimWorld;
 using Verse;
-using Verse.AI; // ReSharper disable once RedundantUsingDirective
+using Verse.AI;
+// ReSharper disable once RedundantUsingDirective
 using Debug = System.Diagnostics.Debug;
 
 namespace JobsOfOpportunity
@@ -68,9 +69,10 @@ namespace JobsOfOpportunity
 
                 var mostThing = WorkGiver_ConstructDeliverResources.resourcesAvailable.DefaultIfEmpty().MaxBy(x => x.stackCount);
                 // too difficult to know in advance if there are no extras for PUAH
-                if (!havePuah || !settings.UsePickUpAndHaulPlus)
+                if (!havePuah || !settings.UsePickUpAndHaulPlus) {
                     if (mostThing.stackCount <= need.count)
                         return null; // there are no extras
+                }
                 return JobUtility__TryStartErrorRecoverJob_Patch.CatchStanding(pawn, HaulBeforeCarry(pawn, constructible.Position, mostThing ?? th));
             }
         }
@@ -98,7 +100,7 @@ namespace JobsOfOpportunity
             if (MassUtility.WillBeOverEncumberedAfterPickingUp(pawn, thing, 2)) return null; // already going for 1, so 2 to check for another
 
             if (!TryFindBestBetterStoreCellFor_ClosestToTarget(
-                thing, IntVec3.Invalid, carryTarget, pawn, pawn.Map, StoreUtility.CurrentStoragePriorityOf(thing), pawn.Faction, out var storeCell, true)) return null;
+                    thing, IntVec3.Invalid, carryTarget, pawn, pawn.Map, StoreUtility.CurrentStoragePriorityOf(thing), pawn.Faction, out var storeCell, true)) return null;
 
             var fromHereDist = thing.Position.DistanceTo(carryTarget.Cell);
             var fromStoreDist = storeCell.DistanceTo(carryTarget.Cell);

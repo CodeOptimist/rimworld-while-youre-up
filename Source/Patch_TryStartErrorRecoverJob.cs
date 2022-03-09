@@ -1,7 +1,8 @@
 ﻿using System.Runtime.CompilerServices;
 using HarmonyLib;
 using Verse;
-using Verse.AI; // ReSharper disable once RedundantUsingDirective
+using Verse.AI;
+// ReSharper disable once RedundantUsingDirective
 using Debug = System.Diagnostics.Debug;
 
 // ReSharper disable UnusedType.Local

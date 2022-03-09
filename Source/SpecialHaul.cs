@@ -5,7 +5,8 @@ using System.Runtime.CompilerServices;
 using HarmonyLib;
 using RimWorld;
 using Verse;
-using Verse.AI; // ReSharper disable once RedundantUsingDirective
+using Verse.AI;
+// ReSharper disable once RedundantUsingDirective
 using Debug = System.Diagnostics.Debug;
 
 namespace JobsOfOpportunity

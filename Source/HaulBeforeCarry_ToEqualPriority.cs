@@ -3,7 +3,8 @@ using System.Linq;
 using System.Reflection;
 using HarmonyLib;
 using RimWorld;
-using Verse; // ReSharper disable once RedundantUsingDirective
+using Verse;
+// ReSharper disable once RedundantUsingDirective
 using Debug = System.Diagnostics.Debug;
 
 // ReSharper disable UnusedType.Local
