@@ -29,19 +29,25 @@ namespace JobsOfOpportunity
         static          bool      foundConfig;
         static readonly Harmony   harmony = new Harmony(modId);
 
-        static readonly Type       PuahCompHauledToInventoryType               = GenTypes.GetTypeInAnyAssembly("PickUpAndHaul.CompHauledToInventory");
-        static readonly Type       PuahWorkGiver_HaulToInventoryType           = GenTypes.GetTypeInAnyAssembly("PickUpAndHaul.WorkGiver_HaulToInventory");
-        static readonly Type       PuahJobDriver_HaulToInventoryType           = GenTypes.GetTypeInAnyAssembly("PickUpAndHaul.JobDriver_HaulToInventory");
-        static readonly Type       PuahJobDriver_UnloadYourHauledInventoryType = GenTypes.GetTypeInAnyAssembly("PickUpAndHaul.JobDriver_UnloadYourHauledInventory");
-        static readonly MethodInfo PuahJobOnThing                              = AccessTools.DeclaredMethod(PuahWorkGiver_HaulToInventoryType, "JobOnThing");
+        static readonly Type PuahCompHauledToInventoryType               = GenTypes.GetTypeInAnyAssembly("PickUpAndHaul.CompHauledToInventory");
+        static readonly Type PuahWorkGiver_HaulToInventoryType           = GenTypes.GetTypeInAnyAssembly("PickUpAndHaul.WorkGiver_HaulToInventory");
+        static readonly Type PuahJobDriver_HaulToInventoryType           = GenTypes.GetTypeInAnyAssembly("PickUpAndHaul.JobDriver_HaulToInventory");
+        static readonly Type PuahJobDriver_UnloadYourHauledInventoryType = GenTypes.GetTypeInAnyAssembly("PickUpAndHaul.JobDriver_UnloadYourHauledInventory");
+
+        static readonly MethodInfo PuahGetCompHauledToInventory = AccessTools.DeclaredMethod(typeof(ThingWithComps), "GetComp").MakeGenericMethod(PuahCompHauledToInventoryType);
+        static readonly MethodInfo PuahJobOnThing               = AccessTools.DeclaredMethod(PuahWorkGiver_HaulToInventoryType, "JobOnThing");
+        static readonly FieldInfo  PuahSkipCellsField           = AccessTools.DeclaredField(PuahWorkGiver_HaulToInventoryType, "skipCells");
 
         static readonly bool havePuah = new List<object>
                 { PuahCompHauledToInventoryType, PuahWorkGiver_HaulToInventoryType, PuahJobDriver_HaulToInventoryType, PuahJobDriver_UnloadYourHauledInventoryType, PuahJobOnThing }
             .All(x => x != null);
 
         static readonly Type HugsDialog_VanillaModSettingsType = GenTypes.GetTypeInAnyAssembly("HugsLib.Settings.Dialog_VanillaModSettings");
+        static readonly bool haveHugs                          = HugsDialog_VanillaModSettingsType != null;
 
-        static readonly bool haveHugs = HugsDialog_VanillaModSettingsType != null;
+        static readonly FieldInfo SelMod = haveHugs
+            ? AccessTools.DeclaredField(HugsDialog_VanillaModSettingsType, "selectedMod")
+            : AccessTools.DeclaredField(typeof(Dialog_ModSettings),        "selMod");
 
         static readonly Type      CsModType                 = GenTypes.GetTypeInAnyAssembly("CommonSense.CommonSense");
         static readonly Type      CsSettingsType            = GenTypes.GetTypeInAnyAssembly("CommonSense.Settings");
@@ -147,8 +153,7 @@ namespace JobsOfOpportunity
 
             // because we may load a game with an incomplete haul
             if (havePuah) {
-                var hauledToInventoryComp =
-                    (ThingComp)AccessTools.DeclaredMethod(typeof(ThingWithComps), "GetComp").MakeGenericMethod(PuahCompHauledToInventoryType).Invoke(pawn, null);
+                var hauledToInventoryComp = (ThingComp)PuahGetCompHauledToInventory.Invoke(pawn, null);
                 var takenToInventory = Traverse.Create(hauledToInventoryComp).Field<HashSet<Thing>>("takenToInventory").Value;
                 if (takenToInventory != null && takenToInventory.Any(t => t != null)) return true;
             }

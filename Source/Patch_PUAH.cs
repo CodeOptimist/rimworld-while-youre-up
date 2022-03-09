@@ -100,7 +100,7 @@ namespace JobsOfOpportunity
                     var isUnloadJob = carrier.CurJobDef == DefDatabase<JobDef>.GetNamed("UnloadYourHauledInventory");
                     if (!callStack.Any() && !isUnloadJob) return Original();
 
-                    var skipCells = (HashSet<IntVec3>)AccessTools.DeclaredField(PuahWorkGiver_HaulToInventoryType, "skipCells").GetValue(null);
+                    var skipCells = (HashSet<IntVec3>)PuahSkipCellsField.GetValue(null);
                     var hasSkipCells = callStack.Contains(allocateThingAtCellMethod);
 
                     // unload job happens over multiple ticks
@@ -191,8 +191,7 @@ namespace JobsOfOpportunity
                 static bool SpecialHaulAwareFirstUnloadableThing(ref ThingCount __result, Pawn pawn) {
                     if (!settings.UsePickUpAndHaulPlus || !settings.Enabled) return Original();
 
-                    var hauledToInventoryComp =
-                        (ThingComp)AccessTools.DeclaredMethod(typeof(ThingWithComps), "GetComp").MakeGenericMethod(PuahCompHauledToInventoryType).Invoke(pawn, null);
+                    var hauledToInventoryComp = (ThingComp)PuahGetCompHauledToInventory.Invoke(pawn, null);
                     var carriedThings = Traverse.Create(hauledToInventoryComp).Method("GetHashSet").GetValue<HashSet<Thing>>();
                     if (!carriedThings.Any()) return Skip(__result = default);
 

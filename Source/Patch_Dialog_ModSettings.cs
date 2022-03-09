@@ -36,10 +36,7 @@ namespace JobsOfOpportunity
 
             [HarmonyPostfix]
             static void CheckCommonSenseSetting(object __instance) {
-                var selModField = haveHugs
-                    ? AccessTools.DeclaredField(HugsDialog_VanillaModSettingsType, "selectedMod")
-                    : AccessTools.DeclaredField(typeof(Dialog_ModSettings),        "selMod");
-                var selMod = selModField.GetValue(__instance);
+                var selMod = SelMod.GetValue(__instance);
 
                 if (settings.HaulBeforeCarry_Bills && haveCommonSense && (bool)CsHaulingOverBillsSetting.GetValue(null)) {
                     var csMod = LoadedModManager.GetMod(CsModType);
