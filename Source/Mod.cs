@@ -61,7 +61,6 @@ namespace JobsOfOpportunity
             settings = GetSettings<Settings>();
             if (!foundConfig)
                 settings.ExposeData(); // initialize to defaults
-
             harmony.PatchAll();
         }
 
@@ -104,6 +103,7 @@ namespace JobsOfOpportunity
                 return settings.Enabled;
             }
 
+            // vanilla checks for job.def.allowOpportunisticPrefix and lots of other things before this
             // our settings.Enabled check is done prior to this in the transpiler
             static Job TryOpportunisticJob(Pawn_JobTracker jobTracker, Job job) {
                 // Debug.WriteLine($"Opportunity checking {job}");
@@ -133,7 +133,10 @@ namespace JobsOfOpportunity
                     }
                 }
 
-                if (job.def == JobDefOf.PrepareCaravan_GatherItems) return null;
+                if (new[] {
+                        JobDefOf.PrepareCaravan_CollectAnimals, JobDefOf.PrepareCaravan_GatherAnimals,
+                        JobDefOf.PrepareCaravan_GatherDownedPawns, JobDefOf.PrepareCaravan_GatherItems,
+                    }.Contains(job.def)) return null;
                 if (pawn.health.hediffSet.BleedRateTotal > 0.001f) return null;
                 return JobUtility__TryStartErrorRecoverJob_Patch.CatchStanding(pawn, Opportunity.TryHaul(pawn, jobTarget));
             }
@@ -190,7 +193,7 @@ namespace JobsOfOpportunity
                     if (stockpile != null && !settings.HaulBeforeCarry_ToStockpiles) continue;
                     if (buildingStorage != null) {
                         if (!settings.HaulBeforeCarry_BuildingFilter.Allows(buildingStorage.def)) continue;
-                        // if we don't consider is suitable for opportunities (e.g. slow storing) we won't consider it suitable for same-priority delivery
+                        // if we don't consider it suitable for opportunities (e.g. slow storing) we won't consider it suitable for same-priority delivery
                         if (slotGroup.Settings.Priority == currentPriority && !settings.Opportunity_BuildingFilter.Allows(buildingStorage.def)) continue;
                     }
                 }
