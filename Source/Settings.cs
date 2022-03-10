@@ -60,13 +60,13 @@ namespace JobsOfOpportunity
             static          Listing_SettingsTreeThingFilter opportunityTreeFilter;
             static readonly QuickSearchFilter               opportunitySearchFilter = new QuickSearchFilter();
             static readonly QuickSearchWidget               opportunitySearchWidget = new QuickSearchWidget();
-            static readonly ThingFilter                     opportunityDummyFilter  = new ThingFilter();
+            static readonly SettingsThingFilter             opportunityDummyFilter  = new SettingsThingFilter();
 
             static          Vector2                         hbcScrollPosition;
             static          Listing_SettingsTreeThingFilter hbcTreeFilter;
             static readonly QuickSearchFilter               hbcSearchFilter = new QuickSearchFilter();
             static readonly QuickSearchWidget               hbcSearchWidget = new QuickSearchWidget();
-            static readonly ThingFilter                     hbcDummyFilter  = new ThingFilter();
+            static readonly SettingsThingFilter             hbcDummyFilter  = new SettingsThingFilter();
 
             static readonly ThingCategoryDef storageBuildingCategoryDef;
             static readonly List<TabRecord>  tabsList = new List<TabRecord>();
@@ -76,8 +76,8 @@ namespace JobsOfOpportunity
                 // now that defs are loaded this will work
                 Log__Error_Patch.SuppressLoadReferenceErrors(
                     () => {
-                        settings.opportunityBuildingFilter = ScribeExtractor.SaveableFromNode<ThingFilter>(settings.opportunityBuildingFilterXmlNode, null);
-                        settings.hbcBuildingFilter = ScribeExtractor.SaveableFromNode<ThingFilter>(settings.hbcBuildingFilterXmlNode,                 null);
+                        settings.opportunityBuildingFilter = ScribeExtractor.SaveableFromNode<SettingsThingFilter>(settings.opportunityBuildingFilterXmlNode, null);
+                        settings.hbcBuildingFilter = ScribeExtractor.SaveableFromNode<SettingsThingFilter>(settings.hbcBuildingFilterXmlNode,                 null);
                     });
                 hbcSearchWidget.filter = hbcSearchFilter;
 
@@ -100,11 +100,11 @@ namespace JobsOfOpportunity
                 ResetFilters();
 
                 if (settings.opportunityBuildingFilter == null) {
-                    settings.opportunityBuildingFilter = new ThingFilter();
+                    settings.opportunityBuildingFilter = new SettingsThingFilter();
                     settings.opportunityBuildingFilter?.CopyAllowancesFrom(settings.opportunityDefaultBuildingFilter);
                 }
                 if (settings.hbcBuildingFilter == null) {
-                    settings.hbcBuildingFilter = new ThingFilter();
+                    settings.hbcBuildingFilter = new SettingsThingFilter();
                     settings.hbcBuildingFilter?.CopyAllowancesFrom(settings.hbcDefaultBuildingFilter);
                 }
             }
@@ -337,10 +337,9 @@ namespace JobsOfOpportunity
         [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
         class Settings : ModSettings
         {
-            public bool Enabled, UsePickUpAndHaulPlus, DrawSpecialHauls;
-
-
             public enum PathCheckerEnum { Default, Vanilla, Pathfinding }
+
+            public bool Enabled, UsePickUpAndHaulPlus, DrawSpecialHauls;
 
             public PathCheckerEnum Opportunity_PathChecker;
             public bool            Opportunity_TweakVanilla, Opportunity_ToStockpiles, Opportunity_AutoBuildings;
@@ -350,19 +349,19 @@ namespace JobsOfOpportunity
 
             public int Opportunity_MaxStartToThingRegionLookCount, Opportunity_MaxStoreToJobRegionLookCount;
 
-            internal readonly ThingFilter opportunityDefaultBuildingFilter = new ThingFilter();
-            internal          ThingFilter opportunityBuildingFilter;
-            internal          XmlNode     opportunityBuildingFilterXmlNode;
+            internal readonly SettingsThingFilter opportunityDefaultBuildingFilter = new SettingsThingFilter();
+            internal          SettingsThingFilter opportunityBuildingFilter;
+            internal          XmlNode             opportunityBuildingFilterXmlNode;
 
 
             public bool HaulBeforeCarry_Supplies, HaulBeforeCarry_Bills, HaulBeforeCarry_Bills_NeedsInitForCs, HaulBeforeCarry_ToEqualPriority, HaulBeforeCarry_ToStockpiles,
                 HaulBeforeCarry_AutoBuildings;
 
-            internal readonly ThingFilter hbcDefaultBuildingFilter = new ThingFilter();
-            internal          ThingFilter hbcBuildingFilter;
-            internal          XmlNode     hbcBuildingFilterXmlNode;
-            public            ThingFilter Opportunity_BuildingFilter     => Opportunity_AutoBuildings ? opportunityDefaultBuildingFilter : opportunityBuildingFilter;
-            public            ThingFilter HaulBeforeCarry_BuildingFilter => HaulBeforeCarry_AutoBuildings ? hbcDefaultBuildingFilter : hbcBuildingFilter;
+            internal readonly SettingsThingFilter hbcDefaultBuildingFilter = new SettingsThingFilter();
+            internal          SettingsThingFilter hbcBuildingFilter;
+            internal          XmlNode             hbcBuildingFilterXmlNode;
+            public            SettingsThingFilter Opportunity_BuildingFilter     => Opportunity_AutoBuildings ? opportunityDefaultBuildingFilter : opportunityBuildingFilter;
+            public            SettingsThingFilter HaulBeforeCarry_BuildingFilter => HaulBeforeCarry_AutoBuildings ? hbcDefaultBuildingFilter : hbcBuildingFilter;
 
             // we also manually call this to restore defaults and to set them before config file exists (Scribe.mode == LoadSaveMode.Inactive)
             public override void ExposeData() {
