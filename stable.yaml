@@ -389,26 +389,24 @@ settings:
 
       (This is sync'd to vanilla's [i]Development mode → inspector icon → Visibility → Draw Opportunistic Jobs[/i].)
 
-  - name: Opportunity_HaulProximities
-    title: Closeness of haulable to pawn *start* position & storage to job
+  - name: Opportunity_PathChecker
+    title: "Path checker"
     desc: |-
-      The primary way we improve on vanilla's opportunistic hauling, implemented as performantly as possible.
+      Our default is performant, but impassable walls or locked doors may confuse pawns—generally worth it for more opportunities.
+      
+      Pathfinding is preferable for small colonies or fast machines.
 
-      Set "required" if pawns are having difficulty with long walls, until I add a true pathfinding option.
-
-  - name: Opportunity_HaulProximities_Both
-    title: Require both (vanilla)
-  - name: Opportunity_HaulProximities_Either
-    title: Require either one
-  - name: Opportunity_HaulProximities_Ignored
-    title: Prefer both, require neither (recommended)
+  - name: Opportunity_PathChecker_Default
+    title: "Region look, then skipped (default)\nFast ✔️\tOpportunities ✔️\tPerfect ✖️"
+  - name: Opportunity_PathChecker_Vanilla
+    title: "Region look (vanilla)\nFast ✔️\tOpportunities ✖️\tPerfect ✔️"
+  - name: Opportunity_PathChecker_Pathfinding
+    title: "Pathfinding\nFast ✖️\tOpportunities ✔️\tPerfect ✔️"
 
   - name: Opportunity_TweakVanilla
     title: Show advanced vanilla settings...
     desc: |-
       Provided for explaining and tweaking vanilla's built-in opportunistic hauling.
-
-      A value of 0 will skip a check.
 
       All distances are straight-line ("as the crow flies").
 

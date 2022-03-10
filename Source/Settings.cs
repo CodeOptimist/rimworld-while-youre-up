@@ -203,9 +203,11 @@ namespace JobsOfOpportunity
                         }
                         oDoubleStd.Gap();
 
-                        oDoubleStd.DrawEnum(
-                            settings.Opportunity_HaulProximities, nameof(settings.Opportunity_HaulProximities), val => { settings.Opportunity_HaulProximities = val; },
-                            Text.LineHeight * 2);
+                        using (new DrawContext { LabelPct = 0.25f }) {
+                            oDoubleStd.DrawEnum(
+                                settings.Opportunity_PathChecker, nameof(settings.Opportunity_PathChecker), val => { settings.Opportunity_PathChecker = val; },
+                                Text.LineHeight * 2);
+                        }
                         oDoubleStd.Gap();
 
                         oDoubleStd.DrawBool(ref settings.Opportunity_TweakVanilla, nameof(settings.Opportunity_TweakVanilla));
@@ -338,10 +340,10 @@ namespace JobsOfOpportunity
             public bool Enabled, UsePickUpAndHaulPlus, DrawSpecialHauls;
 
 
-            public enum HaulProximitiesEnum { Both, Either, Ignored }
+            public enum PathCheckerEnum { Default, Vanilla, Pathfinding }
 
-            public HaulProximitiesEnum Opportunity_HaulProximities;
-            public bool                Opportunity_TweakVanilla, Opportunity_ToStockpiles, Opportunity_AutoBuildings;
+            public PathCheckerEnum Opportunity_PathChecker;
+            public bool            Opportunity_TweakVanilla, Opportunity_ToStockpiles, Opportunity_AutoBuildings;
 
             public float Opportunity_MaxStartToThing, Opportunity_MaxStartToThingPctOrigTrip, Opportunity_MaxStoreToJob, Opportunity_MaxStoreToJobPctOrigTrip,
                 Opportunity_MaxTotalTripPctOrigTrip, Opportunity_MaxNewLegsPctOrigTrip;
@@ -376,7 +378,7 @@ namespace JobsOfOpportunity
                 Look(ref Enabled,                                    nameof(Enabled),                                    true);
                 Look(ref DrawSpecialHauls,                           nameof(DrawSpecialHauls),                           false);
                 Look(ref UsePickUpAndHaulPlus,                       nameof(UsePickUpAndHaulPlus),                       true);
-                Look(ref Opportunity_HaulProximities,                nameof(Opportunity_HaulProximities),                HaulProximitiesEnum.Ignored);
+                Look(ref Opportunity_PathChecker,                    nameof(Opportunity_PathChecker),                    PathCheckerEnum.Default);
                 Look(ref Opportunity_TweakVanilla,                   nameof(Opportunity_TweakVanilla),                   false);
                 Look(ref Opportunity_MaxStartToThing,                nameof(Opportunity_MaxStartToThing),                30f);
                 Look(ref Opportunity_MaxStartToThingPctOrigTrip,     nameof(Opportunity_MaxStartToThingPctOrigTrip),     0.5f);
