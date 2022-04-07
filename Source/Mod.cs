@@ -34,12 +34,12 @@ namespace JobsOfOpportunity
         static readonly Type PuahJobDriver_HaulToInventoryType           = GenTypes.GetTypeInAnyAssembly("PickUpAndHaul.JobDriver_HaulToInventory");
         static readonly Type PuahJobDriver_UnloadYourHauledInventoryType = GenTypes.GetTypeInAnyAssembly("PickUpAndHaul.JobDriver_UnloadYourHauledInventory");
 
-        static readonly MethodInfo PuahGetCompHauledToInventory = AccessTools.DeclaredMethod(typeof(ThingWithComps), "GetComp").MakeGenericMethod(PuahCompHauledToInventoryType);
-        static readonly MethodInfo PuahJobOnThing               = AccessTools.DeclaredMethod(PuahWorkGiver_HaulToInventoryType, "JobOnThing");
-        static readonly FieldInfo  PuahSkipCellsField           = AccessTools.DeclaredField(PuahWorkGiver_HaulToInventoryType, "skipCells");
+        static          MethodInfo PuahGetCompHauledToInventory;
+        static readonly MethodInfo PuahJobOnThing     = AccessTools.DeclaredMethod(PuahWorkGiver_HaulToInventoryType, "JobOnThing");
+        static readonly FieldInfo  PuahSkipCellsField = AccessTools.DeclaredField(PuahWorkGiver_HaulToInventoryType, "skipCells");
 
         static readonly bool havePuah = new List<object>
-                { PuahCompHauledToInventoryType, PuahWorkGiver_HaulToInventoryType, PuahJobDriver_HaulToInventoryType, PuahJobDriver_UnloadYourHauledInventoryType, PuahJobOnThing }
+                { PuahCompHauledToInventoryType, PuahWorkGiver_HaulToInventoryType, PuahJobDriver_HaulToInventoryType, PuahJobDriver_UnloadYourHauledInventoryType, PuahJobOnThing, PuahSkipCellsField }
             .All(x => x != null);
 
         static readonly Type HugsDialog_VanillaModSettingsType = GenTypes.GetTypeInAnyAssembly("HugsLib.Settings.Dialog_VanillaModSettings");
@@ -56,6 +56,9 @@ namespace JobsOfOpportunity
         static readonly bool haveCommonSense = new List<object> { CsModType, CsSettingsType, CsHaulingOverBillsSetting }.All(x => x != null);
 
         public Mod(ModContentPack content) : base(content) {
+            if (havePuah)
+                PuahGetCompHauledToInventory = AccessTools.DeclaredMethod(typeof(ThingWithComps), "GetComp").MakeGenericMethod(PuahCompHauledToInventoryType);
+
             mod = this;
             Gui.modId = modId;
             settings = GetSettings<Settings>();
