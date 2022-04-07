@@ -190,17 +190,18 @@ namespace JobsOfOpportunity
                 [HarmonyPrefix]
                 static bool SpecialHaulAwareFirstUnloadableThing(ref ThingCount __result, Pawn pawn) {
                     if (!settings.UsePickUpAndHaulPlus || !settings.Enabled) return Original();
+                    // Traverse does its own caching
 
                     var hauledToInventoryComp = (ThingComp)PuahGetCompHauledToInventory.Invoke(pawn, null);
                     var carriedThings = Traverse.Create(hauledToInventoryComp).Method("GetHashSet").GetValue<HashSet<Thing>>();
                     if (!carriedThings.Any()) return Skip(__result = default);
 
                     (Thing thing, IntVec3 storeCell) GetDefHaul(PuahWithBetterUnloading puah_, Thing thing) {
-                        // It's completely possible storage has changed, that's fine. This is just a guess for order.
+                        // It's completely possible storage has changed; that's fine. This is just a guess for order.
                         if (puah_.defHauls.TryGetValue(thing.def, out var storeCell))
                             return (thing, storeCell);
 
-                        // should only be necessary after loading because specialHauls aren't saved in game file like CompHauledToInventory
+                        // should only be necessary after loading, because specialHauls aren't saved in game file like CompHauledToInventory
                         if (TryFindBestBetterStoreCellFor_ClosestToTarget(
                                 thing,
                                 (puah_ as PuahOpportunity)?.jobTarget ?? IntVec3.Invalid,

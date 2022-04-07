@@ -148,7 +148,8 @@ namespace JobsOfOpportunity
                         return CanHaulResult.HardFail;
                 }
 
-                // too expensive to check with every expand when it would only facilitate a preference for better opportunities
+                // not worth the performance to continually expand (our expansions are just to facilitate a preference for the best opportunities)
+                // but always try for the very best initially, so we're at least as good as vanilla
                 else if (maxRanges.expandCount == 0) {
                     if (!pawn.Position.WithinRegions(thing.Position, pawn.Map, settings.Opportunity_MaxStartToThingRegionLookCount, TraverseParms.For(pawn)))
                         return CanHaulResult.RangeFail;

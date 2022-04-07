@@ -52,10 +52,10 @@ footer: |-
 
   [h1]Known Issues[/h1]
   [i]• Not taking into account travel time around walls.[/i]
-  An unfortunate consequence of vanilla's straight-line distance checks for opportunities.
-  If this is a huge problem for your map, set [i]Haulable & storage initial closeness[/i] to a stricter setting. Your pawns will find less opportunities. This is how vanilla mitigates the problem while still being performant.
-  I may eventually add a CPU-intensive true-pathfinding option.
-  Alternatively, build a door. 😉
+  This is a consequence of the trade-off between maximum opportunities and good performance.
+  You can change [i]Path checking[/i] within the settings to [i]Pathfinding[/i] but it may reduce performance.
+  You can also set it to [i]Vanilla[/i] but it will reduce opportunities.
+  (Building a door in the wall will also work, if possible.)
 
   [i]• Hauling resources to storage ("closer to") despite no extras.[/i]
   Will occasionally happen with Pick Up And Haul. Not easily fixed.
@@ -67,7 +67,7 @@ footer: |-
   [b]I can now fix your bug in [i]days[/i] instead of [i]months[/i]! 🎉🥳[/b]
 
   [h1]History[/h1]
-  I intended to [url=https://gist.github.com/CodeOptimist/5a740dd803fc370ec43f22ffa8bc953d#file-utils-cs-L48]fork[/url] [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1544626521]While You're Up[/url], until I saw [url=https://github.com/CodeOptimist/rimworld-jobs-of-opportunity/blob/29391b0a075a1dd77d4788777b0137e26390328c/Source/Patch_TryOpportunisticJob.cs]RimWorld 1.0 added it[/url]. This mod improves vanilla's integration, and so is a spiritual successor to [i]While You're Up[/i] 💜.
+  I intended to [url=https://gist.github.com/CodeOptimist/5a740dd803fc370ec43f22ffa8bc953d#file-utils-cs-L48]fork[/url] the original [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1544626521]While You're Up[/url], until I saw [url=https://github.com/CodeOptimist/rimworld-jobs-of-opportunity/blob/29391b0a075a1dd77d4788777b0137e26390328c/Source/Patch_TryOpportunisticJob.cs]RimWorld 1.0 added it[/url]. This mod improves vanilla's integration, and so is a spiritual successor to the original [i]While You're Up[/i] 💜.
 
 features: !join
   - "\n"
@@ -285,7 +285,7 @@ updates:
     credit: '"SetArk <Nyanverick 07>" https://steamcommunity.com/profiles/76561198000445040 '
     desc: |-
       • PUAH unloading
-        - Fix potential IndexOutOfRange error; performance improvement.
+        - Fix potential [i]IndexOutOfRange[/i] error; performance improvement.
 
   - at: 3.1.3
     credit: '"tuk0z" https://steamcommunity.com/profiles/76561198827752749 '
@@ -296,6 +296,14 @@ updates:
     desc: |-
       • Fixed [i]Haul extra supplies[/i] to check incapable of [i]dumb labor[/i] etc.
       (Like [i]opportunities[/i] and [i]ingredients[/i].)
+
+  - at: 3.2.0
+    desc: |-
+      If willing, please report issues immediately via Discord link here ↗ or in Mods menu.
+      
+      • Performance improvements to [i]Opportunities[/i].
+      • [i]Pathfinding[/i] option added to settings (off by default).
+      • Mods which patch [i]ThingFilter[/i] at startup will no longer break WYU settings window.
 
 
 keyed:
@@ -390,16 +398,16 @@ settings:
       (This is sync'd to vanilla's [i]Development mode → inspector icon → Visibility → Draw Opportunistic Jobs[/i].)
 
   - name: Opportunity_PathChecker
-    title: "Path checker"
+    title: Path checking
     desc: |-
       Our default is performant, but impassable walls or locked doors may confuse pawns—generally worth it for more opportunities.
       
       Pathfinding is preferable for small colonies or fast machines.
 
   - name: Opportunity_PathChecker_Default
-    title: "Region look, then skipped (default)\nFast ✔️\tOpportunities ✔️\tPerfect ✖️"
+    title: "By region, then skipped (default)\nFast ✔️\tOpportunities ✔️\tPerfect ✖️"
   - name: Opportunity_PathChecker_Vanilla
-    title: "Region look (vanilla)\nFast ✔️\tOpportunities ✖️\tPerfect ✔️"
+    title: "By region (vanilla)\nFast ✔️\tOpportunities ✖️\tPerfect ✔️"
   - name: Opportunity_PathChecker_Pathfinding
     title: "Pathfinding\nFast ✖️\tOpportunities ✔️\tPerfect ✔️"
 
@@ -424,8 +432,7 @@ settings:
   - name: Opportunity_MaxStartToThingRegionLookCount
     title: Max start-to-haulable region look count
     desc: &region_look_count |-
-      This parameter limits our actual pathing.
-      To understand it, enable [i]Development mode → inspector icon → Visibility → Draw Regions[/i].
+      To understand this, enable [i]Development mode → inspector icon → Visibility → Draw Regions[/i].
 
       Exploration begins from the start region spreading out to all neighbors until encountering the destination region. This setting caps the total number explored - even those in the wrong direction.
 
