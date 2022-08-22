@@ -23,8 +23,8 @@ namespace JobsOfOpportunity
             static void OfferSupport(Pawn pawn) {
                 if (RealTime.frameCount == lastFrameCount && pawn == lastPawn) {
                     Log.Warning(
-                        $"[{mod.Content.Name}] You're welcome to 'Share logs' to my Discord: https://discord.gg/pnZGQAN \n"
-                        + $"Below \"10 jobs in one tick\" error occurred during {lastCallerName}, but could be from several mods.");
+                        $"[{mod.Content.Name}] You're welcome to 'Share logs' to my Discord: https://discord.gg/pnZGQAN \n" +
+                        $"[{mod.Content.Name}] Below \"10 jobs in one tick\" error occurred during {lastCallerName}, but could be from several mods.");
                 }
             }
 

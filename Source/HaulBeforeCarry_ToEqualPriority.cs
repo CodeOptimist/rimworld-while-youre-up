@@ -20,6 +20,20 @@ namespace JobsOfOpportunity
             static readonly List<Thing>     thingsInReducedPriorityStore = new List<Thing>();
 
             [HarmonyPatch]
+            static class StorageSettings_Priority_Patch
+            {
+                static bool       Prepare()      => havePuah;
+                static MethodBase TargetMethod() => AccessTools.DeclaredPropertyGetter(typeof(StorageSettings), nameof(StorageSettings.Priority));
+
+                [HarmonyPostfix]
+                static void GetReducedPriority(StorageSettings __instance, ref StoragePriority __result) {
+                    // least disruptive way to support hauling between stores of equal priority
+                    if (__instance == reducedPriorityStore && __result > StoragePriority.Unstored)
+                        __result -= 1;
+                }
+            }
+
+            [HarmonyPatch]
             static partial class WorkGiver_HaulToInventory__JobOnThing_Patch
             {
                 [HarmonyPrefix]
@@ -29,10 +43,9 @@ namespace JobsOfOpportunity
                     var haulDestination = StoreUtility.CurrentHaulDestinationOf(thing);
                     if (haulDestination == null) return;
 
-                    reducedPriorityStore = haulDestination.GetStoreSettings();
+                    reducedPriorityStore = haulDestination.GetStoreSettings(); // mark it
                     thingsInReducedPriorityStore.AddRange(
-                        thing.GetSlotGroup().CellsList.SelectMany(
-                            cell => cell.GetThingList(thing.Map).Where(cellThing => cellThing.def.alwaysHaulable || cellThing.def.EverHaulable)));
+                        thing.GetSlotGroup().CellsList.SelectMany(cell => cell.GetThingList(thing.Map).Where(cellThing => cellThing.def.EverHaulable)));
                     thing.Map.haulDestinationManager.Notify_HaulDestinationChangedPriority();
                 }
 
@@ -46,19 +59,6 @@ namespace JobsOfOpportunity
             }
 
             [HarmonyPatch]
-            static class StorageSettings_Priority_Patch
-            {
-                static bool       Prepare()      => havePuah;
-                static MethodBase TargetMethod() => AccessTools.DeclaredPropertyGetter(typeof(StorageSettings), nameof(StorageSettings.Priority));
-
-                [HarmonyPostfix]
-                static void GetReducedPriority(StorageSettings __instance, ref StoragePriority __result) {
-                    if (__instance == reducedPriorityStore && __result > StoragePriority.Unstored)
-                        __result -= 1;
-                }
-            }
-
-            [HarmonyPatch]
             static class ListerHaulables_ThingsPotentiallyNeedingHauling_Patch
             {
                 static bool       Prepare()      => havePuah;
@@ -67,7 +67,7 @@ namespace JobsOfOpportunity
                 [HarmonyPostfix]
                 static void IncludeThingsInReducedPriorityStore(ref List<Thing> __result) {
                     if (!thingsInReducedPriorityStore.NullOrEmpty())
-                        __result.AddRange(thingsInReducedPriorityStore);
+                        __result.AddRange(thingsInReducedPriorityStore); // todo does this happen multiple times?
                 }
             }
         }

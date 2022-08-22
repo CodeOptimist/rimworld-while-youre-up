@@ -42,7 +42,9 @@ header: |-
 
 footer: |-
   [h1]Compatibility[/h1]
-  [i]Common Sense?[/i] Yes. (I prevent incompatible settings from being on at the same time.)
+  [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1561769193][i]Common Sense[/i][/url]? Yes. (I prevent incompatible settings from being on at the same time.)
+  [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1617282896][i]LWM's Deep Storage[/i][/url]? Yes. But off by default for [i]Opportunities[/i] because storing items takes time.
+  [url=https://steamcommunity.com/sharedfiles/filedetails/?id=2341486509][i]Perfect Pathfinding[/i][/url]? I expect WYU's [i]Pathfinding[/i] setting to be compatible, but haven't tested.
 
   [i]@Modders:[/i] if you set [i]allowOpportunisticPrefix[/i] to [i]false[/i] for a JobDef, it won't allow opportunistic jobs. This is a vanilla feature.
 
@@ -301,8 +303,12 @@ updates:
     desc: |-
       If willing, please report issues immediately via Discord link here ↗ or in Mods menu.
       
-      • Performance improvements to [i]Opportunities[/i].
+      Features
       • [i]Pathfinding[/i] option added to settings (off by default).
+      
+      Fixes
+      • Performance improvements to [i]Opportunities[/i].
+      • Skip opportunities when gathering animals (not just items) for a caravan.
       • Mods which patch [i]ThingFilter[/i] at startup will no longer break WYU settings window.
 
 
@@ -405,11 +411,11 @@ settings:
       Pathfinding is preferable for small colonies or fast machines.
 
   - name: Opportunity_PathChecker_Default
-    title: "By region, then skipped (default)\nFast ✔️\tOpportunities ✔️\tPerfect ✖️"
+    title: "By region, then skipped (default)\nFPS ✔️\tOpportunities ✔️\tPerfect ✖️"
   - name: Opportunity_PathChecker_Vanilla
-    title: "By region (vanilla)\nFast ✔️\tOpportunities ✖️\tPerfect ✔️"
+    title: "By region (vanilla)\nFPS ✔️\tOpportunities ✖️\tPerfect ✔️"
   - name: Opportunity_PathChecker_Pathfinding
-    title: "Pathfinding\nFast ✖️\tOpportunities ✔️\tPerfect ✔️"
+    title: "Pathfinding\nFPS ✖️\tOpportunities ✔️\tPerfect ✔️"
 
   - name: Opportunity_TweakVanilla
     title: Show advanced vanilla settings...

@@ -38,8 +38,10 @@ namespace JobsOfOpportunity
         static readonly MethodInfo PuahJobOnThing     = AccessTools.DeclaredMethod(PuahWorkGiver_HaulToInventoryType, "JobOnThing");
         static readonly FieldInfo  PuahSkipCellsField = AccessTools.DeclaredField(PuahWorkGiver_HaulToInventoryType, "skipCells");
 
-        static readonly bool havePuah = new List<object>
-                { PuahCompHauledToInventoryType, PuahWorkGiver_HaulToInventoryType, PuahJobDriver_HaulToInventoryType, PuahJobDriver_UnloadYourHauledInventoryType, PuahJobOnThing, PuahSkipCellsField }
+        static readonly bool havePuah = new List<object> {
+                PuahCompHauledToInventoryType, PuahWorkGiver_HaulToInventoryType, PuahJobDriver_HaulToInventoryType, PuahJobDriver_UnloadYourHauledInventoryType, PuahJobOnThing,
+                PuahSkipCellsField,
+            }
             .All(x => x != null);
 
         static readonly Type HugsDialog_VanillaModSettingsType = GenTypes.GetTypeInAnyAssembly("HugsLib.Settings.Dialog_VanillaModSettings");
@@ -121,17 +123,17 @@ namespace JobsOfOpportunity
                         var ingredient = job.targetQueueB[i];
                         if (ingredient.Thing == null) continue;
 
-                        // too difficult to know in advance if there are no extras for PUAH
-                        if (!havePuah || !settings.UsePickUpAndHaulPlus) {
+                        if (!havePuah || !settings.UsePickUpAndHaulPlus) { // too difficult to know in advance if there are no extras for PUAH
                             if (ingredient.Thing.stackCount <= job.countQueue[i])
                                 continue; // there are no extras
                         }
 
-                        if (!HaulAIUtility.PawnCanAutomaticallyHaulFast(pawn, ingredient.Thing, false)) continue;
+                        if (!HaulAIUtility.PawnCanAutomaticallyHaulFast(pawn, ingredient.Thing, false)) continue; // fast check
 
                         // permitted when bleeding because facilitates whatever bill is important enough to do while bleeding
                         //  may save precious time going back for ingredients... unless we want only 1 medicine ASAP; it's a trade-off
-                        var storeJob = HaulBeforeCarry(pawn, jobTarget, ingredient.Thing); // HaulBeforeBill
+
+                        var storeJob = HaulBeforeCarry(pawn, jobTarget, ingredient.Thing); // #HaulBeforeBill
                         if (storeJob != null) return JobUtility__TryStartErrorRecoverJob_Patch.CatchStanding(pawn, storeJob);
                     }
                 }
@@ -176,11 +178,12 @@ namespace JobsOfOpportunity
 
             foreach (var slotGroup in map.haulDestinationManager.AllGroupsListInPriorityOrder) {
                 if (slotGroup.Settings.Priority < foundPriority) break;
-                if (slotGroup.Settings.Priority < currentPriority) break;                          // '<=' in original
-                if (slotGroup.Settings.Priority == StoragePriority.Unstored) break;                // our addition
-                if (slotGroup.Settings.Priority == currentPriority && !beforeCarry.IsValid) break; // our addition
 
-                // our additions
+                // original: if (slotGroup.Settings.Priority <= currentPriority) break;
+                if (slotGroup.Settings.Priority < currentPriority) break;
+                if (slotGroup.Settings.Priority == StoragePriority.Unstored) break;
+                if (slotGroup.Settings.Priority == currentPriority && !beforeCarry.IsValid) break; // #ToEqualPriority
+
                 var stockpile = slotGroup.parent as Zone_Stockpile;
                 var buildingStorage = slotGroup.parent as Building_Storage;
 
@@ -190,6 +193,7 @@ namespace JobsOfOpportunity
                 }
 
                 if (beforeCarry.IsValid) {
+                    // #ToEqualPriority
                     if (!settings.HaulBeforeCarry_ToEqualPriority && slotGroup.Settings.Priority == currentPriority) break;
                     if (settings.HaulBeforeCarry_ToEqualPriority && thing.Position.IsValid && slotGroup == map.haulDestinationManager.SlotGroupAt(thing.Position)) continue;
 
@@ -201,12 +205,14 @@ namespace JobsOfOpportunity
                     }
                 }
 
-                if (!slotGroup.parent.Accepts(thing)) continue;
+                if (!slotGroup.parent.Accepts(thing)) continue; // original
 
-                // our modification
+                // #ClosestToTarget
                 var position = opportunity.IsValid  ? opportunity.Cell :
                     beforeCarry.IsValid             ? beforeCarry.Cell :
-                    thing.SpawnedOrAnyParentSpawned ? thing.PositionHeld : pawn.PositionHeld;
+                    thing.SpawnedOrAnyParentSpawned ? thing.PositionHeld : pawn.PositionHeld; // original
+
+                // original
                 var maxCheckedCells = needAccurateResult ? (int)Math.Floor((double)slotGroup.CellsList.Count * Rand.Range(0.005f, 0.018f)) : 0;
                 for (var i = 0; i < slotGroup.CellsList.Count; i++) {
                     var cell = slotGroup.CellsList[i];

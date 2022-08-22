@@ -41,7 +41,7 @@ namespace JobsOfOpportunity
                     0,
                     (i, codes) => i == afterNearbyIdx,
                     (i, codes) => new List<CodeInstruction> {
-                        // job = HaulBeforeSupply(pawn, (Thing) c, foundRes);
+                        // job = HaulBeforeSupply(pawn, need, (Thing) c, foundRes);
                         new CodeInstruction(OpCodes.Ldarg_1),                                // Pawn pawn
                         new CodeInstruction(OpCodes.Ldloc_S, codes[needObjIdx + 1].operand), // ThingDefCountClass <>c__DisplayClass9_1
                         new CodeInstruction(OpCodes.Ldfld,   needField),                     //                                        .need
@@ -68,12 +68,11 @@ namespace JobsOfOpportunity
                 if (pawn.WorkTagIsDisabled(WorkTags.ManualDumb | WorkTags.Hauling | WorkTags.AllWork)) return null; // like TryOpportunisticJob()
 
                 var mostThing = WorkGiver_ConstructDeliverResources.resourcesAvailable.DefaultIfEmpty().MaxBy(x => x.stackCount);
-                // too difficult to know in advance if there are no extras for PUAH
-                if (!havePuah || !settings.UsePickUpAndHaulPlus) {
+                if (!havePuah || !settings.UsePickUpAndHaulPlus) { // too difficult to know in advance if there are no extras for PUAH
                     if (mostThing.stackCount <= need.count)
                         return null; // there are no extras
                 }
-                return JobUtility__TryStartErrorRecoverJob_Patch.CatchStanding(pawn, HaulBeforeCarry(pawn, constructible.Position, mostThing ?? th));
+                return JobUtility__TryStartErrorRecoverJob_Patch.CatchStanding(pawn, HaulBeforeCarry(pawn, constructible.Position, mostThing ?? th)); // #HaulBeforeSupply
             }
         }
 
@@ -91,12 +90,11 @@ namespace JobsOfOpportunity
             public override string GetUnloadReport(string text) => "HaulBeforeCarry_UnloadReport".ModTranslate(text.Named("ORIGINAL"), carryTarget.Label.Named("DESTINATION"));
         }
 
+        // #HaulBeforeBill #HaulBeforeSupply
         public static Job HaulBeforeCarry(Pawn pawn, LocalTargetInfo carryTarget, Thing thing) {
-            // "Haul before supply" enters here, "Haul before bill" enters from TryOpportunisticJob
-
             if (thing.ParentHolder is Pawn_InventoryTracker) return null;
             // try to avoid haul-before-carry when there are no extras to grab
-            // proper way is to re-check after grabbing everything, but here's a quick hack to at least avoid it with stone chunks
+            // proper way is to recheck after grabbing everything, but here's a simple hack to at least avoid it with stone chunks
             if (MassUtility.WillBeOverEncumberedAfterPickingUp(pawn, thing, 2)) return null; // already going for 1, so 2 to check for another
 
             if (!TryFindBestBetterStoreCellFor_ClosestToTarget(
