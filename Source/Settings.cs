@@ -229,14 +229,15 @@ namespace JobsOfOpportunity
                             oDoubleStd.Label("Opportunity_Tab".ModTranslate());
                         }
                         oDoubleStd.GapLine();
-                        oDoubleStd.DrawBool(ref settings.Opportunity_ToStockpiles,  nameof(settings.Opportunity_ToStockpiles));
-                        oDoubleStd.DrawBool(ref settings.Opportunity_AutoBuildings, nameof(settings.Opportunity_AutoBuildings));
-                        // oDoubleStd.GapLine();
+                        var invertAuto = !settings.Opportunity_AutoBuildings;
+                        oDoubleStd.DrawBool(ref invertAuto, nameof(settings.Opportunity_AutoBuildings));
+                        settings.Opportunity_AutoBuildings = !invertAuto;
                         oDoubleStd.Gap(4f);
                         opportunitySearchWidget.OnGUI(oDoubleStd.GetRect(24f));
                         oDoubleStd.Gap(4f);
 
-                        var filterRect     = oDoubleStd.GetRect(innerTabRect.height - oDoubleStd.CurHeight); // what we Began on, minus CurHeight
+                        // what we Began on, minus CurHeight, minus 2 lines
+                        var filterRect     = oDoubleStd.GetRect(innerTabRect.height - oDoubleStd.CurHeight - Text.LineHeight * 2);
                         var scrollbarWidth = 20f;
                         var filterFullRect = new Rect(0f, 0f, filterRect.width - scrollbarWidth, opportunityTreeFilter?.CurHeight ?? 10000f);
                         Widgets.BeginScrollView(filterRect, ref opportunityScrollPosition, filterFullRect);
@@ -250,6 +251,8 @@ namespace JobsOfOpportunity
                         opportunityTreeFilter.End();
                         Widgets.EndScrollView();
 
+                        oDoubleStd.GapLine();
+                        oDoubleStd.DrawBool(ref settings.Opportunity_ToStockpiles, nameof(settings.Opportunity_ToStockpiles));
                         oDoubleStd.End();
                         break;
 
@@ -275,13 +278,15 @@ namespace JobsOfOpportunity
                             hbcDoubleStd.Label("HaulBeforeCarry_Tab".ModTranslate());
                         }
                         hbcDoubleStd.GapLine();
-                        hbcDoubleStd.DrawBool(ref settings.HaulBeforeCarry_ToStockpiles,  nameof(settings.HaulBeforeCarry_ToStockpiles));
-                        hbcDoubleStd.DrawBool(ref settings.HaulBeforeCarry_AutoBuildings, nameof(settings.HaulBeforeCarry_AutoBuildings));
+                        invertAuto = !settings.HaulBeforeCarry_AutoBuildings;
+                        hbcDoubleStd.DrawBool(ref invertAuto, nameof(settings.HaulBeforeCarry_AutoBuildings));
+                        settings.HaulBeforeCarry_AutoBuildings = !invertAuto;
                         hbcDoubleStd.Gap(4f);
                         hbcSearchWidget.OnGUI(hbcDoubleStd.GetRect(24f));
                         hbcDoubleStd.Gap(4f);
 
-                        filterRect     = hbcDoubleStd.GetRect(innerTabRect.height - hbcDoubleStd.CurHeight); // what we Began on, minus CurHeight
+                        // what we Began on, minus CurHeight, minus 2 lines
+                        filterRect     = hbcDoubleStd.GetRect(innerTabRect.height - hbcDoubleStd.CurHeight - Text.LineHeight * 2);
                         scrollbarWidth = 20f;
                         filterFullRect = new Rect(0f, 0f, filterRect.width - scrollbarWidth, hbcTreeFilter?.CurHeight ?? 10000f);
                         Widgets.BeginScrollView(filterRect, ref hbcScrollPosition, filterFullRect);
@@ -294,6 +299,9 @@ namespace JobsOfOpportunity
                         hbcTreeFilter.ListCategoryChildren(storageBuildingCategoryDef.treeNode, 1, null, filterFullRect);
                         hbcTreeFilter.End();
                         Widgets.EndScrollView();
+
+                        hbcDoubleStd.GapLine();
+                        hbcDoubleStd.DrawBool(ref settings.HaulBeforeCarry_ToStockpiles, nameof(settings.HaulBeforeCarry_ToStockpiles));
                         hbcDoubleStd.End();
                         break;
 

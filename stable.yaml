@@ -326,7 +326,7 @@ keyed:
     value: 'Efficiently {{ORIGINAL}}, on the way to {{DESTINATION}}.'
 
   - name: Opportunity_Tab
-    value: Hauls of Opportunity
+    value: &opportunity_tab Hauls of Opportunity
 
   - name: Opportunity_Intro
     value: |-
@@ -349,7 +349,7 @@ keyed:
     value: |-
       Job report: "... closer to ..."
 
-      A pawn will find the closest resource, which is sometimes waiting delivery to storage near our job site. If we perform that haul first, they can grab extras headed to the same storage.
+      A pawn will find the closest resource, which is sometimes awaiting delivery to storage near our job site. If we perform that haul first, they can grab extras headed to the same storage.
 
   - name: HaulBeforeCarry_EqualPriority
     value: |-
@@ -380,7 +380,7 @@ keyed:
 
   - name: PickUpAndHaulPlus_IntegrationText
     value: |-
-      We fully integrate opportunities by ensuring our entire gather & unload path never exceeds our criteria for "opportunistic".
+      We fully integrate opportunities by ensuring our entire gather and unload path never exceeds our criteria for "opportunistic".
 
       When hauling extra supplies or ingredients to closer storage, we grab extra random things headed to the same higher-priority storage.
 
@@ -389,10 +389,12 @@ settings:
   - name: Enabled
     title: Enabled
     desc: |-
-      Toggle mod without restarting.
+      Toggle entire mod without restarting.
+      Useful for troubleshooting.
 
   - name: UsePickUpAndHaulPlus
     title: Use & improve Pick Up And Haul
+    desc: Details in tab when enabled.
 
   - name: DrawSpecialHauls
     title: Draw special hauls
@@ -453,10 +455,10 @@ settings:
     desc: *region_look_count
 
   - name: Opportunity_ToStockpiles
-    title: &to_stockpiles Work with stockpiles
+    title: &to_stockpiles Stockpiles
 
   - name: Opportunity_AutoBuildings
-    title: &auto_buildings Auto-manage buildings (updated from feedback)
+    title: &auto_buildings Edit manually (won't update with mod)
 
   - name: HaulBeforeCarry_Supplies
     title: Haul extra construction supplies closer
