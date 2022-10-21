@@ -47,9 +47,9 @@ namespace JobsOfOpportunity
         static readonly Type HugsDialog_VanillaModSettingsType = GenTypes.GetTypeInAnyAssembly("HugsLib.Settings.Dialog_VanillaModSettings");
         static readonly bool haveHugs                          = HugsDialog_VanillaModSettingsType != null;
 
-        static readonly FieldInfo SelMod = haveHugs
+        static readonly FieldInfo SettingsCurMod = haveHugs
             ? AccessTools.DeclaredField(HugsDialog_VanillaModSettingsType, "selectedMod")
-            : AccessTools.DeclaredField(typeof(Dialog_ModSettings),        "selMod");
+            : AccessTools.DeclaredField(typeof(Dialog_ModSettings),        "mod");
 
         static readonly Type      CsModType                 = GenTypes.GetTypeInAnyAssembly("CommonSense.CommonSense");
         static readonly Type      CsSettingsType            = GenTypes.GetTypeInAnyAssembly("CommonSense.Settings");
@@ -95,7 +95,7 @@ namespace JobsOfOpportunity
                         new CodeInstruction(OpCodes.Brfalse_S, skipMod),
 
                         new CodeInstruction(OpCodes.Ldarg_0),
-                        new CodeInstruction(OpCodes.Ldarg_1),
+                        new CodeInstruction(OpCodes.Ldarg_2),
                         new CodeInstruction(OpCodes.Call, AccessTools.DeclaredMethod(typeof(Pawn_JobTracker__TryOpportunisticJob_Patch), nameof(TryOpportunisticJob))),
                         new CodeInstruction(OpCodes.Ret),
                     }, true);

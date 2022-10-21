@@ -219,6 +219,17 @@ namespace JobsOfOpportunity
                         specialHauls.SetOrAdd(pawn, puah);
                     }
 
+#if DEBUG
+                    Debug.WriteLine($"{pawn}");
+                    Debug.WriteLine($"{puah.defHauls.Count} Hauls:");
+                    foreach (var defHaul in puah.defHauls)
+                        Debug.WriteLine($"\t{defHaul.Key}");
+
+                    Debug.WriteLine($"{puah.defHauls.Count} Unloads:");
+                    foreach (var haul in puah.defHauls)
+                        Debug.WriteLine($"\t{haul.Value.GetSlotGroup(pawn.Map)}");
+#endif
+
                     var closestHaul = carriedThings.Select(t => GetDefHaul(puah, t))
                         .Where(x => x.storeCell.IsValid).DefaultIfEmpty()
                         .MinBy(x => x.storeCell.DistanceTo(pawn.Position));

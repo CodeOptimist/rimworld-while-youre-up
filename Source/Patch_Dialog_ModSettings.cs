@@ -18,7 +18,7 @@ namespace JobsOfOpportunity
             static MethodBase TargetMethod() {
                 if (haveHugs)
                     return AccessTools.DeclaredConstructor(HugsDialog_VanillaModSettingsType, new[] { typeof(Verse.Mod) });
-                return AccessTools.DeclaredConstructor(typeof(Dialog_ModSettings));
+                return AccessTools.DeclaredConstructor(typeof(Dialog_ModSettings), new[] { typeof(Verse.Mod) });
             }
 
             [HarmonyPostfix]
@@ -36,16 +36,16 @@ namespace JobsOfOpportunity
 
             [HarmonyPostfix]
             static void CheckCommonSenseSetting(object __instance) {
-                var selMod = SelMod.GetValue(__instance);
+                var curMod = SettingsCurMod.GetValue(__instance);
 
                 if (settings.HaulBeforeCarry_Bills && haveCommonSense && (bool)CsHaulingOverBillsSetting.GetValue(null)) {
                     var csMod = LoadedModManager.GetMod(CsModType);
-                    if (selMod == mod) {
+                    if (curMod == mod) {
                         CsHaulingOverBillsSetting.SetValue(null, false);
                         csMod.WriteSettings();
                         Messages.Message(
                             $"[{mod.Content.Name}] Unticked setting in CommonSense: \"haul ingredients for a bill\". (Can't use both.)", MessageTypeDefOf.SilentInput, false);
-                    } else if (selMod == csMod) {
+                    } else if (curMod == csMod) {
                         settings.HaulBeforeCarry_Bills = false;
                         //mod.WriteSettings(); // no save because we handle it best on loading
                         Messages.Message(

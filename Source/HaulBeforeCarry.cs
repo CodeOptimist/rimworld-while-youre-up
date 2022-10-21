@@ -27,28 +27,28 @@ namespace JobsOfOpportunity
                 var afterNearbyIdx =
                     t.TryFindCodeIndex(code => code.Calls(AccessTools.DeclaredMethod(typeof(WorkGiver_ConstructDeliverResources), "FindAvailableNearbyResources")));
                 afterNearbyIdx += 1;
-                var foundResIdx = t.TryFindCodeLastIndex(afterNearbyIdx, code => code.opcode == OpCodes.Brfalse) + 1;
+                var foundResIdx = t.TryFindCodeLastIndex(afterNearbyIdx, code => code.opcode == OpCodes.Brfalse) + 1; // backward search
                 var afterNearby = generator.DefineLabel();
                 t.codes[afterNearbyIdx].labels.Add(afterNearby);
 
-                var needField  = AccessTools.FindIncludingInnerTypes(typeof(WorkGiver_ConstructDeliverResources), ty => AccessTools.DeclaredField(ty, "need"));
-                var needObjIdx = t.TryFindCodeIndex(code => code.Is(OpCodes.Newobj, AccessTools.DeclaredConstructor(needField.DeclaringType)));
+                var needField           = AccessTools.FindIncludingInnerTypes(typeof(WorkGiver_ConstructDeliverResources), ty => AccessTools.DeclaredField(ty, "need"));
+                var needDeclaringObjIdx = t.TryFindCodeIndex(code => code.Is(OpCodes.Newobj, AccessTools.DeclaredConstructor(needField.DeclaringType)));
 
-                var returnJobIdx = t.TryFindCodeIndex(afterNearbyIdx, code => code.opcode == OpCodes.Ret);
-                var jobVar       = t.codes[returnJobIdx - 1].operand;
+                var leaveJobIdx = t.TryFindCodeIndex(afterNearbyIdx, code => code.opcode == OpCodes.Leave);
+                var jobVar      = t.codes[leaveJobIdx - 1].operand;
 
                 t.TryInsertCodes(
                     0,
                     (i, codes) => i == afterNearbyIdx,
                     (i, codes) => new List<CodeInstruction> {
                         // job = HaulBeforeSupply(pawn, need, (Thing) c, foundRes);
-                        new CodeInstruction(OpCodes.Ldarg_1),                                // Pawn pawn
-                        new CodeInstruction(OpCodes.Ldloc_S, codes[needObjIdx + 1].operand), // ThingDefCountClass <>c__DisplayClass9_1
-                        new CodeInstruction(OpCodes.Ldfld,   needField),                     //                                        .need
-                        new CodeInstruction(OpCodes.Ldarg_2),                                // IConstructible c
-                        new CodeInstruction(OpCodes.Castclass, typeof(Thing)),               // (Thing) c
-                        codes[foundResIdx + 1].Clone(),                                      // Thing foundRes
-                        codes[foundResIdx + 2].Clone(),                                      // Thing foundRes
+                        new CodeInstruction(OpCodes.Ldarg_1),                       // Pawn pawn
+                        new CodeInstruction(codes[needDeclaringObjIdx + 2].opcode), // ThingDefCountClass <>c__DisplayClass9_1
+                        new CodeInstruction(OpCodes.Ldfld, needField),              //                                        .need
+                        new CodeInstruction(OpCodes.Ldarg_2),                       // IConstructible c
+                        new CodeInstruction(OpCodes.Castclass, typeof(Thing)),      // (Thing) c
+                        codes[foundResIdx + 1].Clone(),                             // Thing foundRes
+                        codes[foundResIdx + 2].Clone(),                             // Thing foundRes
                         new CodeInstruction(
                             OpCodes.Call, AccessTools.DeclaredMethod(typeof(WorkGiver_ConstructDeliverResources__ResourceDeliverJobFor_Patch), nameof(HaulBeforeSupply))),
                         new CodeInstruction(OpCodes.Stloc_S, jobVar),
