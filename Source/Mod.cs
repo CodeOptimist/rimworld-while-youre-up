@@ -114,11 +114,12 @@ namespace JobsOfOpportunity
                 // Debug.WriteLine($"Opportunity checking {job}");
                 var pawn = Traverse.Create(jobTracker).Field("pawn").GetValue<Pawn>();
                 if (AlreadyHauling(pawn)) return null;
-                var jobTarget = job.targetA;
+
+                var jobTarget = job.targetQueueB?.FirstOrDefault() ?? job.targetA;
 
                 if (job.def == JobDefOf.DoBill && settings.HaulBeforeCarry_Bills) {
-                    // Debug.WriteLine($"Bill: '{job.bill}' label: '{job.bill.Label}'");
-                    // Debug.WriteLine($"Recipe: '{job.bill.recipe}' workerClass: '{job.bill.recipe.workerClass}'");
+                    Debug.WriteLine($"Bill: '{job.bill}' label: '{job.bill.Label}'");
+                    Debug.WriteLine($"Recipe: '{job.bill.recipe}' workerClass: '{job.bill.recipe.workerClass}'");
                     for (var i = 0; i < job.targetQueueB.Count; i++) {
                         var ingredient = job.targetQueueB[i];
                         if (ingredient.Thing == null) continue;

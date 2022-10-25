@@ -302,8 +302,6 @@ updates:
 
   - at: 3.2.0
     desc: |-
-      If willing, please report issues immediately via Discord link here ↗ or in Mods menu.
-      
       Features
       • [i]Pathfinding[/i] option added to settings (off by default).
       
@@ -311,6 +309,13 @@ updates:
       • Performance improvements to [i]Opportunities[/i].
       • Skip opportunities when gathering animals (not just items) for a caravan.
       • Mods which patch [i]ThingFilter[/i] at startup will no longer break WYU settings window.
+
+  - at: 3.2.1
+    credit: '"Fletcher" https://steamcommunity.com/id/iamfletcher2 '
+    desc: |-
+      If willing, please report issues immediately via Discord link here ↗ or in Mods menu.
+      
+      • Fixed hauls "on the way to" workbenches to use first ingredient location!
 
 
 keyed:
