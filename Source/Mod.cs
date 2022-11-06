@@ -17,7 +17,7 @@ namespace JobsOfOpportunity
     static class Extensions
     {
         public static string ModTranslate(this string key, params NamedArgument[] args) {
-            return $"{Mod.modId}_{key}".Translate(args);
+            return $"{Mod.modId}_{key}".Translate(args).Resolve();
         }
     }
 

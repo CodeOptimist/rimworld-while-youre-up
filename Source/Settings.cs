@@ -198,9 +198,7 @@ namespace JobsOfOpportunity
                         };
 
                         oDoubleStd.Begin(innerTabRect);
-                        using (new DrawContext { GuiColor = Color.grey }) {
-                            oDoubleStd.Label("Opportunity_Intro".ModTranslate());
-                        }
+                        oDoubleStd.Label("Opportunity_Intro".ModTranslate());
                         oDoubleStd.Gap();
 
                         using (new DrawContext { LabelPct = 0.25f }) {
@@ -225,9 +223,7 @@ namespace JobsOfOpportunity
                         }
 
                         oDoubleStd.NewColumn();
-                        using (new DrawContext { GuiColor = Color.grey }) {
-                            oDoubleStd.Label("Opportunity_Tab".ModTranslate());
-                        }
+                        oDoubleStd.Label("Opportunity_Tab".ModTranslate());
                         oDoubleStd.GapLine();
                         var invertAuto = !settings.Opportunity_AutoBuildings;
                         oDoubleStd.DrawBool(ref invertAuto, nameof(settings.Opportunity_AutoBuildings));
@@ -262,21 +258,15 @@ namespace JobsOfOpportunity
                         };
 
                         hbcDoubleStd.Begin(innerTabRect);
-                        using (new DrawContext { GuiColor = Color.grey }) {
-                            hbcDoubleStd.Label("HaulBeforeCarry_Intro".ModTranslate());
-                        }
+                        hbcDoubleStd.Label("HaulBeforeCarry_Intro".ModTranslate());
                         hbcDoubleStd.DrawBool(ref settings.HaulBeforeCarry_Supplies, nameof(settings.HaulBeforeCarry_Supplies));
                         hbcDoubleStd.DrawBool(ref settings.HaulBeforeCarry_Bills,    nameof(settings.HaulBeforeCarry_Bills));
                         hbcDoubleStd.Gap();
-                        using (new DrawContext { GuiColor = Color.grey }) {
-                            hbcDoubleStd.Label("HaulBeforeCarry_EqualPriority".ModTranslate());
-                        }
+                        hbcDoubleStd.Label("HaulBeforeCarry_EqualPriority".ModTranslate());
                         hbcDoubleStd.DrawBool(ref settings.HaulBeforeCarry_ToEqualPriority, nameof(settings.HaulBeforeCarry_ToEqualPriority));
 
                         hbcDoubleStd.NewColumn();
-                        using (new DrawContext { GuiColor = Color.grey }) {
-                            hbcDoubleStd.Label("HaulBeforeCarry_Tab".ModTranslate());
-                        }
+                        hbcDoubleStd.Label("HaulBeforeCarry_Tab".ModTranslate());
                         hbcDoubleStd.GapLine();
                         invertAuto = !settings.HaulBeforeCarry_AutoBuildings;
                         hbcDoubleStd.DrawBool(ref invertAuto, nameof(settings.HaulBeforeCarry_AutoBuildings));
@@ -311,16 +301,7 @@ namespace JobsOfOpportunity
                         };
 
                         puahDoubleStd.Begin(innerTabRect);
-                        puahDoubleStd.Label("PickUpAndHaulPlus_UpgradeTitle".ModTranslate());
-                        using (new DrawContext { GuiColor = Color.grey }) {
-                            puahDoubleStd.Label("PickUpAndHaulPlus_UpgradeText".ModTranslate());
-                        }
-                        puahDoubleStd.Gap();
-
-                        puahDoubleStd.Label("PickUpAndHaulPlus_IntegrationTitle".ModTranslate());
-                        using (new DrawContext { GuiColor = Color.grey }) {
-                            puahDoubleStd.Label("PickUpAndHaulPlus_IntegrationText".ModTranslate());
-                        }
+                        puahDoubleStd.Label("PickUpAndHaulPlus_Text".ModTranslate());
                         puahDoubleStd.End();
                         break;
                 }

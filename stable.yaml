@@ -78,8 +78,8 @@ features: !join
       [u][i]Pick Up And Haul+[/i]: Better unloading[/u]
       We enhance all inventory hauling by unloading only once at each storage destination, in closest order.
     - &v3_0_0_puah |-
-      We improve performance by caching haulable destinations.
-    -
+      We cache haulable destinations to improve performance.
+
     - &v1_0_0 |-
       [u]Opportunistic hauls[/u]
       Vanilla has support for opportunities, but with limitations: haulable near your [b]start[/b] position, and storage near your job.
@@ -340,11 +340,11 @@ keyed:
 
   - name: Opportunity_Intro
     value: |-
-      Job report: "... on the way to ..."
+      (*Gray)Job report: "(/Gray)(*DateTime)... on the way to ...(/DateTime)(*Gray)"
 
       Hauling on the way to a job is a vanilla feature, hence generally compatible with all mods. Some storage mods use delays, so are disallowed by default.
 
-      We skip opportunities when bleeding or forming a caravan.
+      We skip opportunities when bleeding or forming a caravan.(/Gray)
 
   - name: HaulBeforeCarry_LoadReport
     value: '{{ORIGINAL}}, headed closer to {{DESTINATION}}.'
@@ -353,17 +353,17 @@ keyed:
     value: 'Efficiently {{ORIGINAL}}, closer to {{DESTINATION}}.'
 
   - name: HaulBeforeCarry_Tab
-    value: Supplies & Ingredients
+    value: &haul_before_carry_tab Supplies & Ingredients
 
   - name: HaulBeforeCarry_Intro
     value: |-
-      Job report: "... closer to ..."
+      (*Gray)Job report: "(/Gray)(*DateTime)... closer to ...(/DateTime)(*Gray)"
 
-      A pawn will find the closest resource, which is sometimes awaiting delivery to storage near our job site. If we perform that haul first, they can grab extras headed to the same storage.
+      A pawn will find the closest resource, which is sometimes awaiting delivery to storage near our job site. By doing that first, our pawn can grab extras.(/Gray)
 
   - name: HaulBeforeCarry_EqualPriority
     value: |-
-      If a resource is already in storage of equal priority, they won't save a trip for a dedicated hauler, but can still grab resources that expedite their future work.
+      (*Gray)If a resource is already in storage, our pawn won't save a trip for a dedicated hauler, but can still grab extras that expedite their future work.(/Gray)
 
   - name: PickUpAndHaulPlus_LoadReport
     value: '{{ORIGINAL}}.'
@@ -374,25 +374,25 @@ keyed:
   - name: PickUpAndHaulPlus_Tab
     value: Pick Up And Haul+
 
-  - name: PickUpAndHaulPlus_UpgradeTitle
-    value: Pick Up And Haul+
-
-  - name: PickUpAndHaulPlus_UpgradeText
+  - name: PickUpAndHaulPlus_Text
     value: !join
       - "\n"
       - - |
-          We significantly enhance Pick Up And Haul by unloading only once at each destination, in closest order.
+          Pick Up And Haul
+        - |
+          (*Gray)Pawns will unload once at each destination, in closest order.
+          
+          Haulable destinations are cached to improve performance.(/Gray)
 
-        - *v3_0_0_puah
+        - *opportunity_tab
+        - ""
+        - |
+          (*Gray)Gathering and unloading a pawn's entire inventory will never exceed the criteria for "opportunistic".(/Gray)
 
-  - name: PickUpAndHaulPlus_IntegrationTitle
-    value: While You're Up
-
-  - name: PickUpAndHaulPlus_IntegrationText
-    value: |-
-      We fully integrate opportunities by ensuring our entire gather and unload path never exceeds our criteria for "opportunistic".
-
-      When hauling extra supplies or ingredients to closer storage, we grab extra random things headed to the same higher-priority storage.
+        - *haul_before_carry_tab
+        - ""
+        - |
+          (*Gray)Pawns hauling extra supplies or ingredients to closer storage will also grab non-resources.(/Gray)
 
 
 settings:
