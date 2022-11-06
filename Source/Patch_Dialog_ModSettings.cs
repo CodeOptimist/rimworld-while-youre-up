@@ -38,10 +38,10 @@ namespace JobsOfOpportunity
             static void CheckCommonSenseSetting(object __instance) {
                 var curMod = SettingsCurMod.GetValue(__instance);
 
-                if (settings.HaulBeforeCarry_Bills && haveCommonSense && (bool)CsHaulingOverBillsSetting.GetValue(null)) {
+                if (settings.HaulBeforeCarry_Bills && haveCommonSense && (bool)CsSettings_HaulingOverBillsField.GetValue(null)) {
                     var csMod = LoadedModManager.GetMod(CsModType);
                     if (curMod == mod) {
-                        CsHaulingOverBillsSetting.SetValue(null, false);
+                        CsSettings_HaulingOverBillsField.SetValue(null, false);
                         csMod.WriteSettings();
                         Messages.Message(
                             $"[{mod.Content.Name}] Unticked setting in CommonSense: \"haul ingredients for a bill\". (Can't use both.)", MessageTypeDefOf.SilentInput, false);

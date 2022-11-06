@@ -29,20 +29,35 @@ namespace JobsOfOpportunity
         static          bool      foundConfig;
         static readonly Harmony   harmony = new Harmony(modId);
 
-        static readonly Type PuahCompHauledToInventoryType               = GenTypes.GetTypeInAnyAssembly("PickUpAndHaul.CompHauledToInventory");
+        static readonly Type PuahCompHauledToInventoryType               = GenTypes.GetTypeInAnyAssembly("PickUpAndHaul.CompHauledToInventory"); // GenTypes has a cache
         static readonly Type PuahWorkGiver_HaulToInventoryType           = GenTypes.GetTypeInAnyAssembly("PickUpAndHaul.WorkGiver_HaulToInventory");
         static readonly Type PuahJobDriver_HaulToInventoryType           = GenTypes.GetTypeInAnyAssembly("PickUpAndHaul.JobDriver_HaulToInventory");
         static readonly Type PuahJobDriver_UnloadYourHauledInventoryType = GenTypes.GetTypeInAnyAssembly("PickUpAndHaul.JobDriver_UnloadYourHauledInventory");
 
-        static          MethodInfo PuahGetCompHauledToInventory;
-        static readonly MethodInfo PuahJobOnThing     = AccessTools.DeclaredMethod(PuahWorkGiver_HaulToInventoryType, "JobOnThing");
-        static readonly FieldInfo  PuahSkipCellsField = AccessTools.DeclaredField(PuahWorkGiver_HaulToInventoryType, "skipCells");
+        static readonly MethodInfo PuahHti_HasJobOnThing                 = AccessTools.DeclaredMethod(PuahWorkGiver_HaulToInventoryType, "HasJobOnThing");
+        static readonly MethodInfo PuahHti_JobOnThing                    = AccessTools.DeclaredMethod(PuahWorkGiver_HaulToInventoryType, "JobOnThing");
+        static readonly MethodInfo PuahHti_TryFindBestBetterStoreCellFor = AccessTools.DeclaredMethod(PuahWorkGiver_HaulToInventoryType, "TryFindBestBetterStoreCellFor");
+
+        static readonly MethodInfo PuahUyhi_FirstUnloadableThing = AccessTools.DeclaredMethod(PuahJobDriver_UnloadYourHauledInventoryType, "FirstUnloadableThing");
+        static readonly MethodInfo PuahUyhi_MakeNewToils         = AccessTools.DeclaredMethod(PuahJobDriver_UnloadYourHauledInventoryType, "MakeNewToils");
+
+        // todo https://github.com/Mehni/PickUpAndHaul/commit/fd2dd37d48af136600b220b5d9c141957b377e8c
+        static readonly MethodInfo PuahHti_AllocateThingAt =
+            AccessTools.DeclaredMethod(PuahWorkGiver_HaulToInventoryType,    "AllocateThingAtStoreTarget")
+            ?? AccessTools.DeclaredMethod(PuahWorkGiver_HaulToInventoryType, "AllocateThingAtCell");
+
+        // todo support changing this to "skipTargets" in the future? https://github.com/Mehni/PickUpAndHaul/commit/d48fdfff9e3c9a072b160871676e813258dee584
+        static readonly FieldInfo PuahHti_SkipCellsField = AccessTools.DeclaredField(PuahWorkGiver_HaulToInventoryType, "skipCells");
 
         static readonly bool havePuah = new List<object> {
-                PuahCompHauledToInventoryType, PuahWorkGiver_HaulToInventoryType, PuahJobDriver_HaulToInventoryType, PuahJobDriver_UnloadYourHauledInventoryType, PuahJobOnThing,
-                PuahSkipCellsField,
+                PuahCompHauledToInventoryType, PuahWorkGiver_HaulToInventoryType, PuahJobDriver_HaulToInventoryType, PuahJobDriver_UnloadYourHauledInventoryType,
+                PuahHti_HasJobOnThing, PuahHti_JobOnThing, PuahHti_TryFindBestBetterStoreCellFor, PuahUyhi_FirstUnloadableThing, PuahUyhi_MakeNewToils, PuahHti_AllocateThingAt,
+                PuahHti_SkipCellsField,
             }
             .All(x => x != null);
+
+        static readonly MethodInfo PuahGetCompHauledToInventory =
+            havePuah ? AccessTools.DeclaredMethod(typeof(ThingWithComps), "GetComp").MakeGenericMethod(PuahCompHauledToInventoryType) : null;
 
         static readonly Type HugsDialog_VanillaModSettingsType = GenTypes.GetTypeInAnyAssembly("HugsLib.Settings.Dialog_VanillaModSettings");
         static readonly bool haveHugs                          = HugsDialog_VanillaModSettingsType != null;
@@ -51,16 +66,13 @@ namespace JobsOfOpportunity
             ? AccessTools.DeclaredField(HugsDialog_VanillaModSettingsType, "selectedMod")
             : AccessTools.DeclaredField(typeof(Dialog_ModSettings),        "mod");
 
-        static readonly Type      CsModType                 = GenTypes.GetTypeInAnyAssembly("CommonSense.CommonSense");
-        static readonly Type      CsSettingsType            = GenTypes.GetTypeInAnyAssembly("CommonSense.Settings");
-        static readonly FieldInfo CsHaulingOverBillsSetting = AccessTools.DeclaredField(CsSettingsType, "hauling_over_bills");
+        static readonly Type      CsModType                        = GenTypes.GetTypeInAnyAssembly("CommonSense.CommonSense");
+        static readonly Type      CsSettingsType                   = GenTypes.GetTypeInAnyAssembly("CommonSense.Settings");
+        static readonly FieldInfo CsSettings_HaulingOverBillsField = AccessTools.DeclaredField(CsSettingsType, "hauling_over_bills");
 
-        static readonly bool haveCommonSense = new List<object> { CsModType, CsSettingsType, CsHaulingOverBillsSetting }.All(x => x != null);
+        static readonly bool haveCommonSense = new List<object> { CsModType, CsSettingsType, CsSettings_HaulingOverBillsField }.All(x => x != null);
 
         public Mod(ModContentPack content) : base(content) {
-            if (havePuah)
-                PuahGetCompHauledToInventory = AccessTools.DeclaredMethod(typeof(ThingWithComps), "GetComp").MakeGenericMethod(PuahCompHauledToInventoryType);
-
             mod       = this;
             Gui.modId = modId;
             settings  = GetSettings<Settings>();
@@ -154,7 +166,7 @@ namespace JobsOfOpportunity
             specialHauls.SetOrAdd(pawn, puah);
             puah.TrackThing(thing, storeCell);
             var puahWorkGiver = DefDatabase<WorkGiverDef>.GetNamed("HaulToInventory").Worker;
-            return (Job)PuahJobOnThing.Invoke(puahWorkGiver, new object[] { pawn, thing, false });
+            return (Job)PuahHti_JobOnThing.Invoke(puahWorkGiver, new object[] { pawn, thing, false });
         }
 
         public static bool AlreadyHauling(Pawn pawn) {

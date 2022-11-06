@@ -19,9 +19,7 @@ namespace JobsOfOpportunity
         {
             static readonly List<MethodBase> callStack = new List<MethodBase>();
 
-            static readonly Dictionary<Thing, IntVec3> cachedStoreCells          = new Dictionary<Thing, IntVec3>();
-            static readonly MethodInfo                 hasJobOnThingMethod       = AccessTools.DeclaredMethod(PuahWorkGiver_HaulToInventoryType, "HasJobOnThing");
-            static readonly MethodInfo                 allocateThingAtCellMethod = AccessTools.DeclaredMethod(PuahWorkGiver_HaulToInventoryType, "AllocateThingAtCell");
+            static readonly Dictionary<Thing, IntVec3> cachedStoreCells = new Dictionary<Thing, IntVec3>();
 
             static void PushMethod(MethodBase method) => callStack.Add(method);
 
@@ -39,7 +37,7 @@ namespace JobsOfOpportunity
             {
                 // because of PUAH's haulMoreWork toil
                 static bool       Prepare()      => havePuah;
-                static MethodBase TargetMethod() => hasJobOnThingMethod;
+                static MethodBase TargetMethod() => PuahHti_HasJobOnThing;
 
                 static void Prefix(MethodBase __originalMethod) => PushMethod(__originalMethod);
                 static void Postfix()                           => PopMethod();
@@ -49,7 +47,7 @@ namespace JobsOfOpportunity
             static partial class WorkGiver_HaulToInventory__JobOnThing_Patch
             {
                 static bool       Prepare()      => havePuah;
-                static MethodBase TargetMethod() => AccessTools.DeclaredMethod(PuahWorkGiver_HaulToInventoryType, "JobOnThing");
+                static MethodBase TargetMethod() => PuahHti_JobOnThing;
 
                 [HarmonyPriority(Priority.High)]
                 static void Prefix(MethodBase __originalMethod) => PushMethod(__originalMethod);
@@ -62,7 +60,7 @@ namespace JobsOfOpportunity
             static class WorkGiver_HaulToInventory__AllocateThingAtCell_Patch
             {
                 static bool       Prepare()      => havePuah;
-                static MethodBase TargetMethod() => allocateThingAtCellMethod;
+                static MethodBase TargetMethod() => PuahHti_AllocateThingAt;
 
                 static void Prefix(MethodBase __originalMethod) => PushMethod(__originalMethod);
                 static void Postfix()                           => PopMethod();
@@ -72,7 +70,7 @@ namespace JobsOfOpportunity
             static class WorkGiver_HaulToInventory__TryFindBestBetterStoreCellFor_Patch
             {
                 static bool       Prepare()      => havePuah;
-                static MethodBase TargetMethod() => AccessTools.DeclaredMethod(PuahWorkGiver_HaulToInventoryType, "TryFindBestBetterStoreCellFor");
+                static MethodBase TargetMethod() => PuahHti_TryFindBestBetterStoreCellFor;
 
                 [HarmonyPrefix]
                 static bool UseSpecialHaulAwareTryFindStore(ref bool __result, Thing thing, Pawn carrier, Map map, StoragePriority currentPriority, Faction faction,
@@ -100,8 +98,8 @@ namespace JobsOfOpportunity
                     var isUnloadJob = carrier.CurJobDef == DefDatabase<JobDef>.GetNamed("UnloadYourHauledInventory");
                     if (!callStack.Any() && !isUnloadJob) return Original();
 
-                    var skipCells    = (HashSet<IntVec3>)PuahSkipCellsField.GetValue(null);
-                    var hasSkipCells = callStack.Contains(allocateThingAtCellMethod);
+                    var skipCells    = (HashSet<IntVec3>)PuahHti_SkipCellsField.GetValue(null);
+                    var hasSkipCells = callStack.Contains(PuahHti_AllocateThingAt);
 
                     // unload job happens over multiple ticks
                     var canCache = !isUnloadJob;
@@ -129,8 +127,8 @@ namespace JobsOfOpportunity
                     if (!foundCell.IsValid && !TryFindBestBetterStoreCellFor_ClosestToTarget(
                             t, opportunityTarget, beforeCarryTarget, carrier, map, currentPriority, faction, out foundCell,
                             // needAccurateResult may give us a shorter path, giving special hauls a better chance
-                            !callStack.Contains(hasJobOnThingMethod) && (opportunityTarget.IsValid || beforeCarryTarget.IsValid)
-                                                                     && Find.TickManager.CurTimeSpeed == TimeSpeed.Normal,
+                            !callStack.Contains(PuahHti_HasJobOnThing) && (opportunityTarget.IsValid || beforeCarryTarget.IsValid)
+                                                                       && Find.TickManager.CurTimeSpeed == TimeSpeed.Normal,
                             hasSkipCells ? skipCells : null))
                         return Skip(__result = false);
 
@@ -169,7 +167,7 @@ namespace JobsOfOpportunity
                         }
                     }
 
-                    if (callStack.Contains(allocateThingAtCellMethod)) {
+                    if (callStack.Contains(PuahHti_AllocateThingAt)) {
                         if (puah == null) {
                             puah = new PuahWithBetterUnloading();
                             specialHauls.SetOrAdd(carrier, puah);
@@ -185,7 +183,7 @@ namespace JobsOfOpportunity
             static class JobDriver_UnloadYourHauledInventory__FirstUnloadableThing_Patch
             {
                 static bool       Prepare()      => havePuah;
-                static MethodBase TargetMethod() => AccessTools.DeclaredMethod(PuahJobDriver_UnloadYourHauledInventoryType, "FirstUnloadableThing");
+                static MethodBase TargetMethod() => PuahUyhi_FirstUnloadableThing;
 
                 [HarmonyPrefix]
                 static bool SpecialHaulAwareFirstUnloadableThing(ref ThingCount __result, Pawn pawn) {

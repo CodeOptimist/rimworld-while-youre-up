@@ -141,7 +141,7 @@ namespace JobsOfOpportunity
             static class JobDriver_UnloadYourHauledInventory__MakeNewToils_Patch
             {
                 static bool       Prepare()      => havePuah;
-                static MethodBase TargetMethod() => AccessTools.DeclaredMethod(PuahJobDriver_UnloadYourHauledInventoryType, "MakeNewToils");
+                static MethodBase TargetMethod() => PuahUyhi_MakeNewToils;
 
                 [HarmonyPostfix]
                 static void ClearSpecialHaulOnFinish(JobDriver __instance) => __instance.AddFinishAction(() => specialHauls.Remove(__instance.pawn));

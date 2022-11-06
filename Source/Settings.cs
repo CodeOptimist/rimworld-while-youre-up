@@ -420,10 +420,10 @@ namespace JobsOfOpportunity
                 if (Scribe.mode == LoadSaveMode.LoadingVars) {
                     if (haveCommonSense) {
                         if (HaulBeforeCarry_Bills_NeedsInitForCs) {
-                            CsHaulingOverBillsSetting.SetValue(null, false);
+                            CsSettings_HaulingOverBillsField.SetValue(null, false);
                             HaulBeforeCarry_Bills                = true;
                             HaulBeforeCarry_Bills_NeedsInitForCs = false;
-                        } else if ((bool)CsHaulingOverBillsSetting.GetValue(null))
+                        } else if ((bool)CsSettings_HaulingOverBillsField.GetValue(null))
                             HaulBeforeCarry_Bills = false;
                     }
                 }
