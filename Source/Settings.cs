@@ -109,7 +109,7 @@ namespace JobsOfOpportunity
                 }
             }
 
-            enum Tab { Opportunity, HaulBeforeCarry, PickUpAndHaul }
+            enum Tab { Opportunity, OpportunityAdvanced, HaulBeforeCarry, PickUpAndHaul }
 
             [SuppressMessage("ReSharper", "StringLiteralTypo")]
             public static void ResetFilters() {
@@ -119,7 +119,7 @@ namespace JobsOfOpportunity
                 foreach (var modCategoryDef in storageBuildingCategoryDef.childCategories) {
                     modCategoryDef.treeNode.SetOpen(1, false);
 
-                    // todo move to XML? postpone that probably
+                    // todo move to XML
                     var mod = LoadedModManager.RunningModsListForReading.FirstOrDefault(x => x.Name == modCategoryDef.label);
                     switch (mod?.PackageId) {
                         // most of these are from ZzZombo#9297, blame him for everything. 🙃
@@ -177,7 +177,9 @@ namespace JobsOfOpportunity
 
                 // todo actually implement Deep Storage defaults
                 tabsList.Clear();
-                tabsList.Add(new TabRecord("Opportunity_Tab".ModTranslate(),     () => tab = Tab.Opportunity,     tab == Tab.Opportunity));
+                tabsList.Add(new TabRecord("Opportunity_Tab".ModTranslate(), () => tab = Tab.Opportunity, tab == Tab.Opportunity));
+                if (settings.Opportunity_TweakVanilla)
+                    tabsList.Add(new TabRecord("OpportunityAdvanced_Tab".ModTranslate(), () => tab = Tab.OpportunityAdvanced, tab == Tab.OpportunityAdvanced));
                 tabsList.Add(new TabRecord("HaulBeforeCarry_Tab".ModTranslate(), () => tab = Tab.HaulBeforeCarry, tab == Tab.HaulBeforeCarry));
                 if (ModLister.HasActiveModWithName("Pick Up And Haul") && settings.UsePickUpAndHaulPlus)
                     tabsList.Add(new TabRecord("PickUpAndHaulPlus_Tab".ModTranslate(), () => tab = Tab.PickUpAndHaul, tab == Tab.PickUpAndHaul));
@@ -209,18 +211,6 @@ namespace JobsOfOpportunity
                         oDoubleStd.Gap();
 
                         oDoubleStd.DrawBool(ref settings.Opportunity_TweakVanilla, nameof(settings.Opportunity_TweakVanilla));
-                        if (settings.Opportunity_TweakVanilla) {
-                            using (new DrawContext { TextAnchor = TextAnchor.MiddleRight, LabelPct = 0.65f }) {
-                                oDoubleStd.DrawFloat(ref settings.Opportunity_MaxNewLegsPctOrigTrip,      nameof(settings.Opportunity_MaxNewLegsPctOrigTrip));
-                                oDoubleStd.DrawFloat(ref settings.Opportunity_MaxTotalTripPctOrigTrip,    nameof(settings.Opportunity_MaxTotalTripPctOrigTrip));
-                                oDoubleStd.DrawFloat(ref settings.Opportunity_MaxStartToThing,            nameof(settings.Opportunity_MaxStartToThing));
-                                oDoubleStd.DrawFloat(ref settings.Opportunity_MaxStartToThingPctOrigTrip, nameof(settings.Opportunity_MaxStartToThingPctOrigTrip));
-                                oDoubleStd.DrawInt(ref settings.Opportunity_MaxStartToThingRegionLookCount, nameof(settings.Opportunity_MaxStartToThingRegionLookCount));
-                                oDoubleStd.DrawFloat(ref settings.Opportunity_MaxStoreToJob,            nameof(settings.Opportunity_MaxStoreToJob));
-                                oDoubleStd.DrawFloat(ref settings.Opportunity_MaxStoreToJobPctOrigTrip, nameof(settings.Opportunity_MaxStoreToJobPctOrigTrip));
-                                oDoubleStd.DrawInt(ref settings.Opportunity_MaxStoreToJobRegionLookCount, nameof(settings.Opportunity_MaxStoreToJobRegionLookCount));
-                            }
-                        }
 
                         oDoubleStd.NewColumn();
                         oDoubleStd.Label("Opportunity_Tab".ModTranslate());
@@ -251,6 +241,46 @@ namespace JobsOfOpportunity
                         oDoubleStd.DrawBool(ref settings.Opportunity_ToStockpiles, nameof(settings.Opportunity_ToStockpiles));
                         oDoubleStd.End();
                         break;
+
+                    case Tab.OpportunityAdvanced:
+                        var labelPct = 0.75f;
+                        var advDoubleStd = new Listing_Standard {
+                            // ColumnWidth = (float)Math.Round((innerTabRect.width - 17 * 1) / 2),
+                        };
+
+                        advDoubleStd.Begin(innerTabRect);
+
+                        advDoubleStd.Label("OpportunityAdvanced_Text1".ModTranslate());
+                        using (new DrawContext { TextAnchor = TextAnchor.MiddleRight, LabelPct = labelPct }) {
+                            advDoubleStd.DrawPercent(ref settings.Opportunity_MaxNewLegsPctOrigTrip,   nameof(settings.Opportunity_MaxNewLegsPctOrigTrip));
+                            advDoubleStd.DrawPercent(ref settings.Opportunity_MaxTotalTripPctOrigTrip, nameof(settings.Opportunity_MaxTotalTripPctOrigTrip));
+                        }
+
+                        advDoubleStd.Gap();
+                        advDoubleStd.GapLine();
+                        advDoubleStd.Gap();
+
+                        advDoubleStd.Label("OpportunityAdvanced_Text2".ModTranslate());
+                        using (new DrawContext { TextAnchor = TextAnchor.MiddleRight, LabelPct = labelPct }) {
+                            advDoubleStd.DrawFloat(ref settings.Opportunity_MaxStartToThing, nameof(settings.Opportunity_MaxStartToThing));
+                            advDoubleStd.DrawFloat(ref settings.Opportunity_MaxStoreToJob,   nameof(settings.Opportunity_MaxStoreToJob));
+                            advDoubleStd.DrawPercent(ref settings.Opportunity_MaxStartToThingPctOrigTrip, nameof(settings.Opportunity_MaxStartToThingPctOrigTrip));
+                            advDoubleStd.DrawPercent(ref settings.Opportunity_MaxStoreToJobPctOrigTrip,   nameof(settings.Opportunity_MaxStoreToJobPctOrigTrip));
+                        }
+
+                        advDoubleStd.Gap();
+                        advDoubleStd.GapLine();
+                        advDoubleStd.Gap();
+
+                        advDoubleStd.Label("OpportunityAdvanced_Text3".ModTranslate());
+                        using (new DrawContext { TextAnchor = TextAnchor.MiddleRight, LabelPct = labelPct }) {
+                            advDoubleStd.DrawInt(ref settings.Opportunity_MaxStartToThingRegionLookCount, nameof(settings.Opportunity_MaxStartToThingRegionLookCount));
+                            advDoubleStd.DrawInt(ref settings.Opportunity_MaxStoreToJobRegionLookCount,   nameof(settings.Opportunity_MaxStoreToJobRegionLookCount));
+                        }
+
+                        advDoubleStd.End();
+                        break;
+
 
                     case Tab.HaulBeforeCarry:
                         var hbcDoubleStd = new Listing_Standard {
@@ -301,7 +331,10 @@ namespace JobsOfOpportunity
                         };
 
                         puahDoubleStd.Begin(innerTabRect);
-                        puahDoubleStd.Label("PickUpAndHaulPlus_Text".ModTranslate());
+                        puahDoubleStd.Label("PickUpAndHaulPlus_Text1".ModTranslate());
+                        puahDoubleStd.GapLine();
+                        puahDoubleStd.Gap();
+                        puahDoubleStd.Label("PickUpAndHaulPlus_Text2".ModTranslate());
                         puahDoubleStd.End();
                         break;
                 }

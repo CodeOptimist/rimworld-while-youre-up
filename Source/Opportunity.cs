@@ -23,7 +23,11 @@ namespace JobsOfOpportunity
                 public float startToThing, startToThingPctOrigTrip;
                 public float storeToJob,   storeToJobPctOrigTrip;
 
-                public static MaxRanges operator *(MaxRanges maxRanges, int multiplier) {
+                [TweakValue("WhileYoureUp", 1.1f, 3f)]
+                // ReSharper disable once FieldCanBeMadeReadOnly.Local
+                public static float heuristicExpandFactor = 2f;
+
+                public static MaxRanges operator *(MaxRanges maxRanges, float multiplier) {
                     maxRanges.expandCount             += 1;
                     maxRanges.startToThing            *= multiplier;
                     maxRanges.startToThingPctOrigTrip *= multiplier;
@@ -46,7 +50,11 @@ namespace JobsOfOpportunity
                     var haulables = new List<Thing>(pawn.Map.listerHaulables.ThingsPotentiallyNeedingHauling());
                     while (haulables.Count > 0) {
                         if (i == haulables.Count) {
-                            maxRanges *= 2;
+                            // By expanding gradually, our slow checks will be performed in the most optimistic order that we can check for cheaply
+                            //  (i.e. thing already close to pawn, storage close to job). Excellent opportunities may satisfy neither of these,
+                            // but it's the best cheap heuristic we have, and better than random.
+                            // todo a smaller number, maybe 1.1f? might actually perform much better here? it's a TweakValue now
+                            maxRanges *= MaxRanges.heuristicExpandFactor;
                             i         =  0;
                         }
 
@@ -63,6 +71,8 @@ namespace JobsOfOpportunity
                                 haulables.RemoveAt(i);
                                 continue;
                             case CanHaulResult.Success:
+                                // todo test our heuristic expand factor more thoroughly
+                                Debug.WriteLine($"Checked: {1 - (haulables.Count - 1) / (float)pawn.Map.listerHaulables.haulables.Count:P}. Expansions: {maxRanges.expandCount}");
                                 if (DebugViewSettings.drawOpportunisticJobs) {
                                     pawn.Map.debugDrawer.FlashLine(pawn.Position,  jobTarget.Cell, 600, SimpleColor.Red);
                                     pawn.Map.debugDrawer.FlashLine(pawn.Position,  thing.Position, 600, SimpleColor.Green);
@@ -149,8 +159,7 @@ namespace JobsOfOpportunity
                         return CanHaulResult.HardFail;
                 }
 
-                // not worth the performance to continually expand (our expansions are just to facilitate a preference for the best opportunities)
-                // but always try for the very best initially, so we're at least as good as vanilla
+                // try for the very best initially, so we're at least as good as vanilla
                 else if (maxRanges.expandCount == 0) {
                     if (!pawn.Position.WithinRegions(thing.Position, pawn.Map, settings.Opportunity_MaxStartToThingRegionLookCount, TraverseParms.For(pawn)))
                         return CanHaulResult.RangeFail;

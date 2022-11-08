@@ -353,6 +353,26 @@ keyed:
 
       We skip opportunities when bleeding or forming a caravan.(/Gray)
 
+  - name: OpportunityAdvanced_Tab
+    value: Advanced Settings
+
+  - name: OpportunityAdvanced_Text1
+    value: |-
+      Vanilla(*Gray): Maximum distance ratios.(/Gray)
+      Default, Pathfinding(*Gray): For these modes, the only settings that control available opportunities.(/Gray)
+
+  - name: OpportunityAdvanced_Text2
+    value: |-
+      Vanilla(*Gray): Maximum distances/ratios to limit opportunities in exchange for performance.(/Gray)
+      Default, Pathfinding(*Gray): Dropped as limits, but kept as a performance heuristic.(/Gray)
+      (*Gray)That heuristic checks paths within these ranges first, while slowly expanding them.(/Gray)
+
+  - name: OpportunityAdvanced_Text3
+    value: |-
+      Vanilla(*Gray): Maximum region-looks (a faster, less-accurate form of pathfinding—see tooltip).(/Gray)
+      Default(*Gray): Used once then ignored to maximize opportunities and performance, but imperfect. (/Gray)
+      Pathfinding(*Gray): Ignored. Uses real pathfinding instead of region-look.(/Gray)
+
   - name: HaulBeforeCarry_LoadReport
     value: '{{ORIGINAL}}, headed closer to {{DESTINATION}}.'
 
@@ -381,7 +401,11 @@ keyed:
   - name: PickUpAndHaulPlus_Tab
     value: Pick Up And Haul+
 
-  - name: PickUpAndHaulPlus_Text
+  - name: PickUpAndHaulPlus_Text1
+    value: |-
+      Enhancements & Integrations
+
+  - name: PickUpAndHaulPlus_Text2
     value: !join
       - "\n"
       - - |
@@ -437,25 +461,45 @@ settings:
     title: "Pathfinding\nFPS ✖️\tOpportunities ✔️\tPerfect ✔️"
 
   - name: Opportunity_TweakVanilla
-    title: Show advanced vanilla settings...
-    desc: |-
-      Provided for explaining and tweaking vanilla's built-in opportunistic hauling.
-
-      All distances are straight-line ("as the crow flies").
-
-  - name: Opportunity_MaxNewLegsPctOrigTrip
-    title: Max new legs % of original trip
-    desc: |-
-      Max start-to-haulable + storage-to-job % of original trip.
-  - name: Opportunity_MaxTotalTripPctOrigTrip
-    title: Max total trip % of original trip
+    title: Show advanced settings tab...
 
   - name: Opportunity_MaxStartToThing
-    title: Max start-to-haulable
+    title: (*ColonistCount)start(/ColonistCount)➡(*DateTime)haulable(/DateTime)
+    desc: |-
+      If ((*ColonistCount)start(/ColonistCount)➡(*DateTime)haulable(/DateTime)) exceeds this value, the haul is disqualified.
+      
+      "Start" is the pawn's starting location, 
+      If a haulable is farther from the pawn's starting position than this, the haul is disqualified.
+
+  - name: Opportunity_MaxStoreToJob
+    title: (*Name)storage(/Name)➡(*Threat)job(/Threat)
+    desc: |-
+      If ((*Name)storage(/Name)➡(*Threat)job(/Threat)) exceeds this value, the haul is disqualified.
+      
+      If a haulable's storage is farther from the pawn's ending position than this, the haul is disqualified.
+
   - name: Opportunity_MaxStartToThingPctOrigTrip
-    title: Max start-to-haulable % of original trip
+    title: "(*ColonistCount)start(/ColonistCount)➡(*DateTime)haulable(/DateTime) : (*ColonistCount)start(/ColonistCount)➡(*Threat)job(/Threat)"
+    desc: |-
+      If ((*ColonistCount)start(/ColonistCount)➡(*DateTime)haulable(/DateTime) / (*ColonistCount)start(/ColonistCount)➡(*Threat)job(/Threat)) exceeds this percentage, the haul is disqualified.
+
+  - name: Opportunity_MaxStoreToJobPctOrigTrip
+    title: "(*Name)storage(/Name)➡(*Threat)job(/Threat) : (*ColonistCount)start(/ColonistCount)➡(*Threat)job(/Threat)"
+    desc: |-
+      If ((*Name)storage(/Name)➡(*Threat)job(/Threat) / (*ColonistCount)start(/ColonistCount)➡(*Threat)job(/Threat)) exceeds this percentage, the haul is disqualified.
+
+  - name: Opportunity_MaxNewLegsPctOrigTrip
+    title: "(*ColonistCount)start(/ColonistCount)➡(*DateTime)haulable(/DateTime) + (*Name)storage(/Name)➡(*Threat)job(/Threat) : (*ColonistCount)start(/ColonistCount)➡(*Threat)job(/Threat)"
+    desc: |-
+      This is a ratio of the "additional legs" of the new trip to the original trip.
+
+  - name: Opportunity_MaxTotalTripPctOrigTrip
+    title: "(*ColonistCount)start(/ColonistCount)➡(*DateTime)haulable(/DateTime)➡(*Name)storage(/Name)➡(*Threat)job(/Threat) : (*ColonistCount)start(/ColonistCount)➡(*Threat)job(/Threat)"
+    desc: |-
+      This is a ratio of the new trip to the original trip.
+
   - name: Opportunity_MaxStartToThingRegionLookCount
-    title: Max start-to-haulable region look count
+    title: (*ColonistCount)start(/ColonistCount)➡(*DateTime)haulable(/DateTime)
     desc: &region_look_count |-
       To understand this, enable [i]Development mode → inspector icon → Visibility → Draw Regions[/i].
 
@@ -463,12 +507,9 @@ settings:
 
       It can't be calculated perfectly from distance, as regions will vary in size and neighbors. (A corridor has only forward and back, so they're explored further.)
       But in a completely open field, if a pawn must travel the distance of n=3 full-sized 12x12 regions (~36 tiles), the algorithm will explore 2(n^2+n)+1 or 25 regions.
-  - name: Opportunity_MaxStoreToJob
-    title: Max storage-to-job
-  - name: Opportunity_MaxStoreToJobPctOrigTrip
-    title: Max storage-to-job % of original trip
+
   - name: Opportunity_MaxStoreToJobRegionLookCount
-    title: Max storage-to-job region look count
+    title: (*Name)storage(/Name)➡(*Threat)job(/Threat)
     desc: *region_look_count
 
   - name: Opportunity_ToStockpiles

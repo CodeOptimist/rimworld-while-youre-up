@@ -89,6 +89,7 @@ namespace JobsOfOpportunity
                 static bool       Prepare()      => havePuah;
                 static MethodBase TargetMethod() => AccessTools.DeclaredMethod(typeof(StoreUtility), nameof(StoreUtility.TryFindBestBetterStoreCellFor));
 
+                // todo print cache hits?
                 [HarmonyPrefix]
                 static bool SpecialHaulAwareTryFindStore(ref bool __result, Thing t, Pawn carrier, Map map, StoragePriority currentPriority,
                     Faction faction, out IntVec3 foundCell, bool needAccurateResult) {
@@ -124,7 +125,7 @@ namespace JobsOfOpportunity
 
                     var opportunityTarget = opportunity?.jobTarget ?? IntVec3.Invalid;
                     var beforeCarryTarget = beforeCarry?.carryTarget ?? IntVec3.Invalid;
-                    if (!foundCell.IsValid && !TryFindBestBetterStoreCellFor_ClosestToTarget(
+                    if (!foundCell.IsValid && !TryFindBestBetterStoreCellFor_ClosestToTarget( // call our own
                             t, opportunityTarget, beforeCarryTarget, carrier, map, currentPriority, faction, out foundCell,
                             // needAccurateResult may give us a shorter path, giving special hauls a better chance
                             !callStack.Contains(PuahHti_HasJobOnThing) && (opportunityTarget.IsValid || beforeCarryTarget.IsValid)

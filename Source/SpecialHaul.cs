@@ -1,4 +1,7 @@
-﻿using System.Collections.Generic;
+﻿// TryFindBestBetterStorageFor() looks for both slot group and non-slot group (twice the search), returns preference for non-slot group
+
+
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
