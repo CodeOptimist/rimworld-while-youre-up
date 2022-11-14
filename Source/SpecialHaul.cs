@@ -25,7 +25,7 @@ namespace JobsOfOpportunity
 
             public SpecialHaul(string reportKey, LocalTargetInfo target) {
                 this.reportKey = reportKey;
-                this.target = target;
+                this.target    = target;
             }
 
             public string GetReport(string text) {

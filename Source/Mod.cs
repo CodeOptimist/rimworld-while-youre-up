@@ -61,9 +61,9 @@ namespace JobsOfOpportunity
             if (havePuah)
                 PuahGetCompHauledToInventory = AccessTools.DeclaredMethod(typeof(ThingWithComps), "GetComp").MakeGenericMethod(PuahCompHauledToInventoryType);
 
-            mod = this;
+            mod       = this;
             Gui.modId = modId;
-            settings = GetSettings<Settings>();
+            settings  = GetSettings<Settings>();
             if (!foundConfig)
                 settings.ExposeData(); // initialize to defaults
             harmony.PatchAll();
@@ -83,9 +83,9 @@ namespace JobsOfOpportunity
         {
             [HarmonyTranspiler]
             static IEnumerable<CodeInstruction> _TryOpportunisticJob(IEnumerable<CodeInstruction> _codes, ILGenerator generator, MethodBase __originalMethod) {
-                var t = new Transpiler(_codes, __originalMethod);
+                var t                  = new Transpiler(_codes, __originalMethod);
                 var listerHaulablesIdx = t.TryFindCodeIndex(code => code.LoadsField(AccessTools.DeclaredField(typeof(Map), nameof(Map.listerHaulables))));
-                var skipMod = generator.DefineLabel();
+                var skipMod            = generator.DefineLabel();
 
                 t.TryInsertCodes(
                     -3,
@@ -162,7 +162,7 @@ namespace JobsOfOpportunity
             // because we may load a game with an incomplete haul
             if (havePuah) {
                 var hauledToInventoryComp = (ThingComp)PuahGetCompHauledToInventory.Invoke(pawn, null);
-                var takenToInventory = Traverse.Create(hauledToInventoryComp).Field<HashSet<Thing>>("takenToInventory").Value;
+                var takenToInventory      = Traverse.Create(hauledToInventoryComp).Field<HashSet<Thing>>("takenToInventory").Value;
                 if (takenToInventory != null && takenToInventory.Any(t => t != null)) return true;
             }
 
@@ -172,9 +172,9 @@ namespace JobsOfOpportunity
         public static bool TryFindBestBetterStoreCellFor_ClosestToTarget(Thing thing, LocalTargetInfo opportunity, LocalTargetInfo beforeCarry, Pawn pawn, Map map,
             StoragePriority currentPriority,
             Faction faction, out IntVec3 foundCell, bool needAccurateResult, HashSet<IntVec3> skipCells = null) {
-            var closestSlot = IntVec3.Invalid;
+            var closestSlot        = IntVec3.Invalid;
             var closestDistSquared = (float)int.MaxValue;
-            var foundPriority = currentPriority;
+            var foundPriority      = currentPriority;
 
             foreach (var slotGroup in map.haulDestinationManager.AllGroupsListInPriorityOrder) {
                 if (slotGroup.Settings.Priority < foundPriority) break;
@@ -184,7 +184,7 @@ namespace JobsOfOpportunity
                 if (slotGroup.Settings.Priority == StoragePriority.Unstored) break;
                 if (slotGroup.Settings.Priority == currentPriority && !beforeCarry.IsValid) break; // #ToEqualPriority
 
-                var stockpile = slotGroup.parent as Zone_Stockpile;
+                var stockpile       = slotGroup.parent as Zone_Stockpile;
                 var buildingStorage = slotGroup.parent as Building_Storage;
 
                 if (opportunity.IsValid) {
@@ -215,15 +215,15 @@ namespace JobsOfOpportunity
                 // original
                 var maxCheckedCells = needAccurateResult ? (int)Math.Floor((double)slotGroup.CellsList.Count * Rand.Range(0.005f, 0.018f)) : 0;
                 for (var i = 0; i < slotGroup.CellsList.Count; i++) {
-                    var cell = slotGroup.CellsList[i];
+                    var cell        = slotGroup.CellsList[i];
                     var distSquared = (float)(position - cell).LengthHorizontalSquared;
                     if (distSquared > closestDistSquared) continue;
                     if (skipCells != null && skipCells.Contains(cell)) continue; // PUAH addition
                     if (!StoreUtility.IsGoodStoreCell(cell, map, thing, pawn, faction)) continue;
 
-                    closestSlot = cell;
+                    closestSlot        = cell;
                     closestDistSquared = distSquared;
-                    foundPriority = slotGroup.Settings.Priority;
+                    foundPriority      = slotGroup.Settings.Priority;
 
                     if (i >= maxCheckedCells) break;
                 }

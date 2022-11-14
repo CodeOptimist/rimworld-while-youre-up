@@ -29,7 +29,7 @@ namespace JobsOfOpportunity
             }
 
             public static Job CatchStanding(Pawn pawn, Job job, [CallerMemberName] string callerName = "") {
-                lastPawn = pawn;
+                lastPawn       = pawn;
                 lastFrameCount = RealTime.frameCount;
                 lastCallerName = callerName;
                 return job;

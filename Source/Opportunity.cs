@@ -23,11 +23,11 @@ namespace JobsOfOpportunity
                 public float storeToJob,   storeToJobPctOrigTrip;
 
                 public static MaxRanges operator *(MaxRanges maxRanges, int multiplier) {
-                    maxRanges.expandCount += 1;
-                    maxRanges.startToThing *= multiplier;
+                    maxRanges.expandCount             += 1;
+                    maxRanges.startToThing            *= multiplier;
                     maxRanges.startToThingPctOrigTrip *= multiplier;
-                    maxRanges.storeToJob *= multiplier;
-                    maxRanges.storeToJobPctOrigTrip *= multiplier;
+                    maxRanges.storeToJob              *= multiplier;
+                    maxRanges.storeToJobPctOrigTrip   *= multiplier;
                     return maxRanges;
                 }
             }
@@ -35,21 +35,21 @@ namespace JobsOfOpportunity
             public static Job TryHaul(Pawn pawn, LocalTargetInfo jobTarget) {
                 Job _TryHaul() {
                     var maxRanges = new MaxRanges {
-                        startToThing = settings.Opportunity_MaxStartToThing,
+                        startToThing            = settings.Opportunity_MaxStartToThing,
                         startToThingPctOrigTrip = settings.Opportunity_MaxStartToThingPctOrigTrip,
-                        storeToJob = settings.Opportunity_MaxStoreToJob,
-                        storeToJobPctOrigTrip = settings.Opportunity_MaxStoreToJobPctOrigTrip,
+                        storeToJob              = settings.Opportunity_MaxStoreToJob,
+                        storeToJobPctOrigTrip   = settings.Opportunity_MaxStoreToJobPctOrigTrip,
                     };
 
-                    var i = 0;
+                    var i         = 0;
                     var haulables = new List<Thing>(pawn.Map.listerHaulables.ThingsPotentiallyNeedingHauling());
                     while (haulables.Count > 0) {
                         if (i == haulables.Count) {
                             maxRanges *= 2;
-                            i = 0;
+                            i         =  0;
                         }
 
-                        var thing = haulables[i];
+                        var thing   = haulables[i];
                         var canHaul = CanHaul(pawn, thing, jobTarget, maxRanges, out var storeCell);
                         switch (canHaul) {
                             case CanHaulResult.RangeFail:
@@ -126,7 +126,7 @@ namespace JobsOfOpportunity
                 if (settings.Opportunity_PathChecker == Settings.PathCheckerEnum.Pathfinding) {
                     float GetPathCost(IntVec3 start, LocalTargetInfo dest, PathEndMode peMode) {
                         var pawnPath = pawn.Map.pathFinder.FindPath(start, dest, TraverseParms.For(pawn), peMode);
-                        var result = pawnPath.TotalCost;
+                        var result   = pawnPath.TotalCost;
                         pawnPath.ReleaseToPool();
                         return result;
                     }
@@ -171,7 +171,7 @@ namespace JobsOfOpportunity
             public List<(Thing thing, IntVec3 storeCell)> hauls = new List<(Thing thing, IntVec3 storeCell)>();
 
             public PuahOpportunity(Pawn pawn, LocalTargetInfo jobTarget) {
-                startCell = pawn.Position;
+                startCell      = pawn.Position;
                 this.jobTarget = jobTarget;
             }
 
@@ -183,11 +183,11 @@ namespace JobsOfOpportunity
                 var isPrepend = pawn.carryTracker?.CarriedThing == thing;
                 TrackThing(thing, foundCell, isPrepend, trackDef: false);
 
-                var curPos = startCell;
+                var curPos           = startCell;
                 var startToLastThing = 0f;
                 foreach (var (thing_, _) in hauls) {
                     startToLastThing += curPos.DistanceTo(thing_.Position);
-                    curPos = thing_.Position;
+                    curPos           =  thing_.Position;
                 }
 
                 // every time, since our foundCell could fit anywhere
@@ -215,19 +215,19 @@ namespace JobsOfOpportunity
                 var firstStoreToLastStore = 0f;
                 foreach (var haul in haulsByUnloadDistance) {
                     firstStoreToLastStore += curPos.DistanceTo(haul.storeCell);
-                    curPos = haul.storeCell;
+                    curPos                =  haul.storeCell;
                 }
 
                 var lastStoreToJob = curPos.DistanceTo(jobTarget.Cell);
 
-                var origTrip = startCell.DistanceTo(jobTarget.Cell);
-                var totalTrip = startToLastThing + lastThingToFirstStore + firstStoreToLastStore + lastStoreToJob;
-                var maxTotalTrip = origTrip * settings.Opportunity_MaxTotalTripPctOrigTrip;
-                var newLegs = startToLastThing + firstStoreToLastStore + lastStoreToJob;
-                var maxNewLegs = origTrip * settings.Opportunity_MaxNewLegsPctOrigTrip;
-                var exceedsMaxTrip = totalTrip > maxTotalTrip;
+                var origTrip          = startCell.DistanceTo(jobTarget.Cell);
+                var totalTrip         = startToLastThing + lastThingToFirstStore + firstStoreToLastStore + lastStoreToJob;
+                var maxTotalTrip      = origTrip * settings.Opportunity_MaxTotalTripPctOrigTrip;
+                var newLegs           = startToLastThing + firstStoreToLastStore + lastStoreToJob;
+                var maxNewLegs        = origTrip * settings.Opportunity_MaxNewLegsPctOrigTrip;
+                var exceedsMaxTrip    = totalTrip > maxTotalTrip;
                 var exceedsMaxNewLegs = newLegs > maxNewLegs;
-                var isRejected = exceedsMaxTrip || exceedsMaxNewLegs;
+                var isRejected        = exceedsMaxTrip || exceedsMaxNewLegs;
 
                 if (isRejected) {
                     foundCell = IntVec3.Invalid;

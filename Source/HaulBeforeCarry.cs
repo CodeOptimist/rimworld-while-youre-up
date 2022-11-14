@@ -31,11 +31,11 @@ namespace JobsOfOpportunity
                 var afterNearby = generator.DefineLabel();
                 t.codes[afterNearbyIdx].labels.Add(afterNearby);
 
-                var needField = AccessTools.FindIncludingInnerTypes(typeof(WorkGiver_ConstructDeliverResources), ty => AccessTools.DeclaredField(ty, "need"));
+                var needField  = AccessTools.FindIncludingInnerTypes(typeof(WorkGiver_ConstructDeliverResources), ty => AccessTools.DeclaredField(ty, "need"));
                 var needObjIdx = t.TryFindCodeIndex(code => code.Is(OpCodes.Newobj, AccessTools.DeclaredConstructor(needField.DeclaringType)));
 
                 var returnJobIdx = t.TryFindCodeIndex(afterNearbyIdx, code => code.opcode == OpCodes.Ret);
-                var jobVar = t.codes[returnJobIdx - 1].operand;
+                var jobVar       = t.codes[returnJobIdx - 1].operand;
 
                 t.TryInsertCodes(
                     0,
@@ -83,7 +83,7 @@ namespace JobsOfOpportunity
 
             public PuahBeforeCarry(LocalTargetInfo carryTarget, IntVec3 storeCell) {
                 this.carryTarget = carryTarget;
-                this.storeCell = storeCell;
+                this.storeCell   = storeCell;
             }
 
             public override string GetLoadReport(string text)   => "HaulBeforeCarry_LoadReport".ModTranslate(text.Named("ORIGINAL"), carryTarget.Label.Named("DESTINATION"));
@@ -100,7 +100,7 @@ namespace JobsOfOpportunity
             if (!TryFindBestBetterStoreCellFor_ClosestToTarget(
                     thing, IntVec3.Invalid, carryTarget, pawn, pawn.Map, StoreUtility.CurrentStoragePriorityOf(thing), pawn.Faction, out var storeCell, true)) return null;
 
-            var fromHereDist = thing.Position.DistanceTo(carryTarget.Cell);
+            var fromHereDist  = thing.Position.DistanceTo(carryTarget.Cell);
             var fromStoreDist = storeCell.DistanceTo(carryTarget.Cell);
             Debug.WriteLine($"Carry from here: {fromHereDist}; carry from store: {fromStoreDist}");
 

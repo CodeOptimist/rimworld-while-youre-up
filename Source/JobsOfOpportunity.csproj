@@ -15,35 +15,38 @@
 		<FileVersion>$(Version)</FileVersion>
 		<OutputPath>bin\$(Configuration)\</OutputPath>
 		<PublicizeAsReferenceAssemblies>false</PublicizeAsReferenceAssemblies>
+		<RimWorldAssemblyPath>$(MsBuildProgramFiles32)\Steam\steamapps\common\RimWorld\RimWorldWin64_Data\Managed\</RimWorldAssemblyPath>
 	</PropertyGroup>
 	<Target Name="BuildMessage" AfterTargets="Build">
 		<Message Text="$(Version)" Importance="High" />
 	</Target>
 	<ItemGroup>
-		<Publicize Include="Assembly-CSharp" />
+		<Publicize Include="Assembly-CSharp;UnityEngine.CoreModule" />
 	</ItemGroup>
 	<ItemGroup>
 		<PackageReference Include="ILRepack.Lib.MSBuild.Task" Version="2.0.18.2" />
-		<PackageReference Include="Krafs.Publicizer" Version="1.0.0">
+		<PackageReference Include="Krafs.Publicizer" Version="1.0.3">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
-		<PackageReference Include="Lib.Harmony" Version="2.1.1" />
+		<PackageReference Include="Lib.Harmony" Version="2.2.2">
+			<GeneratePathProperty>True</GeneratePathProperty>
+		</PackageReference>
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\..\CodeOptimist\CodeOptimist.csproj" />
 	</ItemGroup>
 	<ItemGroup>
 		<Reference Include="Assembly-CSharp">
-			<HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\RimWorld\RimWorldWin64_Data\Managed\Assembly-CSharp.dll</HintPath>
+			<HintPath>$(RimWorldAssemblyPath)Assembly-CSharp.dll</HintPath>
 			<Private>false</Private>
 		</Reference>
 		<Reference Include="UnityEngine.CoreModule">
-			<HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\RimWorld\RimWorldWin64_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
+			<HintPath>$(RimWorldAssemblyPath)UnityEngine.CoreModule.dll</HintPath>
 			<Private>false</Private>
 		</Reference>
 		<Reference Include="UnityEngine.TextRenderingModule">
-			<HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\RimWorld\RimWorldWin64_Data\Managed\UnityEngine.TextRenderingModule.dll</HintPath>
+			<HintPath>$(RimWorldAssemblyPath)UnityEngine.TextRenderingModule.dll</HintPath>
 			<Private>false</Private>
 		</Reference>
 	</ItemGroup>
@@ -54,12 +57,12 @@
 			<InputAssemblies Include="$(OutputPath)\CodeOptimist.dll" />
 		</ItemGroup>
 		<ItemGroup>
-			<LibraryPath Include="$(SolutionDir)\packages\Lib.Harmony.2.0.4\lib\net472\" />
-			<LibraryPath Include="$(ProgramFiles)\Steam\steamapps\common\RimWorld\RimWorldWin64_Data\Managed\" />
+			<LibraryPath Include="$(PkgLib_Harmony)\lib\net472\" />
+			<LibraryPath Include="$(RimWorldAssemblyPath)" />
 		</ItemGroup>
 		<!-- ReSharper disable once UnknownTask -->
 		<ILRepack Parallel="true" Internalize="true" LibraryPath="@(LibraryPath)" InputAssemblies="@(InputAssemblies)"
-		          TargetKind="Dll" OutputFile="$(ProjectDir)..\1.3\Assemblies\$(AssemblyName).dll" />
+		          TargetKind="Dll" OutputFile="$(ProjectDir)..\1.4\Assemblies\$(AssemblyName).dll" />
 	</Target>
 	<Target Name="PreBuild" BeforeTargets="PreBuildEvent">
 		<Exec Command="type nul&gt;$(Temp)\rw_build" />

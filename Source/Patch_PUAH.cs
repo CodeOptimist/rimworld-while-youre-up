@@ -100,7 +100,7 @@ namespace JobsOfOpportunity
                     var isUnloadJob = carrier.CurJobDef == DefDatabase<JobDef>.GetNamed("UnloadYourHauledInventory");
                     if (!callStack.Any() && !isUnloadJob) return Original();
 
-                    var skipCells = (HashSet<IntVec3>)PuahSkipCellsField.GetValue(null);
+                    var skipCells    = (HashSet<IntVec3>)PuahSkipCellsField.GetValue(null);
                     var hasSkipCells = callStack.Contains(allocateThingAtCellMethod);
 
                     // unload job happens over multiple ticks
@@ -120,7 +120,7 @@ namespace JobsOfOpportunity
                         }
                     }
 
-                    var puah = specialHauls.GetValueSafe(carrier) as PuahWithBetterUnloading;
+                    var puah        = specialHauls.GetValueSafe(carrier) as PuahWithBetterUnloading;
                     var opportunity = puah as PuahOpportunity;
                     var beforeCarry = puah as PuahBeforeCarry;
 
@@ -193,7 +193,7 @@ namespace JobsOfOpportunity
                     // Traverse does its own caching
 
                     var hauledToInventoryComp = (ThingComp)PuahGetCompHauledToInventory.Invoke(pawn, null);
-                    var carriedThings = Traverse.Create(hauledToInventoryComp).Method("GetHashSet").GetValue<HashSet<Thing>>();
+                    var carriedThings         = Traverse.Create(hauledToInventoryComp).Method("GetHashSet").GetValue<HashSet<Thing>>();
                     if (!carriedThings.Any()) return Skip(__result = default);
 
                     (Thing thing, IntVec3 storeCell) GetDefHaul(PuahWithBetterUnloading puah_, Thing thing) {

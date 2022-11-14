@@ -25,13 +25,13 @@ namespace JobsOfOpportunity
             static LoadSaveMode scribeMode;
 
             public static void SuppressLoadReferenceErrors(Action action) {
-                scribeMode = Scribe.mode;
-                Scribe.mode = LoadSaveMode.LoadingVars;
+                scribeMode                = Scribe.mode;
+                Scribe.mode               = LoadSaveMode.LoadingVars;
                 ignoreLoadReferenceErrors = true;
 
                 void Restore() {
                     ignoreLoadReferenceErrors = false;
-                    Scribe.mode = scribeMode;
+                    Scribe.mode               = scribeMode;
                 }
 
                 try {
@@ -77,7 +77,7 @@ namespace JobsOfOpportunity
                 Log__Error_Patch.SuppressLoadReferenceErrors(
                     () => {
                         settings.opportunityBuildingFilter = ScribeExtractor.SaveableFromNode<SettingsThingFilter>(settings.opportunityBuildingFilterXmlNode, null);
-                        settings.hbcBuildingFilter = ScribeExtractor.SaveableFromNode<SettingsThingFilter>(settings.hbcBuildingFilterXmlNode,                 null);
+                        settings.hbcBuildingFilter         = ScribeExtractor.SaveableFromNode<SettingsThingFilter>(settings.hbcBuildingFilterXmlNode,         null);
                     });
                 hbcSearchWidget.filter = hbcSearchFilter;
 
@@ -183,8 +183,8 @@ namespace JobsOfOpportunity
                     tabsList.Add(new TabRecord("PickUpAndHaulPlus_Tab".ModTranslate(), () => tab = Tab.PickUpAndHaul, tab == Tab.PickUpAndHaul));
 
                 var tabRect = windowRect.AtZero(); // meaning the top left of windowRect, because we're inside windowRect (Begin)
-                tabRect.yMin += windowTripleStd.MaxColumnHeightSeen;
-                tabRect.yMin += 12f + 30f;   // gap & room for tab label row
+                tabRect.yMin   += windowTripleStd.MaxColumnHeightSeen;
+                tabRect.yMin   += 12f + 30f; // gap & room for tab label row
                 tabRect.height -= 12f + 30f; // room for bottom gap & restore button
                 Widgets.DrawMenuSection(tabRect);
                 TabDrawer.DrawTabs(tabRect, tabsList, 1);
@@ -236,7 +236,7 @@ namespace JobsOfOpportunity
                         opportunitySearchWidget.OnGUI(oDoubleStd.GetRect(24f));
                         oDoubleStd.Gap(4f);
 
-                        var filterRect = oDoubleStd.GetRect(innerTabRect.height - oDoubleStd.CurHeight); // what we Began on, minus CurHeight
+                        var filterRect     = oDoubleStd.GetRect(innerTabRect.height - oDoubleStd.CurHeight); // what we Began on, minus CurHeight
                         var scrollbarWidth = 20f;
                         var filterFullRect = new Rect(0f, 0f, filterRect.width - scrollbarWidth, opportunityTreeFilter?.CurHeight ?? 10000f);
                         Widgets.BeginScrollView(filterRect, ref opportunityScrollPosition, filterFullRect);
@@ -281,7 +281,7 @@ namespace JobsOfOpportunity
                         hbcSearchWidget.OnGUI(hbcDoubleStd.GetRect(24f));
                         hbcDoubleStd.Gap(4f);
 
-                        filterRect = hbcDoubleStd.GetRect(innerTabRect.height - hbcDoubleStd.CurHeight); // what we Began on, minus CurHeight
+                        filterRect     = hbcDoubleStd.GetRect(innerTabRect.height - hbcDoubleStd.CurHeight); // what we Began on, minus CurHeight
                         scrollbarWidth = 20f;
                         filterFullRect = new Rect(0f, 0f, filterRect.width - scrollbarWidth, hbcTreeFilter?.CurHeight ?? 10000f);
                         Widgets.BeginScrollView(filterRect, ref hbcScrollPosition, filterFullRect);
@@ -402,7 +402,7 @@ namespace JobsOfOpportunity
                 }
                 if (Scribe.mode == LoadSaveMode.LoadingVars) {
                     // so we can load after Defs
-                    hbcBuildingFilterXmlNode = Scribe.loader.curXmlParent[nameof(hbcBuildingFilter)];
+                    hbcBuildingFilterXmlNode         = Scribe.loader.curXmlParent[nameof(hbcBuildingFilter)];
                     opportunityBuildingFilterXmlNode = Scribe.loader.curXmlParent[nameof(opportunityBuildingFilter)];
                 }
 
@@ -413,7 +413,7 @@ namespace JobsOfOpportunity
                     if (haveCommonSense) {
                         if (HaulBeforeCarry_Bills_NeedsInitForCs) {
                             CsHaulingOverBillsSetting.SetValue(null, false);
-                            HaulBeforeCarry_Bills = true;
+                            HaulBeforeCarry_Bills                = true;
                             HaulBeforeCarry_Bills_NeedsInitForCs = false;
                         } else if ((bool)CsHaulingOverBillsSetting.GetValue(null))
                             HaulBeforeCarry_Bills = false;
