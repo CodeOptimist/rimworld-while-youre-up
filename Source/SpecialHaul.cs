@@ -85,7 +85,7 @@ namespace JobsOfOpportunity
 
             [HarmonyPostfix]
             static void ClearTempSpecialHaul(bool __state, Pawn pawn) {
-                if (!__state && specialHauls.ContainsKey(pawn))
+                if (!__state)
                     specialHauls.Remove(pawn);
             }
         }

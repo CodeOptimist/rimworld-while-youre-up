@@ -117,9 +117,13 @@ namespace JobsOfOpportunity
                 if (!HaulAIUtility.PawnCanAutomaticallyHaulFast(pawn, thing, false)) return CanHaulResult.HardFail;
 
                 var currentPriority = StoreUtility.CurrentStoragePriorityOf(thing);
-                if (!cachedStoreCells.TryGetValue(thing, out storeCell) && !TryFindBestBetterStoreCellFor_ClosestToTarget(
-                        thing, jobTarget, IntVec3.Invalid, pawn, pawn.Map, currentPriority, pawn.Faction, out storeCell, maxRanges.expandCount == 0))
-                    return CanHaulResult.HardFail;
+                if (!cachedStoreCells.TryGetValue(thing, out storeCell)) {
+                    if (!TryFindBestBetterStoreCellFor_ClosestToTarget(
+                            thing, jobTarget, IntVec3.Invalid, pawn, pawn.Map, currentPriority, pawn.Faction, out storeCell, maxRanges.expandCount == 0))
+                        return CanHaulResult.HardFail;
+                } else {
+                    Debug.WriteLine($"Cache hit! CanHaulResult");
+                }
 
                 // we need storeCell everywhere, so cache it
                 cachedStoreCells.SetOrAdd(thing, storeCell);

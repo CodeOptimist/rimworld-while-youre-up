@@ -89,7 +89,6 @@ namespace JobsOfOpportunity
                 static bool       Prepare()      => havePuah;
                 static MethodBase TargetMethod() => AccessTools.DeclaredMethod(typeof(StoreUtility), nameof(StoreUtility.TryFindBestBetterStoreCellFor));
 
-                // todo print cache hits?
                 [HarmonyPrefix]
                 static bool SpecialHaulAwareTryFindStore(ref bool __result, Thing t, Pawn carrier, Map map, StoragePriority currentPriority,
                     Faction faction, out IntVec3 foundCell, bool needAccurateResult) {
@@ -109,6 +108,8 @@ namespace JobsOfOpportunity
                             cachedStoreCells.AddRange(Opportunity.cachedStoreCells); // inherit cache if available (will be same tick)
                         if (!cachedStoreCells.TryGetValue(t, out foundCell))
                             foundCell = IntVec3.Invalid;
+                        else
+                            Debug.WriteLine($"Cache hit! SpecialHaulAwareTryFindStore");
 
                         // we reproduce PUAH's skipCells in our own TryFindStore but we also need it here with caching
                         if (foundCell.IsValid && hasSkipCells) {
