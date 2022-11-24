@@ -91,7 +91,10 @@ namespace JobsOfOpportunity
         static class Pawn_JobTracker__ClearQueuedJobs_Patch
         {
             [HarmonyPostfix]
-            static void ClearSpecialHaul(Pawn ___pawn) => specialHauls.Remove(___pawn);
+            static void ClearSpecialHaul(Pawn ___pawn) {
+                if (___pawn != null)
+                    specialHauls.Remove(___pawn);
+            }
         }
 
         [HarmonyPatch(typeof(JobDriver_HaulToCell), "MakeNewToils")]
