@@ -127,8 +127,6 @@ namespace JobsOfOpportunity
                 var pawn = Traverse.Create(jobTracker).Field("pawn").GetValue<Pawn>();
                 if (AlreadyHauling(pawn)) return null;
 
-                var jobTarget = job.targetQueueB?.FirstOrDefault() ?? job.targetA;
-
                 if (job.def == JobDefOf.DoBill && settings.HaulBeforeCarry_Bills) {
                     Debug.WriteLine($"Bill: '{job.bill}' label: '{job.bill.Label}'");
                     Debug.WriteLine($"Recipe: '{job.bill.recipe}' workerClass: '{job.bill.recipe.workerClass}'");
@@ -146,7 +144,7 @@ namespace JobsOfOpportunity
                         // permitted when bleeding because facilitates whatever bill is important enough to do while bleeding
                         //  may save precious time going back for ingredients... unless we want only 1 medicine ASAP; it's a trade-off
 
-                        var storeJob = HaulBeforeCarry(pawn, jobTarget, ingredient.Thing); // #HaulBeforeBill
+                        var storeJob = HaulBeforeCarry(pawn, job.targetA, ingredient.Thing); // #HaulBeforeBill
                         if (storeJob != null) return JobUtility__TryStartErrorRecoverJob_Patch.CatchStanding(pawn, storeJob);
                     }
                 }
@@ -156,6 +154,9 @@ namespace JobsOfOpportunity
                         JobDefOf.PrepareCaravan_GatherDownedPawns, JobDefOf.PrepareCaravan_GatherItems,
                     }.Contains(job.def)) return null;
                 if (pawn.health.hediffSet.BleedRateTotal > 0.001f) return null;
+
+                // use first ingredient location if bill
+                var jobTarget = job.def == JobDefOf.DoBill ? job.targetQueueB?.FirstOrDefault() ?? job.targetA : job.targetA;
                 return JobUtility__TryStartErrorRecoverJob_Patch.CatchStanding(pawn, Opportunity.TryHaul(pawn, jobTarget));
             }
         }

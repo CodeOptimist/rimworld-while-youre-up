@@ -313,10 +313,14 @@ updates:
   - at: 3.2.1
     credit: '"Fletcher" https://steamcommunity.com/id/iamfletcher2 '
     desc: |-
-      If willing, please report issues immediately via Discord link here ↗ or in Mods menu.
-      
       • Fixed hauls "on the way to" workbenches to use first ingredient location!
 
+  - at: 3.2.2
+    credit: '"renegade_sock" https://steamcommunity.com/id/renegade_sock '
+    desc: |-
+      If willing, please report issues immediately via Discord link here ↗ or in Mods menu.
+      
+      • Fix for a variety of bad "on the way to" hauls from a stupid mistake in v3.2.1 (Oct 24th).
 
 keyed:
   - name: PickUpAndHaul_Missing
