@@ -1,6 +1,12 @@
 ﻿// todo it seems possible for pawns to be carrying more than they can unload at the approved stockpile, can repro with test colony
+
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Reflection;
+using System.Reflection.Emit;
+using CodeOptimist;
+using HarmonyLib;
 using RimWorld;
 using Verse;
 using Verse.AI;
@@ -11,6 +17,79 @@ namespace JobsOfOpportunity
 {
     partial class Mod
     {
+        [HarmonyPatch(typeof(Pawn_JobTracker), nameof(Pawn_JobTracker.TryOpportunisticJob))]
+        [SuppressMessage("ReSharper", "UnusedType.Local")]
+        [SuppressMessage("ReSharper", "UnusedMember.Local")]
+        static class Pawn_JobTracker__TryOpportunisticJob_Patch
+        {
+            [HarmonyTranspiler]
+            static IEnumerable<CodeInstruction> _TryOpportunisticJob(IEnumerable<CodeInstruction> _codes, ILGenerator generator, MethodBase __originalMethod) {
+                var t                  = new Transpiler(_codes, __originalMethod);
+                var listerHaulablesIdx = t.TryFindCodeIndex(code => code.LoadsField(AccessTools.DeclaredField(typeof(Map), nameof(Map.listerHaulables))));
+                var skipMod            = generator.DefineLabel();
+
+                t.TryInsertCodes(
+                    -3,
+                    (i, codes) => i == listerHaulablesIdx,
+                    (i, codes) => new List<CodeInstruction> {
+                        new CodeInstruction(OpCodes.Call,      AccessTools.DeclaredMethod(typeof(Pawn_JobTracker__TryOpportunisticJob_Patch), nameof(IsEnabled))),
+                        new CodeInstruction(OpCodes.Brfalse_S, skipMod),
+
+                        new CodeInstruction(OpCodes.Ldarg_0),
+                        new CodeInstruction(OpCodes.Ldarg_2),
+                        new CodeInstruction(OpCodes.Call, AccessTools.DeclaredMethod(typeof(Pawn_JobTracker__TryOpportunisticJob_Patch), nameof(TryOpportunisticJob))),
+                        new CodeInstruction(OpCodes.Ret),
+                    }, true);
+
+                t.codes[t.MatchIdx - 3].labels.Add(skipMod);
+                return t.GetFinalCodes();
+            }
+
+            static bool IsEnabled() {
+                return settings.Enabled;
+            }
+
+            // vanilla checks for job.def.allowOpportunisticPrefix and lots of other things before this
+            // our settings.Enabled check is done prior to this in the transpiler
+            static Job TryOpportunisticJob(Pawn_JobTracker jobTracker, Job job) {
+                // Debug.WriteLine($"Opportunity checking {job}");
+                var pawn = Traverse.Create(jobTracker).Field("pawn").GetValue<Pawn>();
+                if (AlreadyHauling(pawn)) return null;
+
+                if (job.def == JobDefOf.DoBill && settings.HaulBeforeCarry_Bills) {
+                    Debug.WriteLine($"Bill: '{job.bill}' label: '{job.bill.Label}'");
+                    Debug.WriteLine($"Recipe: '{job.bill.recipe}' workerClass: '{job.bill.recipe.workerClass}'");
+                    for (var i = 0; i < job.targetQueueB.Count; i++) {
+                        var ingredient = job.targetQueueB[i];
+                        if (ingredient.Thing == null) continue;
+
+                        if (!havePuah || !settings.UsePickUpAndHaulPlus) { // too difficult to know in advance if there are no extras for PUAH
+                            if (ingredient.Thing.stackCount <= job.countQueue[i])
+                                continue; // there are no extras
+                        }
+
+                        if (!HaulAIUtility.PawnCanAutomaticallyHaulFast(pawn, ingredient.Thing, false)) continue; // fast check
+
+                        // permitted when bleeding because facilitates whatever bill is important enough to do while bleeding
+                        //  may save precious time going back for ingredients... unless we want only 1 medicine ASAP; it's a trade-off
+
+                        var storeJob = HaulBeforeCarry(pawn, job.targetA, ingredient.Thing); // #HaulBeforeBill
+                        if (storeJob != null) return JobUtility__TryStartErrorRecoverJob_Patch.CatchStanding(pawn, storeJob);
+                    }
+                }
+
+                if (new[] {
+                        JobDefOf.PrepareCaravan_CollectAnimals, JobDefOf.PrepareCaravan_GatherAnimals,
+                        JobDefOf.PrepareCaravan_GatherDownedPawns, JobDefOf.PrepareCaravan_GatherItems,
+                    }.Contains(job.def)) return null;
+                if (pawn.health.hediffSet.BleedRateTotal > 0.001f) return null;
+
+                // use first ingredient location if bill
+                var jobTarget = job.def == JobDefOf.DoBill ? job.targetQueueB?.FirstOrDefault() ?? job.targetA : job.targetA;
+                return JobUtility__TryStartErrorRecoverJob_Patch.CatchStanding(pawn, Opportunity.TryHaul(pawn, jobTarget));
+            }
+        }
+
         static class Opportunity
         {
             public static readonly Dictionary<Thing, IntVec3> cachedStoreCells = new Dictionary<Thing, IntVec3>();
@@ -96,7 +175,7 @@ namespace JobsOfOpportunity
                 }
 
                 var result = _TryHaul();
-                cachedStoreCells.Clear();
+                cachedStoreCells.Clear(); // #CacheTick
                 return result;
             }
 
@@ -121,9 +200,8 @@ namespace JobsOfOpportunity
                     if (!TryFindBestBetterStoreCellFor_ClosestToTarget(
                             thing, jobTarget, IntVec3.Invalid, pawn, pawn.Map, currentPriority, pawn.Faction, out storeCell, maxRanges.expandCount == 0))
                         return CanHaulResult.HardFail;
-                } else {
-                    Debug.WriteLine($"Cache hit! CanHaulResult");
-                }
+                } else
+                    Debug.WriteLine($"{RealTime.frameCount} Cache hit! (Size: {cachedStoreCells.Count}) CanHaulResult");
 
                 // we need storeCell everywhere, so cache it
                 cachedStoreCells.SetOrAdd(thing, storeCell);

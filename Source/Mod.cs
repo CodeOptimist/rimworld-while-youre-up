@@ -1,9 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
-using System.Reflection.Emit;
 using CodeOptimist;
 using HarmonyLib;
 using RimWorld;
@@ -14,160 +12,84 @@ using Debug = System.Diagnostics.Debug;
 
 namespace JobsOfOpportunity
 {
-    static class Extensions
-    {
-        public static string ModTranslate(this string key, params NamedArgument[] args) {
-            return $"{Mod.modId}_{key}".Translate(args).Resolve();
-        }
-    }
-
     partial class Mod : Verse.Mod
     {
-        public const    string    modId = "CodeOptimist.WhileYoureUp"; // explicit because PackageId may be changed e.g. "__copy__" suffix
-        static          Verse.Mod mod;
-        static          Settings  settings;
-        static          bool      foundConfig;
-        static readonly Harmony   harmony = new Harmony(modId);
+        static readonly Type PuahType_CompHauledToInventory               = GenTypes.GetTypeInAnyAssembly("PickUpAndHaul.CompHauledToInventory"); // GenTypes has a cache
+        static readonly Type PuahType_WorkGiver_HaulToInventory           = GenTypes.GetTypeInAnyAssembly("PickUpAndHaul.WorkGiver_HaulToInventory");
+        static readonly Type PuahType_JobDriver_HaulToInventory           = GenTypes.GetTypeInAnyAssembly("PickUpAndHaul.JobDriver_HaulToInventory");
+        static readonly Type PuahType_JobDriver_UnloadYourHauledInventory = GenTypes.GetTypeInAnyAssembly("PickUpAndHaul.JobDriver_UnloadYourHauledInventory");
 
-        static readonly Type PuahCompHauledToInventoryType               = GenTypes.GetTypeInAnyAssembly("PickUpAndHaul.CompHauledToInventory"); // GenTypes has a cache
-        static readonly Type PuahWorkGiver_HaulToInventoryType           = GenTypes.GetTypeInAnyAssembly("PickUpAndHaul.WorkGiver_HaulToInventory");
-        static readonly Type PuahJobDriver_HaulToInventoryType           = GenTypes.GetTypeInAnyAssembly("PickUpAndHaul.JobDriver_HaulToInventory");
-        static readonly Type PuahJobDriver_UnloadYourHauledInventoryType = GenTypes.GetTypeInAnyAssembly("PickUpAndHaul.JobDriver_UnloadYourHauledInventory");
-
-        static readonly MethodInfo PuahHti_HasJobOnThing                 = AccessTools.DeclaredMethod(PuahWorkGiver_HaulToInventoryType, "HasJobOnThing");
-        static readonly MethodInfo PuahHti_JobOnThing                    = AccessTools.DeclaredMethod(PuahWorkGiver_HaulToInventoryType, "JobOnThing");
-        static readonly MethodInfo PuahHti_TryFindBestBetterStoreCellFor = AccessTools.DeclaredMethod(PuahWorkGiver_HaulToInventoryType, "TryFindBestBetterStoreCellFor");
-
-        static readonly MethodInfo PuahUyhi_FirstUnloadableThing = AccessTools.DeclaredMethod(PuahJobDriver_UnloadYourHauledInventoryType, "FirstUnloadableThing");
-        static readonly MethodInfo PuahUyhi_MakeNewToils         = AccessTools.DeclaredMethod(PuahJobDriver_UnloadYourHauledInventoryType, "MakeNewToils");
+        static readonly MethodInfo PuahMethod_WorkGiver_HaulToInventory_HasJobOnThing                 = AccessTools.DeclaredMethod(PuahType_WorkGiver_HaulToInventory, "HasJobOnThing");
+        static readonly MethodInfo PuahMethod_WorkGiver_HaulToInventory_JobOnThing                    = AccessTools.DeclaredMethod(PuahType_WorkGiver_HaulToInventory, "JobOnThing");
+        static readonly MethodInfo PuahMethod_WorkGiver_HaulToInventory_TryFindBestBetterStoreCellFor = AccessTools.DeclaredMethod(PuahType_WorkGiver_HaulToInventory, "TryFindBestBetterStoreCellFor");
 
         // todo https://github.com/Mehni/PickUpAndHaul/commit/fd2dd37d48af136600b220b5d9c141957b377e8c
-        static readonly MethodInfo PuahHti_AllocateThingAt =
-            AccessTools.DeclaredMethod(PuahWorkGiver_HaulToInventoryType,    "AllocateThingAtStoreTarget")
-            ?? AccessTools.DeclaredMethod(PuahWorkGiver_HaulToInventoryType, "AllocateThingAtCell");
+        static readonly MethodInfo PuahMethod_WorkGiver_HaulToInventory_AllocateThingAt =
+            AccessTools.DeclaredMethod(PuahType_WorkGiver_HaulToInventory,    "AllocateThingAtStoreTarget")
+            ?? AccessTools.DeclaredMethod(PuahType_WorkGiver_HaulToInventory, "AllocateThingAtCell");
+
+        static readonly MethodInfo PuahMethod_JobDriver_UnloadYourHauledInventory_FirstUnloadableThing = AccessTools.DeclaredMethod(PuahType_JobDriver_UnloadYourHauledInventory, "FirstUnloadableThing");
+        static readonly MethodInfo PuahMethod_JobDriver_UnloadYourHauledInventory_MakeNewToils         = AccessTools.DeclaredMethod(PuahType_JobDriver_UnloadYourHauledInventory, "MakeNewToils");
 
         // todo support changing this to "skipTargets" in the future? https://github.com/Mehni/PickUpAndHaul/commit/d48fdfff9e3c9a072b160871676e813258dee584
-        static readonly FieldInfo PuahHti_SkipCellsField = AccessTools.DeclaredField(PuahWorkGiver_HaulToInventoryType, "skipCells");
+        static readonly FieldInfo PuahField_WorkGiver_HaulToInventory_SkipCells = AccessTools.DeclaredField(PuahType_WorkGiver_HaulToInventory, "skipCells");
 
         static readonly bool havePuah = new List<object> {
-                PuahCompHauledToInventoryType, PuahWorkGiver_HaulToInventoryType, PuahJobDriver_HaulToInventoryType, PuahJobDriver_UnloadYourHauledInventoryType,
-                PuahHti_HasJobOnThing, PuahHti_JobOnThing, PuahHti_TryFindBestBetterStoreCellFor, PuahUyhi_FirstUnloadableThing, PuahUyhi_MakeNewToils, PuahHti_AllocateThingAt,
-                PuahHti_SkipCellsField,
+                PuahType_CompHauledToInventory, PuahType_WorkGiver_HaulToInventory, PuahType_JobDriver_HaulToInventory, PuahType_JobDriver_UnloadYourHauledInventory,
+                PuahMethod_WorkGiver_HaulToInventory_HasJobOnThing, PuahMethod_WorkGiver_HaulToInventory_JobOnThing, PuahMethod_WorkGiver_HaulToInventory_TryFindBestBetterStoreCellFor,
+                PuahMethod_WorkGiver_HaulToInventory_AllocateThingAt,
+                PuahMethod_JobDriver_UnloadYourHauledInventory_FirstUnloadableThing, PuahMethod_JobDriver_UnloadYourHauledInventory_MakeNewToils,
+                PuahField_WorkGiver_HaulToInventory_SkipCells,
             }
             .All(x => x != null);
 
-        static readonly MethodInfo PuahGetCompHauledToInventory =
-            havePuah ? AccessTools.DeclaredMethod(typeof(ThingWithComps), "GetComp").MakeGenericMethod(PuahCompHauledToInventoryType) : null;
+        static readonly MethodInfo PuahMethod_CompHauledToInventory_GetComp =
+            havePuah ? AccessTools.DeclaredMethod(typeof(ThingWithComps), "GetComp").MakeGenericMethod(PuahType_CompHauledToInventory) : null;
 
-        static readonly Type HugsDialog_VanillaModSettingsType = GenTypes.GetTypeInAnyAssembly("HugsLib.Settings.Dialog_VanillaModSettings");
-        static readonly bool haveHugs                          = HugsDialog_VanillaModSettingsType != null;
+        static readonly Type HugsType_Dialog_VanillaModSettings = GenTypes.GetTypeInAnyAssembly("HugsLib.Settings.Dialog_VanillaModSettings");
+        static readonly bool haveHugs                          = HugsType_Dialog_VanillaModSettings != null;
 
-        static readonly FieldInfo SettingsCurMod = haveHugs
-            ? AccessTools.DeclaredField(HugsDialog_VanillaModSettingsType, "selectedMod")
+        static readonly FieldInfo SettingsCurModField = haveHugs
+            ? AccessTools.DeclaredField(HugsType_Dialog_VanillaModSettings, "selectedMod")
             : AccessTools.DeclaredField(typeof(Dialog_ModSettings),        "mod");
 
-        static readonly Type      CsModType                        = GenTypes.GetTypeInAnyAssembly("CommonSense.CommonSense");
-        static readonly Type      CsSettingsType                   = GenTypes.GetTypeInAnyAssembly("CommonSense.Settings");
-        static readonly FieldInfo CsSettings_HaulingOverBillsField = AccessTools.DeclaredField(CsSettingsType, "hauling_over_bills");
+        static readonly Type      CsType_CommonSense                        = GenTypes.GetTypeInAnyAssembly("CommonSense.CommonSense");
+        static readonly Type      CsType_Settings                   = GenTypes.GetTypeInAnyAssembly("CommonSense.Settings");
+        static readonly FieldInfo CsField_Settings_HaulingOverBills = AccessTools.DeclaredField(CsType_Settings, "hauling_over_bills");
 
-        static readonly bool haveCommonSense = new List<object> { CsModType, CsSettingsType, CsSettings_HaulingOverBillsField }.All(x => x != null);
+        static readonly bool haveCommonSense = new List<object> { CsType_CommonSense, CsType_Settings, CsField_Settings_HaulingOverBills }.All(x => x != null);
+
+        // Prefix for our XML keys (language translations); PackageId may change (e.g. "__copy__" suffix).
+        public const    string    modId = "CodeOptimist.WhileYoureUp";
+        static          Verse.Mod mod; // static reference for e.g. mod name in log messages
+        static          Settings  settings;
+        static          bool      foundConfig;
+        static readonly Harmony   harmony = new Harmony(modId); // just a unique id
 
         public Mod(ModContentPack content) : base(content) {
-            mod       = this;
-            Gui.modId = modId;
+            mod       = this; // static reference to mod for e.g. mod name in log messages
+            Gui.modId = modId; // setup for CodeOptimist Gui library
+
             settings  = GetSettings<Settings>();
             if (!foundConfig)
                 settings.ExposeData(); // initialize to defaults
+
             harmony.PatchAll();
         }
 
+        // Harmony patch syntactic sugar to visually distinguish these special cases from actual return true/false
         static bool Original(object _ = null) => true;
         static bool Skip(object _ = null)     => false;
 
-        public override string SettingsCategory() {
-            return mod.Content.Name;
-        }
-
-        [HarmonyPatch(typeof(Pawn_JobTracker), nameof(Pawn_JobTracker.TryOpportunisticJob))]
-        [SuppressMessage("ReSharper", "UnusedType.Local")]
-        [SuppressMessage("ReSharper", "UnusedMember.Local")]
-        static class Pawn_JobTracker__TryOpportunisticJob_Patch
-        {
-            [HarmonyTranspiler]
-            static IEnumerable<CodeInstruction> _TryOpportunisticJob(IEnumerable<CodeInstruction> _codes, ILGenerator generator, MethodBase __originalMethod) {
-                var t                  = new Transpiler(_codes, __originalMethod);
-                var listerHaulablesIdx = t.TryFindCodeIndex(code => code.LoadsField(AccessTools.DeclaredField(typeof(Map), nameof(Map.listerHaulables))));
-                var skipMod            = generator.DefineLabel();
-
-                t.TryInsertCodes(
-                    -3,
-                    (i, codes) => i == listerHaulablesIdx,
-                    (i, codes) => new List<CodeInstruction> {
-                        new CodeInstruction(OpCodes.Call,      AccessTools.DeclaredMethod(typeof(Pawn_JobTracker__TryOpportunisticJob_Patch), nameof(IsEnabled))),
-                        new CodeInstruction(OpCodes.Brfalse_S, skipMod),
-
-                        new CodeInstruction(OpCodes.Ldarg_0),
-                        new CodeInstruction(OpCodes.Ldarg_2),
-                        new CodeInstruction(OpCodes.Call, AccessTools.DeclaredMethod(typeof(Pawn_JobTracker__TryOpportunisticJob_Patch), nameof(TryOpportunisticJob))),
-                        new CodeInstruction(OpCodes.Ret),
-                    }, true);
-
-                t.codes[t.MatchIdx - 3].labels.Add(skipMod);
-                return t.GetFinalCodes();
-            }
-
-            static bool IsEnabled() {
-                return settings.Enabled;
-            }
-
-            // vanilla checks for job.def.allowOpportunisticPrefix and lots of other things before this
-            // our settings.Enabled check is done prior to this in the transpiler
-            static Job TryOpportunisticJob(Pawn_JobTracker jobTracker, Job job) {
-                // Debug.WriteLine($"Opportunity checking {job}");
-                var pawn = Traverse.Create(jobTracker).Field("pawn").GetValue<Pawn>();
-                if (AlreadyHauling(pawn)) return null;
-
-                if (job.def == JobDefOf.DoBill && settings.HaulBeforeCarry_Bills) {
-                    Debug.WriteLine($"Bill: '{job.bill}' label: '{job.bill.Label}'");
-                    Debug.WriteLine($"Recipe: '{job.bill.recipe}' workerClass: '{job.bill.recipe.workerClass}'");
-                    for (var i = 0; i < job.targetQueueB.Count; i++) {
-                        var ingredient = job.targetQueueB[i];
-                        if (ingredient.Thing == null) continue;
-
-                        if (!havePuah || !settings.UsePickUpAndHaulPlus) { // too difficult to know in advance if there are no extras for PUAH
-                            if (ingredient.Thing.stackCount <= job.countQueue[i])
-                                continue; // there are no extras
-                        }
-
-                        if (!HaulAIUtility.PawnCanAutomaticallyHaulFast(pawn, ingredient.Thing, false)) continue; // fast check
-
-                        // permitted when bleeding because facilitates whatever bill is important enough to do while bleeding
-                        //  may save precious time going back for ingredients... unless we want only 1 medicine ASAP; it's a trade-off
-
-                        var storeJob = HaulBeforeCarry(pawn, job.targetA, ingredient.Thing); // #HaulBeforeBill
-                        if (storeJob != null) return JobUtility__TryStartErrorRecoverJob_Patch.CatchStanding(pawn, storeJob);
-                    }
-                }
-
-                if (new[] {
-                        JobDefOf.PrepareCaravan_CollectAnimals, JobDefOf.PrepareCaravan_GatherAnimals,
-                        JobDefOf.PrepareCaravan_GatherDownedPawns, JobDefOf.PrepareCaravan_GatherItems,
-                    }.Contains(job.def)) return null;
-                if (pawn.health.hediffSet.BleedRateTotal > 0.001f) return null;
-
-                // use first ingredient location if bill
-                var jobTarget = job.def == JobDefOf.DoBill ? job.targetQueueB?.FirstOrDefault() ?? job.targetA : job.targetA;
-                return JobUtility__TryStartErrorRecoverJob_Patch.CatchStanding(pawn, Opportunity.TryHaul(pawn, jobTarget));
-            }
-        }
-
+        // name in "Mod options" and top of settings window
+        public override string SettingsCategory() => mod.Content.Name;
 
         static Job PuahJob(PuahWithBetterUnloading puah, Pawn pawn, Thing thing, IntVec3 storeCell) {
-            if (!havePuah || !settings.UsePickUpAndHaulPlus || !settings.Enabled) return null;
+            if (!settings.Enabled || !havePuah || !settings.UsePickUpAndHaulPlus) return null;
             specialHauls.SetOrAdd(pawn, puah);
             puah.TrackThing(thing, storeCell);
-            var puahWorkGiver = DefDatabase<WorkGiverDef>.GetNamed("HaulToInventory").Worker;
-            return (Job)PuahHti_JobOnThing.Invoke(puahWorkGiver, new object[] { pawn, thing, false });
+            var puahWorkGiver = DefDatabase<WorkGiverDef>.GetNamed("HaulToInventory").Worker; // dictionary lookup
+            return (Job)PuahMethod_WorkGiver_HaulToInventory_JobOnThing.Invoke(puahWorkGiver, new object[] { pawn, thing, false });
         }
 
         public static bool AlreadyHauling(Pawn pawn) {
@@ -175,78 +97,20 @@ namespace JobsOfOpportunity
 
             // because we may load a game with an incomplete haul
             if (havePuah) {
-                var hauledToInventoryComp = (ThingComp)PuahGetCompHauledToInventory.Invoke(pawn, null);
-                var takenToInventory      = Traverse.Create(hauledToInventoryComp).Field<HashSet<Thing>>("takenToInventory").Value;
-                if (takenToInventory != null && takenToInventory.Any(t => t != null)) return true;
+                var hauledToInventoryComp = (ThingComp)PuahMethod_CompHauledToInventory_GetComp.Invoke(pawn, null);
+                var takenToInventory      = Traverse.Create(hauledToInventoryComp).Field<HashSet<Thing>>("takenToInventory").Value; // traverse is cached
+                if (takenToInventory != null && takenToInventory.Any(t => t != null))
+                    return true;
             }
 
             return false;
         }
+    }
 
-        public static bool TryFindBestBetterStoreCellFor_ClosestToTarget(Thing thing, LocalTargetInfo opportunity, LocalTargetInfo beforeCarry, Pawn pawn, Map map,
-            StoragePriority currentPriority,
-            Faction faction, out IntVec3 foundCell, bool needAccurateResult, HashSet<IntVec3> skipCells = null) {
-            var closestSlot        = IntVec3.Invalid;
-            var closestDistSquared = (float)int.MaxValue;
-            var foundPriority      = currentPriority;
-
-            foreach (var slotGroup in map.haulDestinationManager.AllGroupsListInPriorityOrder) {
-                if (slotGroup.Settings.Priority < foundPriority) break;
-
-                // original: if (slotGroup.Settings.Priority <= currentPriority) break;
-                if (slotGroup.Settings.Priority < currentPriority) break;
-                if (slotGroup.Settings.Priority == StoragePriority.Unstored) break;
-                if (slotGroup.Settings.Priority == currentPriority && !beforeCarry.IsValid) break; // #ToEqualPriority
-
-                var stockpile       = slotGroup.parent as Zone_Stockpile;
-                var buildingStorage = slotGroup.parent as Building_Storage;
-
-                if (opportunity.IsValid) {
-                    if (stockpile != null && !settings.Opportunity_ToStockpiles) continue;
-                    if (buildingStorage != null && !settings.Opportunity_BuildingFilter.Allows(buildingStorage.def)) continue;
-                }
-
-                if (beforeCarry.IsValid) {
-                    // #ToEqualPriority
-                    if (!settings.HaulBeforeCarry_ToEqualPriority && slotGroup.Settings.Priority == currentPriority) break;
-                    if (settings.HaulBeforeCarry_ToEqualPriority && thing.Position.IsValid && slotGroup == map.haulDestinationManager.SlotGroupAt(thing.Position)) continue;
-
-                    if (stockpile != null && !settings.HaulBeforeCarry_ToStockpiles) continue;
-                    if (buildingStorage != null) {
-                        if (!settings.HaulBeforeCarry_BuildingFilter.Allows(buildingStorage.def)) continue;
-                        // if we don't consider it suitable for opportunities (e.g. slow storing) we won't consider it suitable for same-priority delivery
-                        if (slotGroup.Settings.Priority == currentPriority && !settings.Opportunity_BuildingFilter.Allows(buildingStorage.def)) continue;
-                    }
-                }
-
-                if (!slotGroup.parent.Accepts(thing)) continue; // original
-
-                // #ClosestToTarget
-                var position = opportunity.IsValid  ? opportunity.Cell :
-                    beforeCarry.IsValid             ? beforeCarry.Cell :
-                    thing.SpawnedOrAnyParentSpawned ? thing.PositionHeld : pawn.PositionHeld; // original
-
-                // original
-                var maxCheckedCells = needAccurateResult ? (int)Math.Floor((double)slotGroup.CellsList.Count * Rand.Range(0.005f, 0.018f)) : 0;
-                for (var i = 0; i < slotGroup.CellsList.Count; i++) {
-                    var cell        = slotGroup.CellsList[i];
-                    var distSquared = (float)(position - cell).LengthHorizontalSquared;
-                    if (distSquared > closestDistSquared) continue;
-                    if (skipCells != null && skipCells.Contains(cell)) continue; // PUAH addition
-                    if (!StoreUtility.IsGoodStoreCell(cell, map, thing, pawn, faction)) continue;
-
-                    closestSlot        = cell;
-                    closestDistSquared = distSquared;
-                    foundPriority      = slotGroup.Settings.Priority;
-
-                    if (i >= maxCheckedCells) break;
-                }
-            }
-
-            foundCell = closestSlot;
-            if (foundCell.IsValid && skipCells != null)
-                skipCells.Add(foundCell);
-            return foundCell.IsValid;
+    static class Extensions
+    {
+        public static string ModTranslate(this string key, params NamedArgument[] args) {
+            return $"{Mod.modId}_{key}".Translate(args).Resolve();
         }
     }
 }

@@ -4,7 +4,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Xml;
 using CodeOptimist;
-using HarmonyLib;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -16,41 +15,6 @@ namespace JobsOfOpportunity
     partial class Mod
     {
         public override void DoSettingsWindowContents(Rect inRect) => SettingsWindow.DoWindowContents(inRect);
-
-        [HarmonyPatch(typeof(Log), nameof(Log.Error), typeof(string))]
-        [SuppressMessage("ReSharper", "UnusedMember.Local")]
-        static class Log__Error_Patch
-        {
-            static bool         ignoreLoadReferenceErrors;
-            static LoadSaveMode scribeMode;
-
-            public static void SuppressLoadReferenceErrors(Action action) {
-                scribeMode                = Scribe.mode;
-                Scribe.mode               = LoadSaveMode.LoadingVars;
-                ignoreLoadReferenceErrors = true;
-
-                void Restore() {
-                    ignoreLoadReferenceErrors = false;
-                    Scribe.mode               = scribeMode;
-                }
-
-                try {
-                    action();
-                } catch (Exception) {
-                    Restore();
-                    throw;
-                } finally {
-                    Restore();
-                }
-            }
-
-            [HarmonyPrefix]
-            static bool IgnoreCouldNotLoadReferenceOfRemovedModStorageBuildings(string text) {
-                if (ignoreLoadReferenceErrors && text.StartsWith("Could not load reference to "))
-                    return Skip();
-                return Original();
-            }
-        }
 
         // Don't reference this except in DoSettingsWindowContents()! Referencing it early will trigger the static constructor before defs are loaded.
         [StaticConstructorOnStartup]
@@ -434,10 +398,10 @@ namespace JobsOfOpportunity
                 if (Scribe.mode == LoadSaveMode.LoadingVars) {
                     if (haveCommonSense) {
                         if (HaulBeforeCarry_Bills_NeedsInitForCs) {
-                            CsSettings_HaulingOverBillsField.SetValue(null, false);
+                            CsField_Settings_HaulingOverBills.SetValue(null, false);
                             HaulBeforeCarry_Bills                = true;
                             HaulBeforeCarry_Bills_NeedsInitForCs = false;
-                        } else if ((bool)CsSettings_HaulingOverBillsField.GetValue(null))
+                        } else if ((bool)CsField_Settings_HaulingOverBills.GetValue(null))
                             HaulBeforeCarry_Bills = false;
                     }
                 }
