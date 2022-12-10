@@ -108,14 +108,15 @@ namespace JobsOfOpportunity
 
                 if (DebugViewSettings.drawOpportunisticJobs) {
                     // ReSharper disable once RedundantArgumentDefaultValue
-                    pawn.Map.debugDrawer.FlashLine(pawn.Position,  thing.Position,   600, SimpleColor.White);
-                    pawn.Map.debugDrawer.FlashLine(thing.Position, carryTarget.Cell, 600, SimpleColor.Magenta);
-                    pawn.Map.debugDrawer.FlashLine(thing.Position, storeCell,        600, SimpleColor.Cyan);
-                    pawn.Map.debugDrawer.FlashLine(storeCell,      carryTarget.Cell, 600, SimpleColor.Cyan);
-#if DEBUG
-                    // if (!Find.Selector.SelectedPawns.Any())
-                    //     CameraJumper.TrySelect(pawn);
-#endif
+                    for (var _ = 0; _ < 3; _++) {
+                        pawn.Map.debugDrawer.FlashCell(thing.Position,   0.62f, pawn.Name.ToStringShort, 600);
+                        pawn.Map.debugDrawer.FlashCell(storeCell,        0.22f, pawn.Name.ToStringShort, 600);
+                        pawn.Map.debugDrawer.FlashCell(carryTarget.Cell, 0.0f,  pawn.Name.ToStringShort, 600);
+
+                        pawn.Map.debugDrawer.FlashLine(thing.Position, carryTarget.Cell, 600, SimpleColor.Magenta);
+                        pawn.Map.debugDrawer.FlashLine(thing.Position, storeCell,        600, SimpleColor.Cyan);
+                        pawn.Map.debugDrawer.FlashLine(storeCell,      carryTarget.Cell, 600, SimpleColor.Cyan);
+                    }
                 }
 
                 var puahJob = PuahJob(new PuahBeforeCarry(carryTarget, storeCell), pawn, thing, storeCell);
