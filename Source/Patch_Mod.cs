@@ -1,6 +1,4 @@
-﻿using System;
-using System.Diagnostics.CodeAnalysis;
-using System.Reflection;
+﻿using System.Reflection;
 using System.Runtime.CompilerServices;
 using HarmonyLib;
 using RimWorld;
@@ -18,40 +16,6 @@ namespace JobsOfOpportunity
 {
     partial class Mod
     {
-        [HarmonyPatch(typeof(Log), nameof(Log.Error), typeof(string))]
-        [SuppressMessage("ReSharper", "UnusedMember.Local")]
-        static class Log__Error_Patch
-        {
-            static bool         ignoreLoadReferenceErrors;
-            static LoadSaveMode scribeMode;
-
-            public static void SuppressLoadReferenceErrors(Action action) {
-                scribeMode                = Scribe.mode;
-                Scribe.mode               = LoadSaveMode.LoadingVars;
-                ignoreLoadReferenceErrors = true;
-
-                void Restore() {
-                    ignoreLoadReferenceErrors = false;
-                    Scribe.mode               = scribeMode;
-                }
-                try {
-                    action();
-                } catch (Exception) {
-                    Restore(); // if something weird happens, put things back immediately
-                    throw;
-                } finally {
-                    Restore();
-                }
-            }
-
-            [HarmonyPrefix]
-            static bool IgnoreCouldNotLoadReferenceOfRemovedModStorageBuildings(string text) {
-                if (ignoreLoadReferenceErrors && text.StartsWith("Could not load reference to "))
-                    return Skip();
-                return Original();
-            }
-        }
-
         [HarmonyPatch(typeof(JobUtility), nameof(JobUtility.TryStartErrorRecoverJob))]
         static class JobUtility__TryStartErrorRecoverJob_Patch
         {

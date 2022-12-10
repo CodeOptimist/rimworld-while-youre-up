@@ -38,11 +38,15 @@ namespace JobsOfOpportunity
 
             static SettingsWindow() {
                 // now that defs are loaded this will work
-                Log__Error_Patch.SuppressLoadReferenceErrors(
-                    () => {
+                using (var context = new SettingsThingFilter_LoadingContext()) {
+                    try {
                         settings.opportunityBuildingFilter = ScribeExtractor.SaveableFromNode<SettingsThingFilter>(settings.opportunityBuildingFilterXmlNode, null);
                         settings.hbcBuildingFilter         = ScribeExtractor.SaveableFromNode<SettingsThingFilter>(settings.hbcBuildingFilterXmlNode,         null);
-                    });
+                    } catch (Exception) {
+                        context.Dispose(); // cancel error suppression before exception handling
+                        throw;
+                    }
+                }
                 hbcSearchWidget.filter = hbcSearchFilter;
 
                 var storageBuildingTypes = typeof(Building_Storage).AllSubclassesNonAbstract();
