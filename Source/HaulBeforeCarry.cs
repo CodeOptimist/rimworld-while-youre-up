@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -16,8 +15,6 @@ namespace JobsOfOpportunity
     partial class Mod
     {
         [HarmonyPatch(typeof(WorkGiver_ConstructDeliverResources), "ResourceDeliverJobFor")]
-        [SuppressMessage("ReSharper", "UnusedType.Local")]
-        [SuppressMessage("ReSharper", "UnusedMember.Local")]
         static class WorkGiver_ConstructDeliverResources__ResourceDeliverJobFor_Patch
         {
             [HarmonyTranspiler]

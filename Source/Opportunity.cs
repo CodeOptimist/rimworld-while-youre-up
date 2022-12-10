@@ -1,7 +1,6 @@
 ﻿// todo it seems possible for pawns to be carrying more than they can unload at the approved stockpile, can repro with test colony
 
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -17,11 +16,15 @@ namespace JobsOfOpportunity
 {
     partial class Mod
     {
+        public static readonly Dictionary<Thing, IntVec3> opportunityCachedStoreCells = new Dictionary<Thing, IntVec3>();
+
         [HarmonyPatch(typeof(Pawn_JobTracker), nameof(Pawn_JobTracker.TryOpportunisticJob))]
-        [SuppressMessage("ReSharper", "UnusedType.Local")]
-        [SuppressMessage("ReSharper", "UnusedMember.Local")]
         static class Pawn_JobTracker__TryOpportunisticJob_Patch
         {
+            static bool IsEnabled() {
+                return settings.Enabled;
+            }
+
             [HarmonyTranspiler]
             static IEnumerable<CodeInstruction> _TryOpportunisticJob(IEnumerable<CodeInstruction> _codes, ILGenerator generator, MethodBase __originalMethod) {
                 var t                  = new Transpiler(_codes, __originalMethod);
@@ -43,10 +46,6 @@ namespace JobsOfOpportunity
 
                 t.codes[t.MatchIdx - 3].labels.Add(skipMod);
                 return t.GetFinalCodes();
-            }
-
-            static bool IsEnabled() {
-                return settings.Enabled;
             }
 
             // vanilla checks for job.def.allowOpportunisticPrefix and lots of other things before this
@@ -86,172 +85,167 @@ namespace JobsOfOpportunity
 
                 // use first ingredient location if bill
                 var jobTarget = job.def == JobDefOf.DoBill ? job.targetQueueB?.FirstOrDefault() ?? job.targetA : job.targetA;
-                return JobUtility__TryStartErrorRecoverJob_Patch.CatchStanding(pawn, Opportunity.TryHaul(pawn, jobTarget));
+                return JobUtility__TryStartErrorRecoverJob_Patch.CatchStanding(pawn, TryHaul(pawn, jobTarget));
             }
         }
 
-        static class Opportunity
+        enum CanHaulResult { RangeFail, HardFail, Success }
+
+        struct MaxRanges
         {
-            public static readonly Dictionary<Thing, IntVec3> cachedStoreCells = new Dictionary<Thing, IntVec3>();
+            public int   expandCount;
+            public float startToThing, startToThingPctOrigTrip;
+            public float storeToJob,   storeToJobPctOrigTrip;
 
-            enum CanHaulResult { RangeFail, HardFail, Success }
+            [TweakValue("WhileYoureUp", 1.1f, 3f)]
+            // ReSharper disable once FieldCanBeMadeReadOnly.Local
+            public static float heuristicExpandFactor = 2f;
 
-            struct MaxRanges
-            {
-                public int   expandCount;
-                public float startToThing, startToThingPctOrigTrip;
-                public float storeToJob,   storeToJobPctOrigTrip;
-
-                [TweakValue("WhileYoureUp", 1.1f, 3f)]
-                // ReSharper disable once FieldCanBeMadeReadOnly.Local
-                public static float heuristicExpandFactor = 2f;
-
-                public static MaxRanges operator *(MaxRanges maxRanges, float multiplier) {
-                    maxRanges.expandCount             += 1;
-                    maxRanges.startToThing            *= multiplier;
-                    maxRanges.startToThingPctOrigTrip *= multiplier;
-                    maxRanges.storeToJob              *= multiplier;
-                    maxRanges.storeToJobPctOrigTrip   *= multiplier;
-                    return maxRanges;
-                }
+            public static MaxRanges operator *(MaxRanges maxRanges, float multiplier) {
+                maxRanges.expandCount             += 1;
+                maxRanges.startToThing            *= multiplier;
+                maxRanges.startToThingPctOrigTrip *= multiplier;
+                maxRanges.storeToJob              *= multiplier;
+                maxRanges.storeToJobPctOrigTrip   *= multiplier;
+                return maxRanges;
             }
+        }
 
-            public static Job TryHaul(Pawn pawn, LocalTargetInfo jobTarget) {
-                Job _TryHaul() {
-                    var maxRanges = new MaxRanges {
-                        startToThing            = settings.Opportunity_MaxStartToThing,
-                        startToThingPctOrigTrip = settings.Opportunity_MaxStartToThingPctOrigTrip,
-                        storeToJob              = settings.Opportunity_MaxStoreToJob,
-                        storeToJobPctOrigTrip   = settings.Opportunity_MaxStoreToJobPctOrigTrip,
-                    };
+        public static Job TryHaul(Pawn pawn, LocalTargetInfo jobTarget) {
+            Job _TryHaul() {
+                var maxRanges = new MaxRanges {
+                    startToThing            = settings.Opportunity_MaxStartToThing,
+                    startToThingPctOrigTrip = settings.Opportunity_MaxStartToThingPctOrigTrip,
+                    storeToJob              = settings.Opportunity_MaxStoreToJob,
+                    storeToJobPctOrigTrip   = settings.Opportunity_MaxStoreToJobPctOrigTrip,
+                };
 
-                    var i         = 0;
-                    var haulables = new List<Thing>(pawn.Map.listerHaulables.ThingsPotentiallyNeedingHauling());
-                    while (haulables.Count > 0) {
-                        if (i == haulables.Count) {
-                            // By expanding gradually, our slow checks will be performed in the most optimistic order that we can check for cheaply
-                            //  (i.e. thing already close to pawn, storage close to job). Excellent opportunities may satisfy neither of these,
-                            // but it's the best cheap heuristic we have, and better than random.
-                            // todo a smaller number, maybe 1.1f? might actually perform much better here? it's a TweakValue now
-                            maxRanges *= MaxRanges.heuristicExpandFactor;
-                            i         =  0;
-                        }
+                var i         = 0;
+                var haulables = new List<Thing>(pawn.Map.listerHaulables.ThingsPotentiallyNeedingHauling());
+                while (haulables.Count > 0) {
+                    if (i == haulables.Count) {
+                        // By expanding gradually, our slow checks will be performed in the most optimistic order that we can check for cheaply
+                        //  (i.e. thing already close to pawn, storage close to job). Excellent opportunities may satisfy neither of these,
+                        // but it's the best cheap heuristic we have, and better than random.
+                        // todo a smaller number, maybe 1.1f? might actually perform much better here? it's a TweakValue now
+                        maxRanges *= MaxRanges.heuristicExpandFactor;
+                        i         =  0;
+                    }
 
-                        var thing   = haulables[i];
-                        var canHaul = CanHaul(pawn, thing, jobTarget, maxRanges, out var storeCell);
-                        switch (canHaul) {
-                            case CanHaulResult.RangeFail:
-                                if (settings.Opportunity_PathChecker == Settings.PathCheckerEnum.Vanilla)
-                                    goto case CanHaulResult.HardFail;
+                    var thing   = haulables[i];
+                    var canHaul = CanHaul(pawn, thing, jobTarget, maxRanges, out var storeCell);
+                    switch (canHaul) {
+                        case CanHaulResult.RangeFail:
+                            if (settings.Opportunity_PathChecker == Settings.PathCheckerEnum.Vanilla)
+                                goto case CanHaulResult.HardFail;
 
-                                i++;
-                                continue;
-                            case CanHaulResult.HardFail:
-                                haulables.RemoveAt(i);
-                                continue;
-                            case CanHaulResult.Success:
-                                // todo test our heuristic expand factor more thoroughly
-                                Debug.WriteLine($"Checked: {1 - (haulables.Count - 1) / (float)pawn.Map.listerHaulables.haulables.Count:P}. Expansions: {maxRanges.expandCount}");
-                                if (DebugViewSettings.drawOpportunisticJobs) {
-                                    pawn.Map.debugDrawer.FlashLine(pawn.Position,  jobTarget.Cell, 600, SimpleColor.Red);
-                                    pawn.Map.debugDrawer.FlashLine(pawn.Position,  thing.Position, 600, SimpleColor.Green);
-                                    pawn.Map.debugDrawer.FlashLine(thing.Position, storeCell,      600, SimpleColor.Green);
-                                    pawn.Map.debugDrawer.FlashLine(storeCell,      jobTarget.Cell, 600, SimpleColor.Green);
+                            i++;
+                            continue;
+                        case CanHaulResult.HardFail:
+                            haulables.RemoveAt(i);
+                            continue;
+                        case CanHaulResult.Success:
+                            // todo test our heuristic expand factor more thoroughly
+                            Debug.WriteLine($"Checked: {1 - (haulables.Count - 1) / (float)pawn.Map.listerHaulables.haulables.Count:P}. Expansions: {maxRanges.expandCount}");
+                            if (DebugViewSettings.drawOpportunisticJobs) {
+                                pawn.Map.debugDrawer.FlashLine(pawn.Position,  jobTarget.Cell, 600, SimpleColor.Red);
+                                pawn.Map.debugDrawer.FlashLine(pawn.Position,  thing.Position, 600, SimpleColor.Green);
+                                pawn.Map.debugDrawer.FlashLine(thing.Position, storeCell,      600, SimpleColor.Green);
+                                pawn.Map.debugDrawer.FlashLine(storeCell,      jobTarget.Cell, 600, SimpleColor.Green);
 #if DEBUG
-                                    // if (!Find.Selector.SelectedPawns.Any())
-                                    //     CameraJumper.TrySelect(pawn);
+                                // if (!Find.Selector.SelectedPawns.Any())
+                                //     CameraJumper.TrySelect(pawn);
 #endif
-                                }
+                            }
 
-                                var puahJob = PuahJob(new PuahOpportunity(pawn, jobTarget), pawn, thing, storeCell);
-                                if (puahJob != null) return puahJob;
+                            var puahJob = PuahJob(new PuahOpportunity(pawn, jobTarget), pawn, thing, storeCell);
+                            if (puahJob != null) return puahJob;
 
-                                specialHauls.SetOrAdd(pawn, new SpecialHaul("Opportunity_LoadReport", jobTarget));
-                                return HaulAIUtility.HaulToCellStorageJob(pawn, thing, storeCell, false);
-                        }
+                            specialHauls.SetOrAdd(pawn, new SpecialHaul("Opportunity_LoadReport", jobTarget));
+                            return HaulAIUtility.HaulToCellStorageJob(pawn, thing, storeCell, false);
                     }
-
-                    return null;
                 }
 
-                var result = _TryHaul();
-                cachedStoreCells.Clear(); // #CacheTick
-                return result;
+                return null;
             }
 
-            static CanHaulResult CanHaul(Pawn pawn, Thing thing, LocalTargetInfo jobTarget, MaxRanges maxRanges, out IntVec3 storeCell) {
-                storeCell = IntVec3.Invalid;
-                var pawnToJob = pawn.Position.DistanceTo(jobTarget.Cell);
+            var result = _TryHaul();
+            opportunityCachedStoreCells.Clear(); // #CacheTick
+            return result;
+        }
 
-                var startToThing = pawn.Position.DistanceTo(thing.Position);
-                if (startToThing > maxRanges.startToThing) return CanHaulResult.RangeFail;
-                if (startToThing > pawnToJob * maxRanges.startToThingPctOrigTrip) return CanHaulResult.RangeFail;
+        static CanHaulResult CanHaul(Pawn pawn, Thing thing, LocalTargetInfo jobTarget, MaxRanges maxRanges, out IntVec3 storeCell) {
+            storeCell = IntVec3.Invalid;
+            var pawnToJob = pawn.Position.DistanceTo(jobTarget.Cell);
 
-                var thingToJob = thing.Position.DistanceTo(jobTarget.Cell);
-                // if this one exceeds the maximum the next maxTotalTripPctOrigTrip check certainly will
-                if (startToThing + thingToJob > pawnToJob * settings.Opportunity_MaxTotalTripPctOrigTrip)
+            var startToThing = pawn.Position.DistanceTo(thing.Position);
+            if (startToThing > maxRanges.startToThing) return CanHaulResult.RangeFail;
+            if (startToThing > pawnToJob * maxRanges.startToThingPctOrigTrip) return CanHaulResult.RangeFail;
+
+            var thingToJob = thing.Position.DistanceTo(jobTarget.Cell);
+            // if this one exceeds the maximum the next maxTotalTripPctOrigTrip check certainly will
+            if (startToThing + thingToJob > pawnToJob * settings.Opportunity_MaxTotalTripPctOrigTrip)
+                return CanHaulResult.HardFail;
+            if (pawn.Map.reservationManager.FirstRespectedReserver(thing, pawn) != null) return CanHaulResult.HardFail;
+            if (thing.IsForbidden(pawn)) return CanHaulResult.HardFail;
+            if (!HaulAIUtility.PawnCanAutomaticallyHaulFast(pawn, thing, false)) return CanHaulResult.HardFail;
+
+            var currentPriority = StoreUtility.CurrentStoragePriorityOf(thing);
+            if (!opportunityCachedStoreCells.TryGetValue(thing, out storeCell)) {
+                if (!TryFindBestBetterStoreCellFor_ClosestToTarget(
+                        thing, jobTarget, IntVec3.Invalid, pawn, pawn.Map, currentPriority, pawn.Faction, out storeCell, maxRanges.expandCount == 0))
                     return CanHaulResult.HardFail;
-                if (pawn.Map.reservationManager.FirstRespectedReserver(thing, pawn) != null) return CanHaulResult.HardFail;
-                if (thing.IsForbidden(pawn)) return CanHaulResult.HardFail;
-                if (!HaulAIUtility.PawnCanAutomaticallyHaulFast(pawn, thing, false)) return CanHaulResult.HardFail;
+            } else
+                Debug.WriteLine($"{RealTime.frameCount} Cache hit! (Size: {opportunityCachedStoreCells.Count}) CanHaulResult");
 
-                var currentPriority = StoreUtility.CurrentStoragePriorityOf(thing);
-                if (!cachedStoreCells.TryGetValue(thing, out storeCell)) {
-                    if (!TryFindBestBetterStoreCellFor_ClosestToTarget(
-                            thing, jobTarget, IntVec3.Invalid, pawn, pawn.Map, currentPriority, pawn.Faction, out storeCell, maxRanges.expandCount == 0))
-                        return CanHaulResult.HardFail;
-                } else
-                    Debug.WriteLine($"{RealTime.frameCount} Cache hit! (Size: {cachedStoreCells.Count}) CanHaulResult");
+            // we need storeCell everywhere, so cache it
+            opportunityCachedStoreCells.SetOrAdd(thing, storeCell);
 
-                // we need storeCell everywhere, so cache it
-                cachedStoreCells.SetOrAdd(thing, storeCell);
+            var storeToJob = storeCell.DistanceTo(jobTarget.Cell);
+            if (storeToJob > maxRanges.storeToJob) return CanHaulResult.RangeFail;
+            if (storeToJob > pawnToJob * maxRanges.storeToJobPctOrigTrip) return CanHaulResult.RangeFail;
 
-                var storeToJob = storeCell.DistanceTo(jobTarget.Cell);
-                if (storeToJob > maxRanges.storeToJob) return CanHaulResult.RangeFail;
-                if (storeToJob > pawnToJob * maxRanges.storeToJobPctOrigTrip) return CanHaulResult.RangeFail;
+            if (startToThing + storeToJob > pawnToJob * settings.Opportunity_MaxNewLegsPctOrigTrip)
+                return CanHaulResult.HardFail;
+            var thingToStore = thing.Position.DistanceTo(storeCell);
+            if (startToThing + thingToStore + storeToJob > pawnToJob * settings.Opportunity_MaxTotalTripPctOrigTrip)
+                return CanHaulResult.HardFail;
 
-                if (startToThing + storeToJob > pawnToJob * settings.Opportunity_MaxNewLegsPctOrigTrip)
-                    return CanHaulResult.HardFail;
-                var thingToStore = thing.Position.DistanceTo(storeCell);
-                if (startToThing + thingToStore + storeToJob > pawnToJob * settings.Opportunity_MaxTotalTripPctOrigTrip)
-                    return CanHaulResult.HardFail;
-
-                if (settings.Opportunity_PathChecker == Settings.PathCheckerEnum.Pathfinding) {
-                    float GetPathCost(IntVec3 start, LocalTargetInfo dest, PathEndMode peMode) {
-                        var pawnPath = pawn.Map.pathFinder.FindPath(start, dest, TraverseParms.For(pawn), peMode);
-                        var result   = pawnPath.TotalCost;
-                        pawnPath.ReleaseToPool();
-                        return result;
-                    }
-
-                    var pawnToThingPathCost = GetPathCost(pawn.Position, thing, PathEndMode.ClosestTouch);
-                    if (pawnToThingPathCost == 0) return CanHaulResult.HardFail;
-                    var storeToJobPathCost = GetPathCost(storeCell, jobTarget, PathEndMode.Touch);
-                    if (storeToJobPathCost == 0) return CanHaulResult.HardFail;
-                    var pawnToJobPathCost = GetPathCost(pawn.Position, jobTarget, PathEndMode.Touch);
-                    if (pawnToJobPathCost == 0) return CanHaulResult.HardFail;
-
-                    if (pawnToThingPathCost + storeToJobPathCost > pawnToJobPathCost * settings.Opportunity_MaxNewLegsPctOrigTrip)
-                        return CanHaulResult.HardFail;
-
-                    var thingToStorePathCost = GetPathCost(thing.Position, storeCell, PathEndMode.ClosestTouch);
-                    if (thingToStorePathCost == 0) return CanHaulResult.HardFail;
-
-                    if (pawnToThingPathCost + thingToStorePathCost + storeToJobPathCost > pawnToJobPathCost * settings.Opportunity_MaxTotalTripPctOrigTrip)
-                        return CanHaulResult.HardFail;
+            if (settings.Opportunity_PathChecker == Settings.PathCheckerEnum.Pathfinding) {
+                float GetPathCost(IntVec3 start, LocalTargetInfo dest, PathEndMode peMode) {
+                    var pawnPath = pawn.Map.pathFinder.FindPath(start, dest, TraverseParms.For(pawn), peMode);
+                    var result   = pawnPath.TotalCost;
+                    pawnPath.ReleaseToPool();
+                    return result;
                 }
 
-                // try for the very best initially, so we're at least as good as vanilla
-                else if (maxRanges.expandCount == 0) {
-                    if (!pawn.Position.WithinRegions(thing.Position, pawn.Map, settings.Opportunity_MaxStartToThingRegionLookCount, TraverseParms.For(pawn)))
-                        return CanHaulResult.RangeFail;
+                var pawnToThingPathCost = GetPathCost(pawn.Position, thing, PathEndMode.ClosestTouch);
+                if (pawnToThingPathCost == 0) return CanHaulResult.HardFail;
+                var storeToJobPathCost = GetPathCost(storeCell, jobTarget, PathEndMode.Touch);
+                if (storeToJobPathCost == 0) return CanHaulResult.HardFail;
+                var pawnToJobPathCost = GetPathCost(pawn.Position, jobTarget, PathEndMode.Touch);
+                if (pawnToJobPathCost == 0) return CanHaulResult.HardFail;
 
-                    if (!storeCell.WithinRegions(jobTarget.Cell, pawn.Map, settings.Opportunity_MaxStoreToJobRegionLookCount, TraverseParms.For(pawn)))
-                        return CanHaulResult.RangeFail;
-                }
+                if (pawnToThingPathCost + storeToJobPathCost > pawnToJobPathCost * settings.Opportunity_MaxNewLegsPctOrigTrip)
+                    return CanHaulResult.HardFail;
 
-                return CanHaulResult.Success;
+                var thingToStorePathCost = GetPathCost(thing.Position, storeCell, PathEndMode.ClosestTouch);
+                if (thingToStorePathCost == 0) return CanHaulResult.HardFail;
+
+                if (pawnToThingPathCost + thingToStorePathCost + storeToJobPathCost > pawnToJobPathCost * settings.Opportunity_MaxTotalTripPctOrigTrip)
+                    return CanHaulResult.HardFail;
             }
+
+            // try for the very best initially, so we're at least as good as vanilla
+            else if (maxRanges.expandCount == 0) {
+                if (!pawn.Position.WithinRegions(thing.Position, pawn.Map, settings.Opportunity_MaxStartToThingRegionLookCount, TraverseParms.For(pawn)))
+                    return CanHaulResult.RangeFail;
+
+                if (!storeCell.WithinRegions(jobTarget.Cell, pawn.Map, settings.Opportunity_MaxStoreToJobRegionLookCount, TraverseParms.For(pawn)))
+                    return CanHaulResult.RangeFail;
+            }
+
+            return CanHaulResult.Success;
         }
 
         public class PuahOpportunity : PuahWithBetterUnloading

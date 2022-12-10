@@ -2,8 +2,10 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Reflection;
 using System.Xml;
 using CodeOptimist;
+using HarmonyLib;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -14,6 +16,51 @@ namespace JobsOfOpportunity
 {
     partial class Mod
     {
+        [HarmonyPatch]
+        static class Dialog_ModSettings__Dialog_ModSettings_Patch
+        {
+            static MethodBase TargetMethod() {
+                if (haveHugs)
+                    return AccessTools.DeclaredConstructor(HugsType_Dialog_VanillaModSettings, new[] { typeof(Verse.Mod) });
+                return AccessTools.DeclaredConstructor(typeof(Dialog_ModSettings), new[] { typeof(Verse.Mod) });
+            }
+
+            [HarmonyPostfix]
+            static void SyncDrawSettingToVanilla() => settings.DrawSpecialHauls = DebugViewSettings.drawOpportunisticJobs;
+        }
+
+        [HarmonyPatch]
+        static class Dialog_ModSettings__DoWindowContents_Patch
+        {
+            static MethodBase TargetMethod() {
+                if (haveHugs)
+                    return AccessTools.DeclaredMethod(HugsType_Dialog_VanillaModSettings, "DoWindowContents");
+                return AccessTools.DeclaredMethod(typeof(Dialog_ModSettings), nameof(Dialog_ModSettings.DoWindowContents));
+            }
+
+            [HarmonyPostfix]
+            static void CheckCommonSenseSetting(object __instance) {
+                var curMod = SettingsCurModField.GetValue(__instance);
+
+                if (settings.HaulBeforeCarry_Bills && haveCommonSense && (bool)CsField_Settings_HaulingOverBills.GetValue(null)) {
+                    var csMod = LoadedModManager.GetMod(CsType_CommonSense);
+                    if (curMod == mod) {
+                        CsField_Settings_HaulingOverBills.SetValue(null, false);
+                        csMod.WriteSettings();
+                        Messages.Message(
+                            $"[{mod.Content.Name}] Unticked setting in CommonSense: \"haul ingredients for a bill\". (Can't use both.)", MessageTypeDefOf.SilentInput, false);
+                    } else if (curMod == csMod) {
+                        settings.HaulBeforeCarry_Bills = false;
+                        //mod.WriteSettings(); // no save because we handle it best on loading
+                        Messages.Message(
+                            $"[{mod.Content.Name}] Unticked setting in While You're Up: \"Haul extra bill ingredients closer\". (Can't use both.)",
+                            MessageTypeDefOf.SilentInput,
+                            false);
+                    }
+                }
+            }
+        }
+
         public override void DoSettingsWindowContents(Rect inRect) => SettingsWindow.DoWindowContents(inRect);
 
         // Don't reference this except in DoSettingsWindowContents()! Referencing it early will trigger the static constructor before defs are loaded.
@@ -79,6 +126,8 @@ namespace JobsOfOpportunity
 
             enum Tab { Opportunity, OpportunityAdvanced, HaulBeforeCarry, PickUpAndHaul }
 
+            // todo why is build filter XML filled with junk?! v1.4 change?
+            // C:\Users\Chris\AppData\LocalLow\Ludeon Studios\RimWorld by Ludeon Studios\Config\Mod_JobsOfOpportunity_Mod.xml
             [SuppressMessage("ReSharper", "StringLiteralTypo")]
             public static void ResetFilters() {
                 settings.opportunityDefaultBuildingFilter.SetAllowAll(null, true);
@@ -90,7 +139,7 @@ namespace JobsOfOpportunity
                     // todo move to XML
                     var mod = LoadedModManager.RunningModsListForReading.FirstOrDefault(x => x.Name == modCategoryDef.label);
                     switch (mod?.PackageId) {
-                        // most of these are from ZzZombo#9297, blame him for everything. 🙃
+                        // Most of these are from ZzZombo#9297, blame him for everything. 🙃
                         case "buddy1913.expandedstorageboxes":      // Buddy's Expanded Storage Boxes
                         case "im.skye.rimworld.deepstorageplus":    // Deep Storage Plus
                         case "jangodsoul.simplestorage":            // [JDS] Simple Storage
@@ -143,7 +192,6 @@ namespace JobsOfOpportunity
                 } else
                     windowTripleStd.Label("PickUpAndHaul_Missing".ModTranslate(), Text.LineHeight, "PickUpAndHaul_Tooltip".ModTranslate());
 
-                // todo actually implement Deep Storage defaults
                 tabsList.Clear();
                 tabsList.Add(new TabRecord("Opportunity_Tab".ModTranslate(), () => tab = Tab.Opportunity, tab == Tab.Opportunity));
                 if (settings.Opportunity_TweakVanilla)
