@@ -4,7 +4,6 @@ using System.Reflection;
 using HarmonyLib;
 using RimWorld;
 using Verse;
-using Verse.AI;
 // ReSharper disable once RedundantUsingDirective
 using Debug = System.Diagnostics.Debug;
 
@@ -12,6 +11,7 @@ namespace JobsOfOpportunity
 {
     partial class Mod
     {
+    #region PUAH call stack
         // so our StoreUtility code can know from where within Pick Up And Haul it's executing
         static readonly List<MethodBase> puahCallStack = new List<MethodBase>();
 
@@ -23,8 +23,8 @@ namespace JobsOfOpportunity
 
             puahCallStack.Pop();
             if (!puahCallStack.Any()) {
-                // Todo: Keep the cache until the tick changes; verify at the very end if destination still accepts thing
-                // to handle cache going stale within the same tick (uncommon but possible). #CacheTick 
+                // todo: keep the cache until the tick changes; verify at the very end if destination still accepts thing
+                //  to handle cache going stale within the same tick (uncommon but possible). #CacheTick 
                 cachedStoreCells.Clear();
             }
         }
@@ -38,7 +38,32 @@ namespace JobsOfOpportunity
             static void       Postfix()                           => PopMethod();
         }
 
-        #region
+        [HarmonyPatch]
+        static partial class Puah_WorkGiver_HaulToInventory__JobOnThing_Patch
+        {
+            static bool       Prepare()      => havePuah;
+            static MethodBase TargetMethod() => PuahMethod_WorkGiver_HaulToInventory_JobOnThing;
+
+            // priority to order correctly with our other Prefix/Postfix
+            [HarmonyPriority(Priority.HigherThanNormal)]
+            static void Prefix(MethodBase __originalMethod) => PushMethod(__originalMethod);
+
+            [HarmonyPriority(Priority.LowerThanNormal)]
+            static void Postfix() => PopMethod();
+        }
+
+        [HarmonyPatch]
+        static class Puah_WorkGiver_HaulToInventory__AllocateThingAtCell_Patch
+        {
+            static bool       Prepare()      => havePuah;
+            static MethodBase TargetMethod() => PuahMethod_WorkGiver_HaulToInventory_AllocateThingAt;
+
+            static void Prefix(MethodBase __originalMethod) => PushMethod(__originalMethod);
+            static void Postfix()                           => PopMethod();
+        }
+    #endregion
+
+    #region same-priority storage feature
         static StorageSettings reducedPriorityStore;
 
         [HarmonyPatch]
@@ -50,7 +75,7 @@ namespace JobsOfOpportunity
             [HarmonyPostfix]
             static void GetReducedPriority(StorageSettings __instance, ref StoragePriority __result) {
                 // least disruptive way to support hauling between stores of equal priority
-                if (__instance == reducedPriorityStore && __result > StoragePriority.Unstored)
+                if (__instance == reducedPriorityStore && __result > StoragePriority.Unstored) // #ReducedPriority
                     __result -= 1;
             }
         }
@@ -65,36 +90,23 @@ namespace JobsOfOpportunity
 
             [HarmonyPostfix]
             static void IncludeThingsInReducedPriorityStore(ref List<Thing> __result) {
-                if (!thingsInReducedPriorityStore.NullOrEmpty()) {
-                    // todo does this happen multiple times?
-                    Debug.WriteLine($"{RealTime.frameCount} Adding things in reduced priority store.");
+                if (!thingsInReducedPriorityStore.NullOrEmpty())
                     __result.AddRange(thingsInReducedPriorityStore);
-                }
             }
         }
-        #endregion
 
         [HarmonyPatch]
-        static class Puah_WorkGiver_HaulToInventory__JobOnThing_Patch
+        static partial class Puah_WorkGiver_HaulToInventory__JobOnThing_Patch
         {
-            static bool       Prepare()      => havePuah;
-            static MethodBase TargetMethod() => PuahMethod_WorkGiver_HaulToInventory_JobOnThing;
-
-            [HarmonyPriority(Priority.HigherThanNormal)]
-            static void Prefix(MethodBase __originalMethod) => PushMethod(__originalMethod);
-
-            [HarmonyPriority(Priority.LowerThanNormal)]
-            static void Postfix() => PopMethod();
-
             // todo I guess this isn't a feature without PUAH; we should change that?
             [HarmonyPrefix]
             static void HaulToEqualPriority(Pawn pawn, Thing thing) {
-                if (!settings.HaulBeforeCarry_ToEqualPriority || !settings.UsePickUpAndHaulPlus || !settings.Enabled) return;
+                if (!settings.Enabled || !settings.UsePickUpAndHaulPlus || !settings.HaulBeforeCarry_ToEqualPriority) return;
                 if (!(specialHauls.GetValueSafe(pawn) is PuahBeforeCarry)) return;
                 var haulDestination = StoreUtility.CurrentHaulDestinationOf(thing);
                 if (haulDestination == null) return;
 
-                reducedPriorityStore = haulDestination.GetStoreSettings(); // mark it
+                reducedPriorityStore = haulDestination.GetStoreSettings(); // #ReducedPriority
                 thingsInReducedPriorityStore.AddRange(
                     thing.GetSlotGroup().CellsList.SelectMany(cell => cell.GetThingList(thing.Map).Where(cellThing => cellThing.def.EverHaulable)));
                 thing.Map.haulDestinationManager.Notify_HaulDestinationChangedPriority();
@@ -107,57 +119,7 @@ namespace JobsOfOpportunity
                 thingsInReducedPriorityStore.Clear();
                 map?.haulDestinationManager.Notify_HaulDestinationChangedPriority();
             }
-
-            [HarmonyPostfix]
-            static void TrackInitialHaul(WorkGiver_Scanner __instance, Job __result, Pawn pawn, Thing thing) {
-                if (__result == null || !settings.UsePickUpAndHaulPlus || !settings.Enabled) return;
-
-                if (!(specialHauls.GetValueSafe(pawn) is PuahWithBetterUnloading puah)) {
-                    puah = new PuahWithBetterUnloading();
-                    specialHauls.SetOrAdd(pawn, puah);
-                }
-                // thing from parameter because targetA is null because things are in queues instead
-                //  https://github.com/Mehni/PickUpAndHaul/blob/af50a05a8ae5ca64d9b95fee8f593cf91f13be3d/Source/PickUpAndHaul/WorkGiver_HaulToInventory.cs#L98
-                // JobOnThing() can run additional times (e.g. haulMoreWork toil) so don't assume this is already added if it's an Opportunity or HaulBeforeCarry
-                puah.TrackThing(thing, __result.targetB.Cell, prepend: true);
-            }
-        }
-
-        [HarmonyPatch]
-        static class Puah_WorkGiver_HaulToInventory__AllocateThingAtCell_Patch
-        {
-            static bool       Prepare()      => havePuah;
-            static MethodBase TargetMethod() => PuahMethod_WorkGiver_HaulToInventory_AllocateThingAt;
-
-            static void Prefix(MethodBase __originalMethod) => PushMethod(__originalMethod);
-            static void Postfix()                           => PopMethod();
-        }
-
-        [HarmonyPatch]
-        static class Puah_WorkGiver_HaulToInventory__TryFindBestBetterStoreCellFor_Patch
-        {
-            static bool       Prepare()      => havePuah;
-            static MethodBase TargetMethod() => PuahMethod_WorkGiver_HaulToInventory_TryFindBestBetterStoreCellFor;
-
-            // todo #PatchNeighborCheck
-            [HarmonyPrefix]
-            static bool UseSpecialHaulAwareTryFindStore(ref bool __result, Thing thing, Pawn carrier, Map map, StoragePriority currentPriority, Faction faction,
-                ref IntVec3 foundCell) {
-                if (!settings.UsePickUpAndHaulPlus || !settings.Enabled) return Continue();
-                // have PUAH use vanilla's to keep our code in one place
-                __result = StoreUtility.TryFindBestBetterStoreCellFor(thing, carrier, map, currentPriority, faction, out foundCell); // patched below
-                return Halt();
-            }
-        }
-
-        [HarmonyPatch]
-        static class Puah_JobDriver_UnloadYourHauledInventory__MakeNewToils_Patch
-        {
-            static bool       Prepare()      => havePuah;
-            static MethodBase TargetMethod() => PuahMethod_JobDriver_UnloadYourHauledInventory_MakeNewToils;
-
-            [HarmonyPostfix]
-            static void ClearSpecialHaulOnFinish(JobDriver __instance) => __instance.AddFinishAction(() => specialHauls.Remove(__instance.pawn));
+        #endregion
         }
 
         [HarmonyPatch]
@@ -169,11 +131,10 @@ namespace JobsOfOpportunity
             // todo #PatchNeighborCheck
             [HarmonyPrefix]
             static bool SpecialHaulAwareFirstUnloadableThing(ref ThingCount __result, Pawn pawn) {
-                if (!settings.UsePickUpAndHaulPlus || !settings.Enabled) return Continue();
-                // Traverse does its own caching
+                if (!settings.Enabled || !settings.UsePickUpAndHaulPlus) return Continue();
 
                 var hauledToInventoryComp = (ThingComp)PuahMethod_CompHauledToInventory_GetComp.Invoke(pawn, null);
-                var carriedThings         = Traverse.Create(hauledToInventoryComp).Method("GetHashSet").GetValue<HashSet<Thing>>();
+                var carriedThings         = Traverse.Create(hauledToInventoryComp).Method("GetHashSet").GetValue<HashSet<Thing>>(); // Traverse is cached
                 if (!carriedThings.Any()) return Halt(__result = default);
 
                 (Thing thing, IntVec3 storeCell) GetDefHaul(PuahWithBetterUnloading puah_, Thing thing) {
@@ -187,7 +148,7 @@ namespace JobsOfOpportunity
                             (puah_ as PuahOpportunity)?.jobTarget ?? IntVec3.Invalid,
                             (puah_ as PuahBeforeCarry)?.carryTarget ?? IntVec3.Invalid,
                             pawn, pawn.Map, StoreUtility.CurrentStoragePriorityOf(thing), pawn.Faction, out storeCell, false)) {
-                        // add for next
+                        // cache for next
                         puah_.defHauls.Add(thing.def, storeCell);
                     }
                     return (thing, storeCell);

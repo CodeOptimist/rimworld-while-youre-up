@@ -16,7 +16,7 @@ namespace JobsOfOpportunity
 {
     partial class Mod
     {
-        public static readonly Dictionary<Thing, IntVec3> opportunityCachedStoreCells = new Dictionary<Thing, IntVec3>();
+        public static readonly Dictionary<Thing, IntVec3> opportunityCachedStoreCells = new Dictionary<Thing, IntVec3>(); // #CacheTick
 
         [HarmonyPatch(typeof(Pawn_JobTracker), nameof(Pawn_JobTracker.TryOpportunisticJob))]
         static class Pawn_JobTracker__TryOpportunisticJob_Patch

@@ -15,6 +15,7 @@ namespace JobsOfOpportunity
 {
     partial class Mod : Verse.Mod
     {
+    #region other mods
         static readonly Type PuahType_CompHauledToInventory               = GenTypes.GetTypeInAnyAssembly("PickUpAndHaul.CompHauledToInventory"); // GenTypes has a cache
         static readonly Type PuahType_WorkGiver_HaulToInventory           = GenTypes.GetTypeInAnyAssembly("PickUpAndHaul.WorkGiver_HaulToInventory");
         static readonly Type PuahType_JobDriver_HaulToInventory           = GenTypes.GetTypeInAnyAssembly("PickUpAndHaul.JobDriver_HaulToInventory");
@@ -65,6 +66,7 @@ namespace JobsOfOpportunity
         static readonly FieldInfo CsField_Settings_HaulingOverBills = AccessTools.DeclaredField(CsType_Settings, "hauling_over_bills");
 
         static readonly bool haveCommonSense = new List<object> { CsType_CommonSense, CsType_Settings, CsField_Settings_HaulingOverBills }.All(x => x != null);
+    #endregion
 
         static Verse.Mod mod; // static reference for e.g. mod name in log messages
         static Settings  settings;
@@ -73,7 +75,6 @@ namespace JobsOfOpportunity
         // Prefix for our XML keys (language translations); PackageId may change (e.g. "__copy__" suffix).
         public static   string  modId   = "CodeOptimist.WhileYoureUp";
         static readonly Harmony harmony = new Harmony(modId); // just a unique id
-
 
         public Mod(ModContentPack content) : base(content) {
             mod       = this;  // static reference to mod for e.g. mod name in log messages
@@ -86,7 +87,7 @@ namespace JobsOfOpportunity
             harmony.PatchAll();
         }
 
-        // Harmony patch syntactic sugar to visually distinguish these special cases from actual return true/false
+        // Harmony patch syntactic sugar to distinguish result from return behavior e.g. 'return Continue(_result = false)'
         static bool Continue(object _ = null) => true;
         static bool Halt(object _ = null)     => false;
 
@@ -96,8 +97,8 @@ namespace JobsOfOpportunity
         [HarmonyPatch(typeof(JobUtility), nameof(JobUtility.TryStartErrorRecoverJob))]
         static class JobUtility__TryStartErrorRecoverJob_Patch
         {
-            static int    lastFrameCount;
             static Pawn   lastPawn;
+            static int    lastFrameCount;
             static string lastCallerName;
 
             [HarmonyPrefix]

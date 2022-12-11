@@ -14,6 +14,16 @@ namespace JobsOfOpportunity
 {
     partial class Mod
     {
+        // [HarmonyPatch(typeof(WorkGiver_ConstructDeliverResources), nameof(WorkGiver_ConstructDeliverResources.HasJobOnThing))]
+        // `WorkGiver_ConstructDeliverResources` inherits `HasJobOnThing`, so we patch parent
+        [HarmonyPatch(typeof(WorkGiver_Scanner), nameof(WorkGiver_Scanner.HasJobOnThing))]
+        static class WorkGiver_Scanner__HasJobOnThing_Patch
+        {
+            [HarmonyPostfix]
+            // clear this so our code that ran for `HasJobOnThing` can re-run for `JobOnThing`
+            static void ClearTempSpecialHaul(Pawn pawn) => specialHauls.Remove(pawn);
+        }
+
         [HarmonyPatch(typeof(WorkGiver_ConstructDeliverResources), "ResourceDeliverJobFor")]
         static class WorkGiver_ConstructDeliverResources__ResourceDeliverJobFor_Patch
         {
