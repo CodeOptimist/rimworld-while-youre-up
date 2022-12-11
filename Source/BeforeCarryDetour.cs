@@ -21,14 +21,14 @@ namespace JobsOfOpportunity
         {
             [HarmonyPostfix]
             // clear this so our code that ran for `HasJobOnThing` can re-run for `JobOnThing`
-            static void ClearTempSpecialHaul(Pawn pawn) => haulDetours.Remove(pawn);
+            static void ClearTempDetour(Pawn pawn) => haulDetours.Remove(pawn);
         }
 
         [HarmonyPatch(typeof(WorkGiver_ConstructDeliverResources), "ResourceDeliverJobFor")]
         static class WorkGiver_ConstructDeliverResources__ResourceDeliverJobFor_Patch
         {
             [HarmonyTranspiler]
-            static IEnumerable<CodeInstruction> _HaulBeforeSupply(IEnumerable<CodeInstruction> _codes, ILGenerator generator, MethodBase __originalMethod) {
+            static IEnumerable<CodeInstruction> BeforeSupplyDetour(IEnumerable<CodeInstruction> _codes, ILGenerator generator, MethodBase __originalMethod) {
                 var t = new Transpiler(_codes, __originalMethod);
 
                 var afterNearbyIdx =
@@ -48,7 +48,7 @@ namespace JobsOfOpportunity
                     0,
                     (i, codes) => i == afterNearbyIdx,
                     (i, codes) => new List<CodeInstruction> {
-                        // job = HaulBeforeSupply(pawn, need, (Thing) c, foundRes);
+                        // job = BeforeSupplyDetourJob(pawn, need, (Thing) c, foundRes);
                         new CodeInstruction(OpCodes.Ldarg_1),                       // Pawn pawn
                         new CodeInstruction(codes[needDeclaringObjIdx + 2].opcode), // ThingDefCountClass <>c__DisplayClass9_1
                         new CodeInstruction(OpCodes.Ldfld, needField),              //                                        .need
@@ -57,7 +57,7 @@ namespace JobsOfOpportunity
                         codes[foundResIdx + 1].Clone(),                             // Thing foundRes
                         codes[foundResIdx + 2].Clone(),                             // Thing foundRes
                         new CodeInstruction(
-                            OpCodes.Call, AccessTools.DeclaredMethod(typeof(WorkGiver_ConstructDeliverResources__ResourceDeliverJobFor_Patch), nameof(HaulBeforeSupply))),
+                            OpCodes.Call, AccessTools.DeclaredMethod(typeof(WorkGiver_ConstructDeliverResources__ResourceDeliverJobFor_Patch), nameof(BeforeSupplyDetourJob))),
                         new CodeInstruction(OpCodes.Stloc_S, jobVar),
 
                         // if (job != null) return job;
@@ -70,7 +70,7 @@ namespace JobsOfOpportunity
                 return t.GetFinalCodes();
             }
 
-            static Job HaulBeforeSupply(Pawn pawn, ThingDefCountClass need, Thing constructible, Thing th) {
+            static Job BeforeSupplyDetourJob(Pawn pawn, ThingDefCountClass need, Thing constructible, Thing th) {
                 if (!settings.HaulBeforeCarry_Supplies || !settings.Enabled || AlreadyHauling(pawn)) return null;
                 if (pawn.WorkTagIsDisabled(WorkTags.ManualDumb | WorkTags.Hauling | WorkTags.AllWork)) return null; // like TryOpportunisticJob()
 
@@ -79,7 +79,7 @@ namespace JobsOfOpportunity
                     if (mostThing.stackCount <= need.count)
                         return null; // there are no extras
                 }
-                return JobUtility__TryStartErrorRecoverJob_Patch.CatchStanding(pawn, HaulBeforeCarry(pawn, constructible.Position, mostThing ?? th)); // #HaulBeforeSupply
+                return JobUtility__TryStartErrorRecoverJob_Patch.CatchStandingJob(pawn, BeforeCarryDetourJob(pawn, constructible.Position, mostThing ?? th)); // #BeforeSupplyDetour
             }
         }
 
@@ -96,8 +96,8 @@ namespace JobsOfOpportunity
             public override string GetUnloadReport(string text) => "HaulBeforeCarry_UnloadReport".ModTranslate(text.Named("ORIGINAL"), destTarget.Label.Named("DESTINATION"));
         }
 
-        // #HaulBeforeBill #HaulBeforeSupply
-        public static Job HaulBeforeCarry(Pawn pawn, LocalTargetInfo carryTarget, Thing thing) {
+        // #BeforeBillDetour #BeforeSupplyDetour
+        public static Job BeforeCarryDetourJob(Pawn pawn, LocalTargetInfo carryTarget, Thing thing) {
             if (thing.ParentHolder is Pawn_InventoryTracker) return null;
             // try to avoid haul-before-carry when there are no extras to grab
             // proper way is to recheck after grabbing everything, but here's a simple hack to at least avoid it with stone chunks

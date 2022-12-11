@@ -72,8 +72,8 @@ namespace JobsOfOpportunity
                         // permitted when bleeding because facilitates whatever bill is important enough to do while bleeding
                         //  may save precious time going back for ingredients... unless we want only 1 medicine ASAP; it's a trade-off
 
-                        var storeJob = HaulBeforeCarry(pawn, job.targetA, ingredient.Thing); // #HaulBeforeBill
-                        if (storeJob != null) return JobUtility__TryStartErrorRecoverJob_Patch.CatchStanding(pawn, storeJob);
+                        var storeJob = BeforeCarryDetourJob(pawn, job.targetA, ingredient.Thing); // #BeforeBillDetour
+                        if (storeJob != null) return JobUtility__TryStartErrorRecoverJob_Patch.CatchStandingJob(pawn, storeJob);
                     }
                 }
 
@@ -85,7 +85,7 @@ namespace JobsOfOpportunity
 
                 // use first ingredient location if bill
                 var jobTarget = job.def == JobDefOf.DoBill ? job.targetQueueB?.FirstOrDefault() ?? job.targetA : job.targetA;
-                return JobUtility__TryStartErrorRecoverJob_Patch.CatchStanding(pawn, TryHaul(pawn, jobTarget));
+                return JobUtility__TryStartErrorRecoverJob_Patch.CatchStandingJob(pawn, OpportunityJob(pawn, jobTarget));
             }
         }
 
@@ -111,8 +111,8 @@ namespace JobsOfOpportunity
             }
         }
 
-        public static Job TryHaul(Pawn pawn, LocalTargetInfo jobTarget) {
-            Job _TryHaul() {
+        public static Job OpportunityJob(Pawn pawn, LocalTargetInfo jobTarget) {
+            Job _OpportunityJob() {
                 var maxRanges = new MaxRanges {
                     startToThing            = settings.Opportunity_MaxStartToThing,
                     startToThingPctOrigTrip = settings.Opportunity_MaxStartToThingPctOrigTrip,
@@ -173,7 +173,7 @@ namespace JobsOfOpportunity
                 return null;
             }
 
-            var result = _TryHaul();
+            var result = _OpportunityJob();
             opportunityCachedStoreCells.Clear(); // #CacheTick
             return result;
         }
@@ -267,10 +267,10 @@ namespace JobsOfOpportunity
             public override string GetLoadReport(string text)   => "Opportunity_LoadReport".ModTranslate(text.Named("ORIGINAL"), destTarget.Label.Named("DESTINATION"));
             public override string GetUnloadReport(string text) => "Opportunity_UnloadReport".ModTranslate(text.Named("ORIGINAL"), destTarget.Label.Named("DESTINATION"));
 
-            public bool TrackThingIfOpportune(Thing thing, Pawn pawn, ref IntVec3 foundCell) {
+            public bool TrackPuahThingIfOpportune(Thing thing, Pawn pawn, ref IntVec3 foundCell) {
                 Debug.Assert(thing != null);
                 var isPrepend = pawn.carryTracker?.CarriedThing == thing;
-                TrackThing(thing, foundCell, isPrepend, trackDef: false);
+                TrackPuahThing(thing, foundCell, isPrepend, trackDef: false);
 
                 var curPos           = startCell;
                 var startToLastThing = 0f;

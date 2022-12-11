@@ -119,9 +119,10 @@ namespace JobsOfOpportunity
                 thingsInReducedPriorityStore.Clear();
                 map?.haulDestinationManager.Notify_HaulDestinationChangedPriority();
             }
-        #endregion
         }
+    #endregion
 
+    #region unloading
         [HarmonyPatch]
         static class Puah_JobDriver_UnloadYourHauledInventory__FirstUnloadableThing_Patch
         {
@@ -130,7 +131,7 @@ namespace JobsOfOpportunity
 
             // todo #PatchNeighborCheck
             [HarmonyPrefix]
-            static bool SpecialHaulAwareFirstUnloadableThing(ref ThingCount __result, Pawn pawn) {
+            static bool DetourAwareFirstUnloadableThing(ref ThingCount __result, Pawn pawn) {
                 if (!settings.Enabled || !settings.UsePickUpAndHaulPlus) return Continue();
 
                 var hauledToInventoryComp = (ThingComp)PuahMethod_CompHauledToInventory_GetComp.Invoke(pawn, null);
@@ -142,7 +143,7 @@ namespace JobsOfOpportunity
                     if (puah_.defHauls.TryGetValue(thing.def, out var storeCell))
                         return (thing, storeCell);
 
-                    // should only be necessary after loading, because specialHauls aren't saved in game file like CompHauledToInventory
+                    // should only be necessary after loading, because detours aren't saved in game file like CompHauledToInventory
                     if (TryFindBestBetterStoreCellFor_ClosestToTarget(
                             thing,
                             (puah_ as PuahOpportunityDetour)?.destTarget ?? IntVec3.Invalid,
@@ -199,5 +200,6 @@ namespace JobsOfOpportunity
                 return Halt(__result = new ThingCount(firstThingToUnload, firstThingToUnload.stackCount));
             }
         }
+    #endregion
     }
 }

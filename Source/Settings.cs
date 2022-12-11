@@ -124,7 +124,7 @@ namespace JobsOfOpportunity
                 }
             }
 
-            enum Tab { Opportunity, OpportunityAdvanced, HaulBeforeCarry, PickUpAndHaul }
+            enum Tab { Opportunity, OpportunityAdvanced, BeforeCarryDetour, PickUpAndHaul }
 
             // todo why is build filter XML filled with junk?! v1.4 change?
             // C:\Users\Chris\AppData\LocalLow\Ludeon Studios\RimWorld by Ludeon Studios\Config\Mod_JobsOfOpportunity_Mod.xml
@@ -188,7 +188,7 @@ namespace JobsOfOpportunity
                 if (ModLister.HasActiveModWithName("Pick Up And Haul")) {
                     windowTripleStd.DrawBool(ref settings.UsePickUpAndHaulPlus, nameof(settings.UsePickUpAndHaulPlus));
                     if (tab == Tab.PickUpAndHaul && !settings.UsePickUpAndHaulPlus)
-                        tab = Tab.HaulBeforeCarry;
+                        tab = Tab.BeforeCarryDetour;
                 } else
                     windowTripleStd.Label("PickUpAndHaul_Missing".ModTranslate(), Text.LineHeight, "PickUpAndHaul_Tooltip".ModTranslate());
 
@@ -196,7 +196,7 @@ namespace JobsOfOpportunity
                 tabsList.Add(new TabRecord("Opportunity_Tab".ModTranslate(), () => tab = Tab.Opportunity, tab == Tab.Opportunity));
                 if (settings.Opportunity_TweakVanilla)
                     tabsList.Add(new TabRecord("OpportunityAdvanced_Tab".ModTranslate(), () => tab = Tab.OpportunityAdvanced, tab == Tab.OpportunityAdvanced));
-                tabsList.Add(new TabRecord("HaulBeforeCarry_Tab".ModTranslate(), () => tab = Tab.HaulBeforeCarry, tab == Tab.HaulBeforeCarry));
+                tabsList.Add(new TabRecord("HaulBeforeCarry_Tab".ModTranslate(), () => tab = Tab.BeforeCarryDetour, tab == Tab.BeforeCarryDetour));
                 if (ModLister.HasActiveModWithName("Pick Up And Haul") && settings.UsePickUpAndHaulPlus)
                     tabsList.Add(new TabRecord("PickUpAndHaulPlus_Tab".ModTranslate(), () => tab = Tab.PickUpAndHaul, tab == Tab.PickUpAndHaul));
 
@@ -298,7 +298,7 @@ namespace JobsOfOpportunity
                         break;
 
 
-                    case Tab.HaulBeforeCarry:
+                    case Tab.BeforeCarryDetour:
                         var hbcDoubleStd = new Listing_Standard {
                             ColumnWidth = (float)Math.Round((innerTabRect.width - 17 * 1) / 2),
                         };

@@ -94,6 +94,20 @@ namespace JobsOfOpportunity
         // name in "Mod options" and top of settings window
         public override string SettingsCategory() => mod.Content.Name;
 
+        public static bool AlreadyHauling(Pawn pawn) {
+            if (haulDetours.ContainsKey(pawn)) return true;
+
+            // because we may load a game with an incomplete haul
+            if (havePuah) {
+                var hauledToInventoryComp = (ThingComp)PuahMethod_CompHauledToInventory_GetComp.Invoke(pawn, null);
+                var takenToInventory      = Traverse.Create(hauledToInventoryComp).Field<HashSet<Thing>>("takenToInventory").Value; // traverse is cached
+                if (takenToInventory != null && takenToInventory.Any(t => t != null))
+                    return true;
+            }
+
+            return false;
+        }
+
         [HarmonyPatch(typeof(JobUtility), nameof(JobUtility.TryStartErrorRecoverJob))]
         static class JobUtility__TryStartErrorRecoverJob_Patch
         {
@@ -110,7 +124,7 @@ namespace JobsOfOpportunity
                 }
             }
 
-            public static Job CatchStanding(Pawn pawn, Job job, [CallerMemberName] string callerName = "") {
+            public static Job CatchStandingJob(Pawn pawn, Job job, [CallerMemberName] string callerName = "") {
                 lastPawn       = pawn;
                 lastFrameCount = RealTime.frameCount;
                 lastCallerName = callerName;

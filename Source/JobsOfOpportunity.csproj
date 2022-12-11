@@ -61,7 +61,8 @@
 			<LibraryPath Include="$(RimWorldAssemblyPath)" />
 		</ItemGroup>
 		<!-- ReSharper disable once UnknownTask -->
-		<ILRepack Parallel="true" Internalize="true" LibraryPath="@(LibraryPath)" InputAssemblies="@(InputAssemblies)" TargetKind="Dll" OutputFile="$(ProjectDir)..\1.4\Assemblies\$(AssemblyName).dll" />
+		<ILRepack Parallel="true" Internalize="true" LibraryPath="@(LibraryPath)" InputAssemblies="@(InputAssemblies)"
+		          TargetKind="Dll" OutputFile="$(ProjectDir)..\1.4\Assemblies\$(AssemblyName).dll" />
 	</Target>
 	<Target Name="PreBuild" BeforeTargets="PreBuildEvent">
 		<Exec Command="type nul&gt;$(Temp)\rw_build" />

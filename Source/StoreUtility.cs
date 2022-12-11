@@ -24,11 +24,11 @@ namespace JobsOfOpportunity
 
             // todo #PatchNeighborCheck
             [HarmonyPrefix]
-            static bool UseSpecialHaulAwareTryFindStore(ref bool __result, Thing thing, Pawn carrier, Map map, StoragePriority currentPriority, Faction faction,
+            static bool Use_DetourAware_TryFindStore(ref bool __result, Thing thing, Pawn carrier, Map map, StoragePriority currentPriority, Faction faction,
                 ref IntVec3 foundCell) {
                 if (!settings.Enabled || !settings.UsePickUpAndHaulPlus) return Continue();
-                // have PUAH use vanilla's to keep our code in one place
-                __result = StoreUtility.TryFindBestBetterStoreCellFor(thing, carrier, map, currentPriority, faction, out foundCell); // patched below
+                // patched below to keep our code in one place
+                __result = StoreUtility.TryFindBestBetterStoreCellFor(thing, carrier, map, currentPriority, faction, out foundCell);
                 return Halt();
             }
         }
@@ -43,7 +43,7 @@ namespace JobsOfOpportunity
 
             // todo #PatchNeighborCheck
             [HarmonyPrefix]
-            static bool SpecialHaulAwareTryFindStore(ref bool __result, Thing t, Pawn carrier, Map map, StoragePriority currentPriority,
+            static bool DetourAware_TryFindStore(ref bool __result, Thing t, Pawn carrier, Map map, StoragePriority currentPriority,
                 Faction faction, out IntVec3 foundCell, bool needAccurateResult) {
                 foundCell = IntVec3.Invalid;
 
@@ -63,14 +63,15 @@ namespace JobsOfOpportunity
                     if (!cachedStoreCells.TryGetValue(t, out foundCell))
                         foundCell = IntVec3.Invalid;
                     else
-                        Debug.WriteLine($"{RealTime.frameCount} Cache hit! (Size: {cachedStoreCells.Count}) SpecialHaulAwareTryFindStore");
+                        // ReSharper disable once PossibleNullReferenceException
+                        Debug.WriteLine($"{RealTime.frameCount} Cache hit! (Size: {cachedStoreCells.Count}) {MethodBase.GetCurrentMethod().Name}");
 
                     // we reproduce PUAH's skipCells in our own TryFindStore but we also need it here with caching
                     if (foundCell.IsValid && hasSkipCells) {
                         if (skipCells.Contains(foundCell))
                             foundCell = IntVec3.Invalid; // cache is no good, skipCells will be used below
                         else                             // successful cache hit
-                            skipCells.Add(foundCell);    // not used below, but the next SpecialHaulAwareTryFindStore(), like PUAH
+                            skipCells.Add(foundCell);    // not used below, but the next call of this method, like PUAH
                     }
                 }
 
@@ -94,7 +95,7 @@ namespace JobsOfOpportunity
                 if (isUnloadJob)
                     return Halt(__result = true);
 
-                if (opportunity != null && !opportunity.TrackThingIfOpportune(t, carrier, ref foundCell))
+                if (opportunity != null && !opportunity.TrackPuahThingIfOpportune(t, carrier, ref foundCell))
                     return Halt(__result = false);
 
                 if (beforeCarry != null) {
@@ -128,7 +129,7 @@ namespace JobsOfOpportunity
                         puah = new PuahDetour();
                         haulDetours.SetOrAdd(carrier, puah);
                     }
-                    puah.TrackThing(t, foundCell);
+                    puah.TrackPuahThing(t, foundCell);
                 }
 
                 return Halt(__result = true);

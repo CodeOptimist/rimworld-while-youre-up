@@ -38,8 +38,8 @@ namespace JobsOfOpportunity
             foreach (var itemDef in itemDefs)
                 DebugThingPlaceHelper.DebugSpawn(itemDef, pawnAndThingRect.RandomCell, -1, true);
 
-            var count = 30;
-            for (var i = 0; i < count; i++) {
+            var pawnCount = 30;
+            for (var i = 0; i < pawnCount; i++) {
                 var pawn = PawnGenerator.GeneratePawn(Faction.OfPlayer.def.basicMemberKind, Faction.OfPlayer);
                 foreach (var w in DefDatabase<WorkTypeDef>.AllDefs) {
                     if (!pawn.WorkTypeIsDisabled(w))
@@ -50,7 +50,7 @@ namespace JobsOfOpportunity
             }
 
             var designated = new Designator_ZoneAddStockpile_Resources();
-            for (var _ = 0; _ < 7; _++) {
+            for (var _ = 0; _ < 6; _++) {
                 Autotests_ColonyMaker.TryGetFreeRect(7, 7, out var stockpileRect);
                 stockpileRect = stockpileRect.ContractedBy(1);
                 designated.DesignateMultiCell(stockpileRect.Cells);
