@@ -74,12 +74,12 @@ namespace JobsOfOpportunity
                     }
                 }
 
-                var puah        = specialHauls.GetValueSafe(carrier) as PuahWithBetterUnloading;
-                var opportunity = puah as PuahOpportunity;
-                var beforeCarry = puah as PuahBeforeCarry;
+                var puah        = haulDetours.GetValueSafe(carrier) as PuahDetour;
+                var opportunity = puah as PuahOpportunityDetour;
+                var beforeCarry = puah as PuahBeforeCarryDetour;
 
-                var opportunityTarget = opportunity?.jobTarget ?? IntVec3.Invalid;
-                var beforeCarryTarget = beforeCarry?.carryTarget ?? IntVec3.Invalid;
+                var opportunityTarget = opportunity?.destTarget ?? IntVec3.Invalid;
+                var beforeCarryTarget = beforeCarry?.destTarget ?? IntVec3.Invalid;
                 if (!foundCell.IsValid && !TryFindBestBetterStoreCellFor_ClosestToTarget( // call our own
                         t, opportunityTarget, beforeCarryTarget, carrier, map, currentPriority, faction, out foundCell,
                         // True here may give us a shorter path, giving special hauls a better chance
@@ -109,7 +109,7 @@ namespace JobsOfOpportunity
                             if (!frame.cachedMaterialsNeeded.Select(x => x.thingDef).Contains(t.def))
                                 return Halt(__result = false);
                             Debug.WriteLine(
-                                $"APPROVED {t} {t.Position} as needed supplies for {beforeCarry.carryTarget}"
+                                $"APPROVED {t} {t.Position} as needed supplies for {beforeCarry.destTarget}"
                                 + $" headed to same-priority storage {foundCellGroup} {foundCell}.");
                         }
 
@@ -117,7 +117,7 @@ namespace JobsOfOpportunity
                             if (!carrier.CurJob.targetQueueB.Select(x => x.Thing?.def).Contains(t.def))
                                 return Halt(__result = false);
                             Debug.WriteLine(
-                                $"APPROVED {t} {t.Position} as ingredients for {beforeCarry.carryTarget}"
+                                $"APPROVED {t} {t.Position} as ingredients for {beforeCarry.destTarget}"
                                 + $" headed to same-priority storage {foundCellGroup} {foundCell}.");
                         }
                     }
@@ -125,8 +125,8 @@ namespace JobsOfOpportunity
 
                 if (puahCallStack.Contains(PuahMethod_WorkGiver_HaulToInventory_AllocateThingAt)) {
                     if (puah == null) {
-                        puah = new PuahWithBetterUnloading();
-                        specialHauls.SetOrAdd(carrier, puah);
+                        puah = new PuahDetour();
+                        haulDetours.SetOrAdd(carrier, puah);
                     }
                     puah.TrackThing(t, foundCell);
                 }
@@ -173,7 +173,7 @@ namespace JobsOfOpportunity
 
                 if (!slotGroup.parent.Accepts(thing)) continue; // original
 
-                // #ClosestToTarget
+                // closest to target
                 var position = opportunity.IsValid  ? opportunity.Cell :
                     beforeCarry.IsValid             ? beforeCarry.Cell :
                     thing.SpawnedOrAnyParentSpawned ? thing.PositionHeld : pawn.PositionHeld; // original

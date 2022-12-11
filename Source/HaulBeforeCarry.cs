@@ -21,7 +21,7 @@ namespace JobsOfOpportunity
         {
             [HarmonyPostfix]
             // clear this so our code that ran for `HasJobOnThing` can re-run for `JobOnThing`
-            static void ClearTempSpecialHaul(Pawn pawn) => specialHauls.Remove(pawn);
+            static void ClearTempSpecialHaul(Pawn pawn) => haulDetours.Remove(pawn);
         }
 
         [HarmonyPatch(typeof(WorkGiver_ConstructDeliverResources), "ResourceDeliverJobFor")]
@@ -83,18 +83,17 @@ namespace JobsOfOpportunity
             }
         }
 
-        public class PuahBeforeCarry : PuahWithBetterUnloading
+        public class BeforeCarryDetour : HaulDetour
         {
-            public LocalTargetInfo carryTarget;
-            public IntVec3         storeCell;
+            public override string GetLoadReport(string text) => "HaulBeforeCarry_LoadReport".ModTranslate(text.Named("ORIGINAL"), destTarget.Label.Named("DESTINATION"));
+        }
 
-            public PuahBeforeCarry(LocalTargetInfo carryTarget, IntVec3 storeCell) {
-                this.carryTarget = carryTarget;
-                this.storeCell   = storeCell;
-            }
+        public class PuahBeforeCarryDetour : PuahDetour
+        {
+            public IntVec3 storeCell;
 
-            public override string GetLoadReport(string text)   => "HaulBeforeCarry_LoadReport".ModTranslate(text.Named("ORIGINAL"), carryTarget.Label.Named("DESTINATION"));
-            public override string GetUnloadReport(string text) => "HaulBeforeCarry_UnloadReport".ModTranslate(text.Named("ORIGINAL"), carryTarget.Label.Named("DESTINATION"));
+            public override string GetLoadReport(string text)   => "HaulBeforeCarry_LoadReport".ModTranslate(text.Named("ORIGINAL"), destTarget.Label.Named("DESTINATION"));
+            public override string GetUnloadReport(string text) => "HaulBeforeCarry_UnloadReport".ModTranslate(text.Named("ORIGINAL"), destTarget.Label.Named("DESTINATION"));
         }
 
         // #HaulBeforeBill #HaulBeforeSupply
@@ -129,10 +128,10 @@ namespace JobsOfOpportunity
                     }
                 }
 
-                var puahJob = PuahJob(new PuahBeforeCarry(carryTarget, storeCell), pawn, thing, storeCell);
+                var puahJob = PuahJob(new PuahBeforeCarryDetour { destTarget = carryTarget, storeCell = storeCell }, pawn, thing, storeCell);
                 if (puahJob != null) return puahJob;
 
-                specialHauls.SetOrAdd(pawn, new SpecialHaul("HaulBeforeCarry_LoadReport", carryTarget));
+                haulDetours.SetOrAdd(pawn, new BeforeCarryDetour { destTarget = carryTarget });
                 return HaulAIUtility.HaulToCellStorageJob(pawn, thing, storeCell, false);
             }
 
