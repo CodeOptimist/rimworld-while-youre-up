@@ -150,15 +150,17 @@ namespace JobsOfOpportunity
 
                             if (DebugViewSettings.drawOpportunisticJobs) {
                                 for (var _ = 0; _ < 3; _++) {
-                                    pawn.Map.debugDrawer.FlashCell(pawn.Position,  0.50f, pawn.Name.ToStringShort, 600);
-                                    pawn.Map.debugDrawer.FlashCell(thing.Position, 0.62f, pawn.Name.ToStringShort, 600);
-                                    pawn.Map.debugDrawer.FlashCell(storeCell,      0.22f, pawn.Name.ToStringShort, 600);
-                                    pawn.Map.debugDrawer.FlashCell(jobTarget.Cell, 0.0f,  pawn.Name.ToStringShort, 600);
+                                    var duration = 600;
+                                    pawn.Map.debugDrawer.FlashCell(pawn.Position,  0.50f, pawn.Name.ToStringShort, duration);
+                                    pawn.Map.debugDrawer.FlashCell(thing.Position, 0.62f, pawn.Name.ToStringShort, duration);
+                                    pawn.Map.debugDrawer.FlashCell(storeCell,      0.22f, pawn.Name.ToStringShort, duration);
+                                    pawn.Map.debugDrawer.FlashCell(jobTarget.Cell, 0.0f,  pawn.Name.ToStringShort, duration);
 
-                                    pawn.Map.debugDrawer.FlashLine(pawn.Position,  jobTarget.Cell, 600, SimpleColor.Red);
-                                    pawn.Map.debugDrawer.FlashLine(pawn.Position,  thing.Position, 600, SimpleColor.Green);
-                                    pawn.Map.debugDrawer.FlashLine(thing.Position, storeCell,      600, SimpleColor.Green);
-                                    pawn.Map.debugDrawer.FlashLine(storeCell,      jobTarget.Cell, 600, SimpleColor.Green);
+                                    pawn.Map.debugDrawer.FlashLine(pawn.Position,  jobTarget.Cell, duration, SimpleColor.Red);
+                                    pawn.Map.debugDrawer.FlashLine(pawn.Position,  thing.Position, duration, SimpleColor.Green);
+                                    pawn.Map.debugDrawer.FlashLine(thing.Position, storeCell,      duration, SimpleColor.Green);
+                                    // first ingredient if a bill
+                                    pawn.Map.debugDrawer.FlashLine(storeCell, jobTarget.Cell, duration, SimpleColor.Green);
                                 }
                             }
 
@@ -199,8 +201,9 @@ namespace JobsOfOpportunity
                 if (!TryFindBestBetterStoreCellFor_ClosestToTarget(
                         thing, jobTarget, IntVec3.Invalid, pawn, pawn.Map, currentPriority, pawn.Faction, out storeCell, maxRanges.expandCount == 0))
                     return CanHaulResult.HardFail;
-            } else
-                Debug.WriteLine($"{RealTime.frameCount} Cache hit! (Size: {opportunityCachedStoreCells.Count}) CanHaulResult");
+            }
+            // else
+            //     Debug.WriteLine($"{RealTime.frameCount} Cache hit! (Size: {opportunityCachedStoreCells.Count}) CanHaulResult");
 
             // we need storeCell everywhere, so cache it
             opportunityCachedStoreCells.SetOrAdd(thing, storeCell);

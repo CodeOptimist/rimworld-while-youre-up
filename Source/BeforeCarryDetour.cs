@@ -118,13 +118,14 @@ namespace JobsOfOpportunity
                 if (DebugViewSettings.drawOpportunisticJobs) {
                     // ReSharper disable once RedundantArgumentDefaultValue
                     for (var _ = 0; _ < 3; _++) {
-                        pawn.Map.debugDrawer.FlashCell(thing.Position,   0.62f, pawn.Name.ToStringShort, 600);
-                        pawn.Map.debugDrawer.FlashCell(storeCell,        0.22f, pawn.Name.ToStringShort, 600);
-                        pawn.Map.debugDrawer.FlashCell(carryTarget.Cell, 0.0f,  pawn.Name.ToStringShort, 600);
+                        var duration = 600;
+                        pawn.Map.debugDrawer.FlashCell(thing.Position,   0.62f, pawn.Name.ToStringShort, duration);
+                        pawn.Map.debugDrawer.FlashCell(storeCell,        0.22f, pawn.Name.ToStringShort, duration);
+                        pawn.Map.debugDrawer.FlashCell(carryTarget.Cell, 0.0f,  pawn.Name.ToStringShort, duration);
 
-                        pawn.Map.debugDrawer.FlashLine(thing.Position, carryTarget.Cell, 600, SimpleColor.Magenta);
-                        pawn.Map.debugDrawer.FlashLine(thing.Position, storeCell,        600, SimpleColor.Cyan);
-                        pawn.Map.debugDrawer.FlashLine(storeCell,      carryTarget.Cell, 600, SimpleColor.Cyan);
+                        pawn.Map.debugDrawer.FlashLine(thing.Position, carryTarget.Cell, duration, SimpleColor.Magenta);
+                        pawn.Map.debugDrawer.FlashLine(thing.Position, storeCell,        duration, SimpleColor.Cyan);
+                        pawn.Map.debugDrawer.FlashLine(storeCell,      carryTarget.Cell, duration, SimpleColor.Cyan);
                     }
                 }
 

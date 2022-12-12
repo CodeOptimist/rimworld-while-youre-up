@@ -48,7 +48,7 @@ namespace JobsOfOpportunity
                 foundCell = IntVec3.Invalid;
 
                 if (carrier == null || !settings.Enabled || !settings.UsePickUpAndHaulPlus) return Continue();
-                // todo we really need to check both? maybe true; explain if so
+                // unload job is ongoing, multiple ticks
                 var isUnloadJob = carrier.CurJobDef == DefDatabase<JobDef>.GetNamed("UnloadYourHauledInventory");
                 if (!puahCallStack.Any() && !isUnloadJob) return Continue();
 
@@ -62,9 +62,8 @@ namespace JobsOfOpportunity
                         cachedStoreCells.AddRange(opportunityCachedStoreCells); // inherit cache if available (will be same tick)
                     if (!cachedStoreCells.TryGetValue(t, out foundCell))
                         foundCell = IntVec3.Invalid;
-                    else
-                        // ReSharper disable once PossibleNullReferenceException
-                        Debug.WriteLine($"{RealTime.frameCount} Cache hit! (Size: {cachedStoreCells.Count}) {MethodBase.GetCurrentMethod().Name}");
+                    // else
+                    //     Debug.WriteLine($"{RealTime.frameCount} Cache hit! (Size: {cachedStoreCells.Count}) {MethodBase.GetCurrentMethod().Name}");
 
                     // we reproduce PUAH's skipCells in our own TryFindStore but we also need it here with caching
                     if (foundCell.IsValid && hasSkipCells) {
@@ -92,8 +91,42 @@ namespace JobsOfOpportunity
                 if (canCache)
                     cachedStoreCells.SetOrAdd(t, foundCell);
 
-                if (isUnloadJob)
+                // since unloading occurs many ticks later than loading, circumstances may have changed
+                // if we're only hauling because it was opportune, and the goal posts have been moved,
+                // let's throw a (figurative) fit and drop everything so we aren't further delayed from the original non-haul job
+                if (isUnloadJob) {
+                    if (opportunity != null && opportunity.defHauls.TryGetValue(t.def, out var originalFoundCell)) {
+                        if (foundCell.GetSlotGroup(map) != originalFoundCell.GetSlotGroup(map)) {
+                            var distance           = carrier.Position.DistanceTo(foundCell) + foundCell.DistanceTo(opportunityTarget.Cell);
+                            var distanceToOriginal = carrier.Position.DistanceTo(originalFoundCell) + originalFoundCell.DistanceTo(opportunityTarget.Cell);
+                            if (distance > distanceToOriginal) {
+#if DEBUG
+                                if (!Find.Selector.AnyPawnSelected) {
+                                    map.debugDrawer.debugCells.Clear();
+                                    map.debugDrawer.debugLines.Clear();
+
+                                    for (var _ = 0; _ < 3; _++) {
+                                        var duration = 600;
+                                        map.debugDrawer.FlashCell(foundCell,              0.26f, carrier.Name.ToStringShort, duration);
+                                        map.debugDrawer.FlashCell(t.Position,             0.62f, carrier.Name.ToStringShort, duration);
+                                        map.debugDrawer.FlashCell(originalFoundCell,      0.22f, carrier.Name.ToStringShort, duration);
+                                        map.debugDrawer.FlashCell(opportunityTarget.Cell, 0.0f,  carrier.Name.ToStringShort, duration);
+
+                                        map.debugDrawer.FlashLine(carrier.Position,  foundCell,              duration, SimpleColor.Yellow);
+                                        map.debugDrawer.FlashLine(foundCell,         opportunityTarget.Cell, duration, SimpleColor.Yellow);
+                                        map.debugDrawer.FlashLine(t.Position,        originalFoundCell,      duration, SimpleColor.Green);
+                                        map.debugDrawer.FlashLine(originalFoundCell, opportunityTarget.Cell, duration, SimpleColor.Green);
+                                    }
+                                    CameraJumper.TryJumpAndSelect(carrier);
+                                    Find.TickManager.Pause();
+                                }
+#endif
+                                return Halt(__result = false);
+                            }
+                        }
+                    }
                     return Halt(__result = true);
+                }
 
                 if (opportunity != null && !opportunity.TrackPuahThingIfOpportune(t, carrier, ref foundCell))
                     return Halt(__result = false);
