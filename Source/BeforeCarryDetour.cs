@@ -21,7 +21,7 @@ namespace JobsOfOpportunity
         {
             [HarmonyPostfix]
             // clear this so our code that ran for `HasJobOnThing` can re-run for `JobOnThing`
-            static void ClearTempDetour(Pawn pawn) => haulDetours.GetValueSafe(pawn)?.Deactivate();
+            static void ClearTempDetour(Pawn pawn) => detours.GetValueSafe(pawn)?.Deactivate();
         }
 
         [HarmonyPatch(typeof(WorkGiver_ConstructDeliverResources), "ResourceDeliverJobFor")]

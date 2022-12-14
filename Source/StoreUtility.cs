@@ -16,7 +16,7 @@ namespace JobsOfOpportunity
     {
         [TweakValue("WhileYoureUp")]
         // ReSharper disable once FieldCanBeMadeReadOnly.Local
-        public static bool pauseIfPawnUnloadBamboozled;
+        public static bool pauseOnPawnUnloadingBamboozled;
         static readonly Dictionary<Thing, IntVec3> cachedStoreCells = new();
 
         [HarmonyPatch]
@@ -77,7 +77,7 @@ namespace JobsOfOpportunity
                     }
                 }
 
-                var detour      = haulDetours.GetValueSafe(carrier);
+                var detour      = detours.GetValueSafe(carrier);
                 var jobTarget   = detour?.opportunity_jobTarget ?? LocalTargetInfo.Invalid;
                 var carryTarget = detour?.beforeCarry_carryTarget ?? LocalTargetInfo.Invalid;
 
@@ -105,12 +105,12 @@ namespace JobsOfOpportunity
                             var distanceToOriginal = carrier.Position.DistanceTo(originalFoundCell) + originalFoundCell.DistanceTo(detour.opportunity_jobTarget.Cell);
                             if (distance > distanceToOriginal) {
 #if DEBUG
-                                if (pauseIfPawnUnloadBamboozled) {
+                                if (pauseOnPawnUnloadingBamboozled) {
                                     map.debugDrawer.debugCells.Clear();
                                     map.debugDrawer.debugLines.Clear();
                                 }
 
-                                if (pauseIfPawnUnloadBamboozled || DebugViewSettings.drawOpportunisticJobs) {
+                                if (pauseOnPawnUnloadingBamboozled || DebugViewSettings.drawOpportunisticJobs) {
                                     for (var _ = 0; _ < 3; _++) {
                                         var duration = 600;
                                         map.debugDrawer.FlashCell(foundCell,                         0.26f, carrier.Name.ToStringShort, duration);
@@ -125,7 +125,7 @@ namespace JobsOfOpportunity
                                     }
                                 }
 
-                                if (pauseIfPawnUnloadBamboozled) {
+                                if (pauseOnPawnUnloadingBamboozled) {
                                     if (!Find.Selector.AnyPawnSelected) {
                                         CameraJumper.TryJumpAndSelect(carrier);
                                         Find.TickManager.Pause();
@@ -178,9 +178,10 @@ namespace JobsOfOpportunity
             }
         }
 
-        public static bool TryFindBestBetterStoreCellFor_ClosestToTarget(Thing thing, LocalTargetInfo opportunity, LocalTargetInfo beforeCarry, Pawn pawn, Map map,
-            StoragePriority currentPriority,
-            Faction faction, out IntVec3 foundCell, bool needAccurateResult, HashSet<IntVec3> skipCells = null) {
+        public static bool TryFindBestBetterStoreCellFor_ClosestToTarget(
+            Thing thing, LocalTargetInfo opportunity, LocalTargetInfo beforeCarry,
+            Pawn carrier, Map map, StoragePriority currentPriority, Faction faction,
+            out IntVec3 foundCell, bool needAccurateResult, HashSet<IntVec3> skipCells = null) {
             var closestSlot        = IntVec3.Invalid;
             var closestDistSquared = (float)int.MaxValue;
             var foundPriority      = currentPriority;
@@ -219,7 +220,7 @@ namespace JobsOfOpportunity
                 // closest to target
                 var position = opportunity.IsValid  ? opportunity.Cell :
                     beforeCarry.IsValid             ? beforeCarry.Cell :
-                    thing.SpawnedOrAnyParentSpawned ? thing.PositionHeld : pawn.PositionHeld; // original
+                    thing.SpawnedOrAnyParentSpawned ? thing.PositionHeld : carrier.PositionHeld; // original
 
                 // original block
                 var maxCheckedCells = needAccurateResult ? (int)Math.Floor((double)slotGroup.CellsList.Count * Rand.Range(0.005f, 0.018f)) : 0;
@@ -228,7 +229,7 @@ namespace JobsOfOpportunity
                     var distSquared = (float)(position - cell).LengthHorizontalSquared;
                     if (distSquared > closestDistSquared) continue;
                     if (skipCells != null && skipCells.Contains(cell)) continue; // PUAH addition
-                    if (!StoreUtility.IsGoodStoreCell(cell, map, thing, pawn, faction)) continue;
+                    if (!StoreUtility.IsGoodStoreCell(cell, map, thing, carrier, faction)) continue;
 
                     closestSlot        = cell;
                     closestDistSquared = distSquared;

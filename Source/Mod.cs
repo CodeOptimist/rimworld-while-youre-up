@@ -96,7 +96,7 @@ namespace JobsOfOpportunity
         public override string SettingsCategory() => mod.Content.Name;
 
         public static bool AlreadyHauling(Pawn pawn) {
-            if (haulDetours.TryGetValue(pawn, out var detour) && detour.type != DetourType.Inactive) return true;
+            if (detours.TryGetValue(pawn, out var detour) && detour.type != DetourType.Inactive) return true;
 
             // because we may load a game with an incomplete haul
             if (havePuah) {

@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using HarmonyLib;
@@ -11,12 +10,12 @@ namespace JobsOfOpportunity
 {
     partial class Mod
     {
-        public static readonly Dictionary<Pawn, HaulDetour> haulDetours = new();
+        public static readonly Dictionary<Pawn, BaseDetour> detours = new();
 
         public enum DetourType { Inactive, Opportunity, BeforeCarry, ExistingElsePuah, Puah, PuahOpportunity, PuahBeforeCarry }
 
         // 'record' for a pretty `Debug.WriteLine(detour);`
-        public partial record HaulDetour
+        public partial record BaseDetour
         {
             public DetourType                    type;
             public Dictionary<ThingDef, IntVec3> puah_defHauls = new();
@@ -68,12 +67,12 @@ namespace JobsOfOpportunity
             }
         }
 
-        public static HaulDetour SetOrAddDetour(Pawn pawn, DetourType type,
+        public static BaseDetour SetOrAddDetour(Pawn pawn, DetourType type,
             IntVec3? startCell = null, LocalTargetInfo? jobTarget = null,
             IntVec3? storeCell = null, LocalTargetInfo? carryTarget = null) {
-            if (!haulDetours.TryGetValue(pawn, out var detour)) {
-                detour            = new HaulDetour();
-                haulDetours[pawn] = detour;
+            if (!detours.TryGetValue(pawn, out var detour)) {
+                detour        = new BaseDetour();
+                detours[pawn] = detour;
             }
 
             if (type == DetourType.ExistingElsePuah) {
@@ -89,7 +88,6 @@ namespace JobsOfOpportunity
 
             detour.Deactivate(); // wipe lists
             detour.type = type;  // reactivate
-            Debug.WriteLine(detour);
             return detour;
         }
 
@@ -116,8 +114,7 @@ namespace JobsOfOpportunity
         static class JobDriver_HaulToCell__GetReport_Patch
         {
             [HarmonyPostfix]
-            static void GetDetourReport(JobDriver_HaulToCell __instance, ref string __result) =>
-                haulDetours.GetValueSafe(__instance.pawn)?.GetJobReport(ref __result, isLoad: true);
+            static void GetDetourReport(JobDriver_HaulToCell __instance, ref string __result) => detours.GetValueSafe(__instance.pawn)?.GetJobReport(ref __result, isLoad: true);
         }
 
         [HarmonyPatch]
@@ -133,7 +130,7 @@ namespace JobsOfOpportunity
                 var isLoad   = PuahType_JobDriver_HaulToInventory.IsInstanceOfType(__instance);
                 var isUnload = PuahType_JobDriver_UnloadYourHauledInventory.IsInstanceOfType(__instance);
                 if (isLoad || isUnload)
-                    haulDetours.GetValueSafe(__instance.pawn)?.GetJobReport(ref __result, isLoad);
+                    detours.GetValueSafe(__instance.pawn)?.GetJobReport(ref __result, isLoad);
             }
         }
     #endregion
@@ -146,7 +143,7 @@ namespace JobsOfOpportunity
             static void ClearDetourOnFinish(JobDriver __instance) =>
                 __instance.AddFinishAction(
                     () => {
-                        var detour = haulDetours.GetValueSafe(__instance.pawn);
+                        var detour = detours.GetValueSafe(__instance.pawn);
                         if (detour?.type == DetourType.Opportunity || detour?.type == DetourType.BeforeCarry)
                             detour.Deactivate();
                     });
@@ -159,7 +156,7 @@ namespace JobsOfOpportunity
             static MethodBase TargetMethod() => PuahMethod_JobDriver_UnloadYourHauledInventory_MakeNewToils;
 
             [HarmonyPostfix]
-            static void ClearDetourOnFinish(JobDriver __instance) => __instance.AddFinishAction(() => haulDetours.GetValueSafe(__instance.pawn)?.Deactivate());
+            static void ClearDetourOnFinish(JobDriver __instance) => __instance.AddFinishAction(() => detours.GetValueSafe(__instance.pawn)?.Deactivate());
         }
 
         [HarmonyPatch(typeof(Pawn_JobTracker), nameof(Pawn_JobTracker.ClearQueuedJobs))]
@@ -168,7 +165,7 @@ namespace JobsOfOpportunity
             [HarmonyPostfix]
             static void ClearDetour(Pawn ___pawn) {
                 if (___pawn != null)
-                    haulDetours.GetValueSafe(___pawn)?.Deactivate();
+                    detours.GetValueSafe(___pawn)?.Deactivate();
             }
         }
     #endregion

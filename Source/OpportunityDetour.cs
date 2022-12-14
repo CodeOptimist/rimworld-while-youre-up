@@ -259,7 +259,7 @@ namespace JobsOfOpportunity
             return CanHaulResult.Success;
         }
 
-        partial record HaulDetour
+        partial record BaseDetour
         {
             public bool TrackPuahThingIfOpportune(Thing thing, Pawn pawn, ref IntVec3 foundCell) {
                 var isPrepend = pawn.carryTracker?.CarriedThing == thing;
