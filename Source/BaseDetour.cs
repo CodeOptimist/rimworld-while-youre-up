@@ -76,7 +76,7 @@ namespace JobsOfOpportunity
             }
 
             if (type == DetourType.ExistingElsePuah) {
-                if (detour.type == DetourType.PuahOpportunity || detour.type == DetourType.PuahBeforeCarry)
+                if (detour.type is DetourType.PuahOpportunity or DetourType.PuahBeforeCarry)
                     return detour;
                 type = DetourType.Puah;
             }
@@ -99,7 +99,7 @@ namespace JobsOfOpportunity
         partial class Puah_WorkGiver_HaulToInventory__JobOnThing_Patch
         {
             [HarmonyPostfix]
-            static void TrackInitialHaul(WorkGiver_Scanner __instance, Job __result, Pawn pawn, Thing thing) {
+            static void TrackInitialHaul(Job __result, Pawn pawn, Thing thing) {
                 if (__result == null || !settings.Enabled || !settings.UsePickUpAndHaulPlus) return;
                 // thing from parameter because targetA is null because things are in queues instead
                 //  https://github.com/Mehni/PickUpAndHaul/blob/af50a05a8ae5ca64d9b95fee8f593cf91f13be3d/Source/PickUpAndHaul/WorkGiver_HaulToInventory.cs#L98
@@ -144,7 +144,7 @@ namespace JobsOfOpportunity
                 __instance.AddFinishAction(
                     () => {
                         var detour = detours.GetValueSafe(__instance.pawn);
-                        if (detour?.type == DetourType.Opportunity || detour?.type == DetourType.BeforeCarry)
+                        if (detour?.type is DetourType.Opportunity or DetourType.BeforeCarry)
                             detour.Deactivate();
                     });
         }

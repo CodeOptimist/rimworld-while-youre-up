@@ -178,8 +178,7 @@ namespace JobsOfOpportunity
             }
         }
 
-        public static bool TryFindBestBetterStoreCellFor_ClosestToTarget(
-            Thing thing, LocalTargetInfo opportunity, LocalTargetInfo beforeCarry,
+        public static bool TryFindBestBetterStoreCellFor_ClosestToTarget(Thing thing, LocalTargetInfo opportunity, LocalTargetInfo beforeCarry,
             Pawn carrier, Map map, StoragePriority currentPriority, Faction faction,
             out IntVec3 foundCell, bool needAccurateResult, HashSet<IntVec3> skipCells = null) {
             var closestSlot        = IntVec3.Invalid;

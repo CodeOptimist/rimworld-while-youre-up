@@ -129,6 +129,7 @@ namespace JobsOfOpportunity
             // todo why is build filter XML filled with junk?! v1.4 change?
             // C:\Users\Chris\AppData\LocalLow\Ludeon Studios\RimWorld by Ludeon Studios\Config\Mod_JobsOfOpportunity_Mod.xml
             [SuppressMessage("ReSharper", "StringLiteralTypo")]
+            [SuppressMessage("ReSharper", "CommentTypo")]
             public static void ResetFilters() {
                 settings.opportunityDefaultBuildingFilter.SetAllowAll(null, true);
                 settings.hbcDefaultBuildingFilter.SetDisallowAll();
@@ -444,7 +445,7 @@ namespace JobsOfOpportunity
                     opportunityBuildingFilterXmlNode = Scribe.loader.curXmlParent[nameof(opportunityBuildingFilter)];
                 }
 
-                if (Scribe.mode == LoadSaveMode.LoadingVars || Scribe.mode == LoadSaveMode.Saving)
+                if (Scribe.mode is LoadSaveMode.LoadingVars or LoadSaveMode.Saving)
                     DebugViewSettings.drawOpportunisticJobs = DrawSpecialHauls;
 
                 if (Scribe.mode == LoadSaveMode.LoadingVars) {
