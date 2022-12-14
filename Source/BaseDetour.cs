@@ -168,6 +168,13 @@ namespace JobsOfOpportunity
                     detours.GetValueSafe(___pawn)?.Deactivate();
             }
         }
+
+        [HarmonyPatch(typeof(Pawn), nameof(Pawn.Destroy))]
+        static class Pawn__Destroy_Patch
+        {
+            [HarmonyPostfix]
+            static void ClearDetour(Pawn __instance) => detours.Remove(__instance);
+        }
     #endregion
     }
 }
