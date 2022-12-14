@@ -148,7 +148,7 @@ namespace JobsOfOpportunity
                     var foundCellGroup = foundCell.GetSlotGroup(map);
 
                     // only grab extra things going to the same store
-                    if (foundCellGroup != detour.beforeCarry_storeCell.GetSlotGroup(map)) return Halt(__result = false);
+                    if (foundCellGroup != detour.beforeCarry_puah_storeCell.GetSlotGroup(map)) return Halt(__result = false);
                     // Debug.WriteLine($"{t} is destined for same storage {foundCellGroup} {foundCell}");
 
                     if (foundCellGroup.Settings.Priority == t.Position.GetSlotGroup(map)?.Settings?.Priority) {

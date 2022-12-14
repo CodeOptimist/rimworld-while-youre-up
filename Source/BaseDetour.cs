@@ -5,6 +5,8 @@ using HarmonyLib;
 using RimWorld;
 using Verse;
 using Verse.AI;
+// ReSharper disable once RedundantUsingDirective
+using Debug = System.Diagnostics.Debug;
 
 namespace JobsOfOpportunity
 {
@@ -17,16 +19,17 @@ namespace JobsOfOpportunity
         // 'record' for a pretty `Debug.WriteLine(detour);`
         public partial record BaseDetour
         {
-            public DetourType                    type;
+            public DetourType type;
+
             public Dictionary<ThingDef, IntVec3> puah_defHauls = new();
 
-            public IntVec3         opportunity_startCell;
-            public LocalTargetInfo opportunity_jobTarget;
+            public IntVec3         opportunity_puah_startCell;
+            public LocalTargetInfo opportunity_jobTarget; // vanilla & PUAH
             // reminder that storeCell is just *some* cell in our stockpile, actual unload cell is determined at unload
             public List<(Thing thing, IntVec3 storeCell)> opportunity_hauls = new();
 
-            public IntVec3         beforeCarry_storeCell;
-            public LocalTargetInfo beforeCarry_carryTarget;
+            public IntVec3         beforeCarry_puah_storeCell;
+            public LocalTargetInfo beforeCarry_carryTarget; // vanilla & PUAH
 
             public void Deactivate() {
                 type = DetourType.Inactive;
@@ -81,10 +84,10 @@ namespace JobsOfOpportunity
                 type = DetourType.Puah;
             }
 
-            detour.opportunity_startCell   = startCell ?? IntVec3.Invalid;
-            detour.opportunity_jobTarget   = jobTarget ?? LocalTargetInfo.Invalid;
-            detour.beforeCarry_storeCell   = storeCell ?? IntVec3.Invalid;
-            detour.beforeCarry_carryTarget = carryTarget ?? LocalTargetInfo.Invalid;
+            detour.opportunity_puah_startCell = startCell ?? IntVec3.Invalid;
+            detour.opportunity_jobTarget      = jobTarget ?? LocalTargetInfo.Invalid;
+            detour.beforeCarry_puah_storeCell = storeCell ?? IntVec3.Invalid;
+            detour.beforeCarry_carryTarget    = carryTarget ?? LocalTargetInfo.Invalid;
 
             detour.Deactivate(); // wipe lists
             detour.type = type;  // reactivate

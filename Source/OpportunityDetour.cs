@@ -263,7 +263,7 @@ namespace JobsOfOpportunity
                 var isPrepend = pawn.carryTracker?.CarriedThing == thing;
                 TrackPuahThing(thing, foundCell, isPrepend, trackDef: false);
 
-                var curPos           = opportunity_startCell;
+                var curPos           = opportunity_puah_startCell;
                 var startToLastThing = 0f;
                 foreach (var (thing_, _) in opportunity_hauls) {
                     startToLastThing += curPos.DistanceTo(thing_.Position);
@@ -300,7 +300,7 @@ namespace JobsOfOpportunity
 
                 var lastStoreToJob = curPos.DistanceTo(opportunity_jobTarget.Cell);
 
-                var origTrip          = opportunity_startCell.DistanceTo(opportunity_jobTarget.Cell);
+                var origTrip          = opportunity_puah_startCell.DistanceTo(opportunity_jobTarget.Cell);
                 var totalTrip         = startToLastThing + lastThingToFirstStore + firstStoreToLastStore + lastStoreToJob;
                 var maxTotalTrip      = origTrip * settings.Opportunity_MaxTotalTripPctOrigTrip;
                 var newLegs           = startToLastThing + firstStoreToLastStore + lastStoreToJob;
@@ -322,12 +322,12 @@ namespace JobsOfOpportunity
                 var storeCells = haulsByUnloadDistance.Select(x => x.storeCell).ToList();
                 Debug.WriteLine($"APPROVED {thing} -> {foundCell} for {pawn}");
                 Debug.WriteLine(
-                    $"\tstartToLastThing: {pawn} {opportunity_startCell} -> {string.Join(" -> ", opportunity_hauls.Select(x => $"{x.thing} {x.thing.Position}"))} = {startToLastThing}");
+                    $"\tstartToLastThing: {pawn} {opportunity_puah_startCell} -> {string.Join(" -> ", opportunity_hauls.Select(x => $"{x.thing} {x.thing.Position}"))} = {startToLastThing}");
                 Debug.WriteLine($"\tlastThingToFirstStore: {thing} {thing.Position} -> {storeCells.First().GetSlotGroup(pawn.Map)} {storeCells.First()} = {lastThingToFirstStore}");
                 Debug.WriteLine($"\tfirstStoreToLastStore: {string.Join(" -> ", storeCells.Select(x => $"{x.GetSlotGroup(pawn.Map)} {x}"))} = {firstStoreToLastStore}");
                 Debug.WriteLine(
                     $"\tlastStoreToJob: {storeCells.Last().GetSlotGroup(pawn.Map)} {storeCells.Last()} -> {opportunity_jobTarget} {opportunity_jobTarget.Cell} = {lastStoreToJob}");
-                Debug.WriteLine($"\torigTrip: {pawn} {opportunity_startCell} -> {opportunity_jobTarget} {opportunity_jobTarget.Cell} = {origTrip}");
+                Debug.WriteLine($"\torigTrip: {pawn} {opportunity_puah_startCell} -> {opportunity_jobTarget} {opportunity_jobTarget.Cell} = {origTrip}");
                 Debug.WriteLine($"\ttotalTrip: {startToLastThing} + {lastThingToFirstStore} + {firstStoreToLastStore} + {lastStoreToJob}  = {totalTrip}");
                 Debug.WriteLine($"\tmaxTotalTrip: {origTrip} * {settings.Opportunity_MaxTotalTripPctOrigTrip} = {maxTotalTrip}");
                 Debug.WriteLine($"\tnewLegs: {startToLastThing} + {firstStoreToLastStore} + {lastStoreToJob} = {newLegs}");
