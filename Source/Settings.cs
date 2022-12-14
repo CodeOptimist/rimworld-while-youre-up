@@ -69,18 +69,18 @@ namespace JobsOfOpportunity
         {
             static          Vector2                         opportunityScrollPosition;
             static          Listing_SettingsTreeThingFilter opportunityTreeFilter;
-            static readonly QuickSearchFilter               opportunitySearchFilter = new QuickSearchFilter();
-            static readonly QuickSearchWidget               opportunitySearchWidget = new QuickSearchWidget();
-            static readonly SettingsThingFilter             opportunityDummyFilter  = new SettingsThingFilter();
+            static readonly QuickSearchFilter               opportunitySearchFilter = new();
+            static readonly QuickSearchWidget               opportunitySearchWidget = new();
+            static readonly SettingsThingFilter             opportunityDummyFilter  = new();
 
             static          Vector2                         hbcScrollPosition;
             static          Listing_SettingsTreeThingFilter hbcTreeFilter;
-            static readonly QuickSearchFilter               hbcSearchFilter = new QuickSearchFilter();
-            static readonly QuickSearchWidget               hbcSearchWidget = new QuickSearchWidget();
-            static readonly SettingsThingFilter             hbcDummyFilter  = new SettingsThingFilter();
+            static readonly QuickSearchFilter               hbcSearchFilter = new();
+            static readonly QuickSearchWidget               hbcSearchWidget = new();
+            static readonly SettingsThingFilter             hbcDummyFilter  = new();
 
             static readonly ThingCategoryDef storageBuildingCategoryDef;
-            static readonly List<TabRecord>  tabsList = new List<TabRecord>();
+            static readonly List<TabRecord>  tabsList = new();
             static          Tab              tab      = Tab.Opportunity;
 
             static SettingsWindow() {
@@ -387,7 +387,7 @@ namespace JobsOfOpportunity
 
             public int Opportunity_MaxStartToThingRegionLookCount, Opportunity_MaxStoreToJobRegionLookCount;
 
-            internal readonly SettingsThingFilter opportunityDefaultBuildingFilter = new SettingsThingFilter();
+            internal readonly SettingsThingFilter opportunityDefaultBuildingFilter = new();
             internal          SettingsThingFilter opportunityBuildingFilter;
             internal          XmlNode             opportunityBuildingFilterXmlNode;
 
@@ -395,7 +395,7 @@ namespace JobsOfOpportunity
             public bool HaulBeforeCarry_Supplies, HaulBeforeCarry_Bills, HaulBeforeCarry_Bills_NeedsInitForCs, HaulBeforeCarry_ToEqualPriority, HaulBeforeCarry_ToStockpiles,
                 HaulBeforeCarry_AutoBuildings;
 
-            internal readonly SettingsThingFilter hbcDefaultBuildingFilter = new SettingsThingFilter();
+            internal readonly SettingsThingFilter hbcDefaultBuildingFilter = new();
             internal          SettingsThingFilter hbcBuildingFilter;
             internal          XmlNode             hbcBuildingFilterXmlNode;
             public            SettingsThingFilter Opportunity_BuildingFilter     => Opportunity_AutoBuildings ? opportunityDefaultBuildingFilter : opportunityBuildingFilter;

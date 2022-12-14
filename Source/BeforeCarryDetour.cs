@@ -49,22 +49,21 @@ namespace JobsOfOpportunity
                     (i, codes) => i == afterNearbyIdx,
                     (i, codes) => new List<CodeInstruction> {
                         // job = BeforeSupplyDetourJob(pawn, need, (Thing) c, foundRes);
-                        new CodeInstruction(OpCodes.Ldarg_1),                       // Pawn pawn
-                        new CodeInstruction(codes[needDeclaringObjIdx + 2].opcode), // ThingDefCountClass <>c__DisplayClass9_1
-                        new CodeInstruction(OpCodes.Ldfld, needField),              //                                        .need
-                        new CodeInstruction(OpCodes.Ldarg_2),                       // IConstructible c
-                        new CodeInstruction(OpCodes.Castclass, typeof(Thing)),      // (Thing) c
-                        codes[foundResIdx + 1].Clone(),                             // Thing foundRes
-                        codes[foundResIdx + 2].Clone(),                             // Thing foundRes
-                        new CodeInstruction(
-                            OpCodes.Call, AccessTools.DeclaredMethod(typeof(WorkGiver_ConstructDeliverResources__ResourceDeliverJobFor_Patch), nameof(BeforeSupplyDetourJob))),
-                        new CodeInstruction(OpCodes.Stloc_S, jobVar),
+                        new(OpCodes.Ldarg_1),                       // Pawn pawn
+                        new(codes[needDeclaringObjIdx + 2].opcode), // ThingDefCountClass <>c__DisplayClass9_1
+                        new(OpCodes.Ldfld, needField),              //                                        .need
+                        new(OpCodes.Ldarg_2),                       // IConstructible c
+                        new(OpCodes.Castclass, typeof(Thing)),      // (Thing) c
+                        codes[foundResIdx + 1].Clone(),             // Thing foundRes
+                        codes[foundResIdx + 2].Clone(),             // Thing foundRes
+                        new(OpCodes.Call, AccessTools.DeclaredMethod(typeof(WorkGiver_ConstructDeliverResources__ResourceDeliverJobFor_Patch), nameof(BeforeSupplyDetourJob))),
+                        new(OpCodes.Stloc_S, jobVar),
 
                         // if (job != null) return job;
-                        new CodeInstruction(OpCodes.Ldloc_S,   jobVar),
-                        new CodeInstruction(OpCodes.Brfalse_S, afterNearby),
-                        new CodeInstruction(OpCodes.Ldloc_S,   jobVar),
-                        new CodeInstruction(OpCodes.Ret),
+                        new(OpCodes.Ldloc_S, jobVar),
+                        new(OpCodes.Brfalse_S, afterNearby),
+                        new(OpCodes.Ldloc_S, jobVar),
+                        new(OpCodes.Ret),
                     });
 
                 return t.GetFinalCodes();

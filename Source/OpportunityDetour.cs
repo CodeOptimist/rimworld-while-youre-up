@@ -16,7 +16,7 @@ namespace JobsOfOpportunity
 {
     partial class Mod
     {
-        public static readonly Dictionary<Thing, IntVec3> opportunityCachedStoreCells = new Dictionary<Thing, IntVec3>(); // #CacheTick
+        public static readonly Dictionary<Thing, IntVec3> opportunityCachedStoreCells = new(); // #CacheTick
 
         [HarmonyPatch(typeof(Pawn_JobTracker), nameof(Pawn_JobTracker.TryOpportunisticJob))]
         static class Pawn_JobTracker__TryOpportunisticJob_Patch
@@ -35,13 +35,13 @@ namespace JobsOfOpportunity
                     -3,
                     (i, codes) => i == listerHaulablesIdx,
                     (i, codes) => new List<CodeInstruction> {
-                        new CodeInstruction(OpCodes.Call,      AccessTools.DeclaredMethod(typeof(Pawn_JobTracker__TryOpportunisticJob_Patch), nameof(IsEnabled))),
-                        new CodeInstruction(OpCodes.Brfalse_S, skipMod),
+                        new(OpCodes.Call, AccessTools.DeclaredMethod(typeof(Pawn_JobTracker__TryOpportunisticJob_Patch), nameof(IsEnabled))),
+                        new(OpCodes.Brfalse_S, skipMod),
 
-                        new CodeInstruction(OpCodes.Ldarg_0),
-                        new CodeInstruction(OpCodes.Ldarg_2),
-                        new CodeInstruction(OpCodes.Call, AccessTools.DeclaredMethod(typeof(Pawn_JobTracker__TryOpportunisticJob_Patch), nameof(TryOpportunisticJob))),
-                        new CodeInstruction(OpCodes.Ret),
+                        new(OpCodes.Ldarg_0),
+                        new(OpCodes.Ldarg_2),
+                        new(OpCodes.Call, AccessTools.DeclaredMethod(typeof(Pawn_JobTracker__TryOpportunisticJob_Patch), nameof(TryOpportunisticJob))),
+                        new(OpCodes.Ret),
                     }, true);
 
                 t.codes[t.MatchIdx - 3].labels.Add(skipMod);

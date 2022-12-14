@@ -13,7 +13,7 @@ namespace JobsOfOpportunity
     {
     #region PUAH call stack
         // so our StoreUtility code can know from where within Pick Up And Haul it's executing
-        static readonly List<MethodBase> puahCallStack = new List<MethodBase>();
+        static readonly List<MethodBase> puahCallStack = new();
 
         static void PushMethod(MethodBase method) => puahCallStack.Add(method);
 
@@ -80,7 +80,7 @@ namespace JobsOfOpportunity
             }
         }
 
-        static readonly List<Thing> thingsInReducedPriorityStore = new List<Thing>();
+        static readonly List<Thing> thingsInReducedPriorityStore = new();
 
         [HarmonyPatch]
         static class Puah_ListerHaulables_ThingsPotentiallyNeedingHauling_Patch

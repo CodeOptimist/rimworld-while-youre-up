@@ -75,7 +75,7 @@ namespace JobsOfOpportunity
 
         // Prefix for our XML keys (language translations); PackageId may change (e.g. "__copy__" suffix).
         public static   string  modId   = "CodeOptimist.WhileYoureUp";
-        static readonly Harmony harmony = new Harmony(modId); // just a unique id
+        static readonly Harmony harmony = new(modId); // just a unique id
 
         public Mod(ModContentPack content) : base(content) {
             mod       = this;  // static reference to mod for e.g. mod name in log messages
