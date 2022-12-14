@@ -13,7 +13,7 @@ namespace JobsOfOpportunity
             DebugViewSettings.drawOpportunisticJobs = true;
 
             Thing.allowDestroyNonDestroyable = true;
-            if (Autotests_ColonyMaker.usedCells == null)
+            if (Autotests_ColonyMaker.usedCells is null)
                 Autotests_ColonyMaker.usedCells = new BoolGrid(Autotests_ColonyMaker.Map);
             else
                 Autotests_ColonyMaker.usedCells.ClearAndResizeTo(Autotests_ColonyMaker.Map);

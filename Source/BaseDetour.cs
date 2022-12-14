@@ -100,7 +100,7 @@ namespace JobsOfOpportunity
         {
             [HarmonyPostfix]
             static void TrackInitialHaul(Job __result, Pawn pawn, Thing thing) {
-                if (__result == null || !settings.Enabled || !settings.UsePickUpAndHaulPlus) return;
+                if (__result is null || !settings.Enabled || !settings.UsePickUpAndHaulPlus) return;
                 // thing from parameter because targetA is null because things are in queues instead
                 //  https://github.com/Mehni/PickUpAndHaul/blob/af50a05a8ae5ca64d9b95fee8f593cf91f13be3d/Source/PickUpAndHaul/WorkGiver_HaulToInventory.cs#L98
                 // PUAH has a `haulMoreWork` toil that can re-trigger `JobOnThing()` for every type of detour
@@ -164,7 +164,7 @@ namespace JobsOfOpportunity
         {
             [HarmonyPostfix]
             static void ClearDetour(Pawn ___pawn) {
-                if (___pawn != null)
+                if (___pawn is not null)
                     detours.GetValueSafe(___pawn)?.Deactivate();
             }
         }

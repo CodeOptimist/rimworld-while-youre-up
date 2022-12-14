@@ -101,7 +101,7 @@ namespace JobsOfOpportunity
                 storageBuildingCategoryDef = new ThingCategoryDef();
                 var storageBuildings = DefDatabase<ThingDef>.AllDefsListForReading.Where(x => storageBuildingTypes.Contains(x.thingClass)).ToList();
                 foreach (var storageMod in storageBuildings.Select(x => x.modContentPack).Distinct()) {
-                    if (storageMod == null) continue;
+                    if (storageMod is null) continue;
                     var modCategoryDef = new ThingCategoryDef { label = storageMod.Name };
                     storageBuildingCategoryDef.childCategories.Add(modCategoryDef);
                     modCategoryDef.childThingDefs.AddRange(storageBuildings.Where(x => x.modContentPack == storageMod).Select(x => x));
@@ -114,11 +114,11 @@ namespace JobsOfOpportunity
 
                 ResetFilters();
 
-                if (settings.opportunityBuildingFilter == null) {
+                if (settings.opportunityBuildingFilter is null) {
                     settings.opportunityBuildingFilter = new SettingsThingFilter();
                     settings.opportunityBuildingFilter?.CopyAllowancesFrom(settings.opportunityDefaultBuildingFilter);
                 }
-                if (settings.hbcBuildingFilter == null) {
+                if (settings.hbcBuildingFilter is null) {
                     settings.hbcBuildingFilter = new SettingsThingFilter();
                     settings.hbcBuildingFilter?.CopyAllowancesFrom(settings.hbcDefaultBuildingFilter);
                 }

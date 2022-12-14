@@ -50,13 +50,13 @@ namespace JobsOfOpportunity
                 PuahMethod_JobDriver_UnloadYourHauledInventory_FirstUnloadableThing, PuahMethod_JobDriver_UnloadYourHauledInventory_MakeNewToils,
                 PuahField_WorkGiver_HaulToInventory_SkipCells,
             }
-            .All(x => x != null);
+            .All(x => x is not null);
 
         static readonly MethodInfo PuahMethod_CompHauledToInventory_GetComp =
             havePuah ? AccessTools.DeclaredMethod(typeof(ThingWithComps), "GetComp").MakeGenericMethod(PuahType_CompHauledToInventory) : null;
 
         static readonly Type HugsType_Dialog_VanillaModSettings = GenTypes.GetTypeInAnyAssembly("HugsLib.Settings.Dialog_VanillaModSettings");
-        static readonly bool haveHugs                           = HugsType_Dialog_VanillaModSettings != null;
+        static readonly bool haveHugs                           = HugsType_Dialog_VanillaModSettings is not null;
 
         static readonly FieldInfo SettingsCurModField = haveHugs
             ? AccessTools.DeclaredField(HugsType_Dialog_VanillaModSettings, "selectedMod")
@@ -66,7 +66,7 @@ namespace JobsOfOpportunity
         static readonly Type      CsType_Settings                   = GenTypes.GetTypeInAnyAssembly("CommonSense.Settings");
         static readonly FieldInfo CsField_Settings_HaulingOverBills = AccessTools.DeclaredField(CsType_Settings, "hauling_over_bills");
 
-        static readonly bool haveCommonSense = new List<object> { CsType_CommonSense, CsType_Settings, CsField_Settings_HaulingOverBills }.All(x => x != null);
+        static readonly bool haveCommonSense = new List<object> { CsType_CommonSense, CsType_Settings, CsField_Settings_HaulingOverBills }.All(x => x is not null);
     #endregion
 
         static Verse.Mod mod; // static reference for e.g. mod name in log messages
@@ -102,7 +102,7 @@ namespace JobsOfOpportunity
             if (havePuah) {
                 var hauledToInventoryComp = (ThingComp)PuahMethod_CompHauledToInventory_GetComp.Invoke(pawn, null);
                 var takenToInventory      = Traverse.Create(hauledToInventoryComp).Field<HashSet<Thing>>("takenToInventory").Value; // traverse is cached
-                if (takenToInventory != null && takenToInventory.Any(t => t != null))
+                if (takenToInventory is not null && takenToInventory.Any(t => t is not null))
                     return true;
             }
 

@@ -104,7 +104,7 @@ namespace JobsOfOpportunity
                 if (!settings.Enabled || !settings.UsePickUpAndHaulPlus || !settings.HaulBeforeCarry_ToEqualPriority) return;
                 if (detours.GetValueSafe(pawn)?.type != DetourType.PuahBeforeCarry) return;
                 var haulDestination = StoreUtility.CurrentHaulDestinationOf(thing);
-                if (haulDestination == null) return;
+                if (haulDestination is null) return;
 
                 reducedPriorityStore = haulDestination.GetStoreSettings(); // #ReducedPriority
                 thingsInReducedPriorityStore.AddRange(
@@ -172,14 +172,14 @@ namespace JobsOfOpportunity
                     .MinBy(x => x.storeCell.DistanceTo(pawn.Position));
                 var closestSlotGroup = closestHaul.storeCell.IsValid ? closestHaul.storeCell.GetSlotGroup(pawn.Map) : null;
 
-                var firstThingToUnload = closestSlotGroup == null
+                var firstThingToUnload = closestSlotGroup is null
                     ? closestHaul.thing
                     : carriedThings.Select(GetDefHaul)
                         .Where(x => x.storeCell.IsValid && x.storeCell.GetSlotGroup(pawn.Map) == closestSlotGroup)
                         .DefaultIfEmpty() // should at least find closestHaul, but guard against future changes
                         .MinBy(x => (x.thing.def.FirstThingCategory?.index, x.thing.def.defName)).thing;
 
-                if (firstThingToUnload == null)
+                if (firstThingToUnload is null)
                     firstThingToUnload = carriedThings.MinBy(t => (t.def.FirstThingCategory?.index, t.def.defName));
 
                 if (!carriedThings.Intersect(pawn.inventory.innerContainer).Contains(firstThingToUnload)) {

@@ -58,7 +58,7 @@ namespace JobsOfOpportunity
                     Debug.WriteLine($"Recipe: '{job.bill.recipe}' workerClass: '{job.bill.recipe.workerClass}'");
                     for (var i = 0; i < job.targetQueueB.Count; i++) {
                         var ingredient = job.targetQueueB[i];
-                        if (ingredient.Thing == null) continue;
+                        if (ingredient.Thing is null) continue;
 
                         if (!havePuah || !settings.UsePickUpAndHaulPlus) { // too difficult to know in advance if there are no extras for PUAH
                             if (ingredient.Thing.stackCount <= job.countQueue[i])
@@ -71,7 +71,7 @@ namespace JobsOfOpportunity
                         //  may save precious time going back for ingredients... unless we want only 1 medicine ASAP; it's a trade-off
 
                         var storeJob = BeforeCarryDetourJob(pawn, job.targetA, ingredient.Thing); // #BeforeBillDetour
-                        if (storeJob != null) return JobUtility__TryStartErrorRecoverJob_Patch.CatchStandingJob(pawn, storeJob);
+                        if (storeJob is not null) return JobUtility__TryStartErrorRecoverJob_Patch.CatchStandingJob(pawn, storeJob);
                     }
                 }
 
@@ -194,7 +194,7 @@ namespace JobsOfOpportunity
             // if this one exceeds the maximum the next maxTotalTripPctOrigTrip check certainly will
             if (startToThing + thingToJob > pawnToJob * settings.Opportunity_MaxTotalTripPctOrigTrip)
                 return CanHaulResult.HardFail;
-            if (pawn.Map.reservationManager.FirstRespectedReserver(thing, pawn) != null) return CanHaulResult.HardFail;
+            if (pawn.Map.reservationManager.FirstRespectedReserver(thing, pawn) is not null) return CanHaulResult.HardFail;
             if (thing.IsForbidden(pawn)) return CanHaulResult.HardFail;
             if (!HaulAIUtility.PawnCanAutomaticallyHaulFast(pawn, thing, false)) return CanHaulResult.HardFail;
 
@@ -315,7 +315,7 @@ namespace JobsOfOpportunity
                     return false;
                 }
 
-                Debug.Assert(thing != null, nameof(thing) + " != null");
+                Debug.Assert(thing is not null, nameof(thing) + " is not null");
                 puah_defHauls.SetOrAdd(thing.def, foundCell);
 
 #if DEBUG

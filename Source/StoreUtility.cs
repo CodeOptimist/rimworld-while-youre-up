@@ -50,7 +50,7 @@ namespace JobsOfOpportunity
                 Faction faction, out IntVec3 foundCell, bool needAccurateResult) {
                 foundCell = IntVec3.Invalid;
 
-                if (carrier == null || !settings.Enabled || !settings.UsePickUpAndHaulPlus) return Continue();
+                if (carrier is null || !settings.Enabled || !settings.UsePickUpAndHaulPlus) return Continue();
                 // unload job is ongoing, multiple ticks
                 var isUnloadJob = carrier.CurJobDef == DefDatabase<JobDef>.GetNamed("UnloadYourHauledInventory");
                 if (!puahCallStack.Any() && !isUnloadJob) return Continue();
@@ -197,8 +197,8 @@ namespace JobsOfOpportunity
                 var buildingStorage = slotGroup.parent as Building_Storage;
 
                 if (opportunity.IsValid) {
-                    if (stockpile != null && !settings.Opportunity_ToStockpiles) continue;
-                    if (buildingStorage != null && !settings.Opportunity_BuildingFilter.Allows(buildingStorage.def)) continue;
+                    if (stockpile is not null && !settings.Opportunity_ToStockpiles) continue;
+                    if (buildingStorage is not null && !settings.Opportunity_BuildingFilter.Allows(buildingStorage.def)) continue;
                 }
 
                 if (beforeCarry.IsValid) {
@@ -206,8 +206,8 @@ namespace JobsOfOpportunity
                     if (!settings.HaulBeforeCarry_ToEqualPriority && slotGroup.Settings.Priority == currentPriority) break;
                     if (settings.HaulBeforeCarry_ToEqualPriority && thing.Position.IsValid && slotGroup == map.haulDestinationManager.SlotGroupAt(thing.Position)) continue;
 
-                    if (stockpile != null && !settings.HaulBeforeCarry_ToStockpiles) continue;
-                    if (buildingStorage != null) {
+                    if (stockpile is not null && !settings.HaulBeforeCarry_ToStockpiles) continue;
+                    if (buildingStorage is not null) {
                         if (!settings.HaulBeforeCarry_BuildingFilter.Allows(buildingStorage.def)) continue;
                         // if we don't consider it suitable for opportunities (e.g. slow storing) we won't consider it suitable for same-priority delivery
                         if (slotGroup.Settings.Priority == currentPriority && !settings.Opportunity_BuildingFilter.Allows(buildingStorage.def)) continue;
@@ -227,7 +227,7 @@ namespace JobsOfOpportunity
                     var cell        = slotGroup.CellsList[i];
                     var distSquared = (float)(position - cell).LengthHorizontalSquared;
                     if (distSquared > closestDistSquared) continue;
-                    if (skipCells != null && skipCells.Contains(cell)) continue; // PUAH addition
+                    if (skipCells is not null && skipCells.Contains(cell)) continue; // PUAH addition
                     if (!StoreUtility.IsGoodStoreCell(cell, map, thing, carrier, faction)) continue;
 
                     closestSlot        = cell;
@@ -239,7 +239,7 @@ namespace JobsOfOpportunity
             }
 
             foundCell = closestSlot;
-            if (foundCell.IsValid && skipCells != null)
+            if (foundCell.IsValid && skipCells is not null)
                 skipCells.Add(foundCell);
             return foundCell.IsValid;
         }

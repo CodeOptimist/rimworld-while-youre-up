@@ -59,7 +59,7 @@ namespace JobsOfOpportunity
                         new(OpCodes.Call, AccessTools.DeclaredMethod(typeof(WorkGiver_ConstructDeliverResources__ResourceDeliverJobFor_Patch), nameof(BeforeSupplyDetourJob))),
                         new(OpCodes.Stloc_S, jobVar),
 
-                        // if (job != null) return job;
+                        // if (job is not null) return job;
                         new(OpCodes.Ldloc_S, jobVar),
                         new(OpCodes.Brfalse_S, afterNearby),
                         new(OpCodes.Ldloc_S, jobVar),
