@@ -25,6 +25,7 @@ namespace JobsOfOpportunity
 
             public IntVec3         opportunity_puah_startCell;
             public LocalTargetInfo opportunity_jobTarget; // vanilla & PUAH
+            public int             opportunity_puah_unloadedTick;
             // reminder that storeCell is just *some* cell in our stockpile, actual unload cell is determined at unload
             public List<(Thing thing, IntVec3 storeCell)> opportunity_hauls = new();
 
@@ -159,7 +160,16 @@ namespace JobsOfOpportunity
             static MethodBase TargetMethod() => PuahMethod_JobDriver_UnloadYourHauledInventory_MakeNewToils;
 
             [HarmonyPostfix]
-            static void ClearDetourOnFinish(JobDriver __instance) => __instance.AddFinishAction(() => detours.GetValueSafe(__instance.pawn)?.Deactivate());
+            static void ClearDetourOnFinish(JobDriver __instance) =>
+                __instance.AddFinishAction(
+                    () => {
+                        var detour = detours.GetValueSafe(__instance.pawn);
+                        if (detour is not null) {
+                            if (detour.type == DetourType.PuahOpportunity)
+                                detour.opportunity_puah_unloadedTick = RealTime.frameCount;
+                            detour.Deactivate();
+                        }
+                    });
         }
 
         [HarmonyPatch(typeof(Pawn_JobTracker), nameof(Pawn_JobTracker.ClearQueuedJobs))]

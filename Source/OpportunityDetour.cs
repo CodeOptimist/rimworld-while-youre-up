@@ -81,6 +81,9 @@ namespace JobsOfOpportunity
                     }.Contains(job.def)) return null;
                 if (pawn.health.hediffSet.BleedRateTotal > 0.001f) return null;
 
+                var detour = detours.GetValueSafe(pawn);
+                if (detour?.opportunity_puah_unloadedTick > 0 && RealTime.frameCount - detour.opportunity_puah_unloadedTick <= 5) return null;
+
                 // use first ingredient location if bill
                 var jobTarget = job.def == JobDefOf.DoBill ? job.targetQueueB?.FirstOrDefault() ?? job.targetA : job.targetA;
                 return JobUtility__TryStartErrorRecoverJob_Patch.CatchStandingJob(pawn, OpportunityJob(pawn, jobTarget));
