@@ -164,10 +164,14 @@ namespace JobsOfOpportunity
                                 }
                             }
 
-                            var puahJob = PuahJob(new PuahOpportunityDetour { startCell = pawn.Position, destTarget = jobTarget }, pawn, thing, storeCell);
-                            if (puahJob != null) return puahJob;
+                            if (havePuah && settings.UsePickUpAndHaulPlus) {
+                                var detour = SetOrAddDetour(pawn, DetourType.PuahOpportunity, startCell: pawn.Position, jobTarget: jobTarget);
+                                detour.TrackPuahThing(thing, storeCell);
+                                var puahJob = PuahJob(pawn, thing);
+                                if (puahJob is not null) return puahJob;
+                            }
 
-                            haulDetours.SetOrAdd(pawn, new OpportunityDetour { destTarget = jobTarget });
+                            SetOrAddDetour(pawn, DetourType.Opportunity, jobTarget: jobTarget);
                             return HaulAIUtility.HaulToCellStorageJob(pawn, thing, storeCell, false);
                     }
                 }
@@ -255,29 +259,15 @@ namespace JobsOfOpportunity
             return CanHaulResult.Success;
         }
 
-        public class OpportunityDetour : HaulDetour
+        partial record HaulDetour
         {
-            public override string GetLoadReport(string text) => "Opportunity_LoadReport".ModTranslate(text.Named("ORIGINAL"), destTarget.Label.Named("DESTINATION"));
-        }
-
-        public class PuahOpportunityDetour : PuahDetour
-        {
-            public IntVec3 startCell;
-
-            // reminder that storeCell is just *some* cell in our stockpile, actual unload cell is determined at unload
-            public List<(Thing thing, IntVec3 storeCell)> hauls = new List<(Thing thing, IntVec3 storeCell)>();
-
-            public override string GetLoadReport(string text)   => "Opportunity_LoadReport".ModTranslate(text.Named("ORIGINAL"), destTarget.Label.Named("DESTINATION"));
-            public override string GetUnloadReport(string text) => "Opportunity_UnloadReport".ModTranslate(text.Named("ORIGINAL"), destTarget.Label.Named("DESTINATION"));
-
             public bool TrackPuahThingIfOpportune(Thing thing, Pawn pawn, ref IntVec3 foundCell) {
-                Debug.Assert(thing != null);
                 var isPrepend = pawn.carryTracker?.CarriedThing == thing;
                 TrackPuahThing(thing, foundCell, isPrepend, trackDef: false);
 
-                var curPos           = startCell;
+                var curPos           = opportunity_startCell;
                 var startToLastThing = 0f;
-                foreach (var (thing_, _) in hauls) {
+                foreach (var (thing_, _) in opportunity_hauls) {
                     startToLastThing += curPos.DistanceTo(thing_.Position);
                     curPos           =  thing_.Position;
                 }
@@ -285,8 +275,8 @@ namespace JobsOfOpportunity
                 // every time, since our foundCell could fit anywhere
                 List<(Thing thing, IntVec3 storeCell)> GetHaulsByUnloadDistance() {
                     // PUAH WorkGiver always takes us to the first
-                    var ordered = new List<(Thing thing, IntVec3 storeCell)> { hauls.First() };
-                    var pending = new List<(Thing thing, IntVec3 storeCell)>(hauls.GetRange(1, hauls.Count - 1));
+                    var ordered = new List<(Thing thing, IntVec3 storeCell)> { opportunity_hauls.First() };
+                    var pending = new List<(Thing thing, IntVec3 storeCell)>(opportunity_hauls.GetRange(1, opportunity_hauls.Count - 1));
 
                     while (pending.Count > 0) {
                         // only used for distance checks, so it's perfectly correct if due to close-together or oddly-shaped stockpiles these cells
@@ -310,9 +300,9 @@ namespace JobsOfOpportunity
                     curPos                =  haul.storeCell;
                 }
 
-                var lastStoreToJob = curPos.DistanceTo(destTarget.Cell);
+                var lastStoreToJob = curPos.DistanceTo(opportunity_jobTarget.Cell);
 
-                var origTrip          = startCell.DistanceTo(destTarget.Cell);
+                var origTrip          = opportunity_startCell.DistanceTo(opportunity_jobTarget.Cell);
                 var totalTrip         = startToLastThing + lastThingToFirstStore + firstStoreToLastStore + lastStoreToJob;
                 var maxTotalTrip      = origTrip * settings.Opportunity_MaxTotalTripPctOrigTrip;
                 var newLegs           = startToLastThing + firstStoreToLastStore + lastStoreToJob;
@@ -323,20 +313,23 @@ namespace JobsOfOpportunity
 
                 if (isRejected) {
                     foundCell = IntVec3.Invalid;
-                    hauls.RemoveAt(isPrepend ? 0 : hauls.Count - 1);
+                    opportunity_hauls.RemoveAt(isPrepend ? 0 : opportunity_hauls.Count - 1);
                     return false;
                 }
 
-                defHauls.SetOrAdd(thing.def, foundCell);
+                Debug.Assert(thing != null, nameof(thing) + " != null");
+                puah_defHauls.SetOrAdd(thing.def, foundCell);
 
 #if DEBUG
                 var storeCells = haulsByUnloadDistance.Select(x => x.storeCell).ToList();
                 Debug.WriteLine($"APPROVED {thing} -> {foundCell} for {pawn}");
-                Debug.WriteLine($"\tstartToLastThing: {pawn} {startCell} -> {string.Join(" -> ", hauls.Select(x => $"{x.thing} {x.thing.Position}"))} = {startToLastThing}");
+                Debug.WriteLine(
+                    $"\tstartToLastThing: {pawn} {opportunity_startCell} -> {string.Join(" -> ", opportunity_hauls.Select(x => $"{x.thing} {x.thing.Position}"))} = {startToLastThing}");
                 Debug.WriteLine($"\tlastThingToFirstStore: {thing} {thing.Position} -> {storeCells.First().GetSlotGroup(pawn.Map)} {storeCells.First()} = {lastThingToFirstStore}");
                 Debug.WriteLine($"\tfirstStoreToLastStore: {string.Join(" -> ", storeCells.Select(x => $"{x.GetSlotGroup(pawn.Map)} {x}"))} = {firstStoreToLastStore}");
-                Debug.WriteLine($"\tlastStoreToJob: {storeCells.Last().GetSlotGroup(pawn.Map)} {storeCells.Last()} -> {destTarget} {destTarget.Cell} = {lastStoreToJob}");
-                Debug.WriteLine($"\torigTrip: {pawn} {startCell} -> {destTarget} {destTarget.Cell} = {origTrip}");
+                Debug.WriteLine(
+                    $"\tlastStoreToJob: {storeCells.Last().GetSlotGroup(pawn.Map)} {storeCells.Last()} -> {opportunity_jobTarget} {opportunity_jobTarget.Cell} = {lastStoreToJob}");
+                Debug.WriteLine($"\torigTrip: {pawn} {opportunity_startCell} -> {opportunity_jobTarget} {opportunity_jobTarget.Cell} = {origTrip}");
                 Debug.WriteLine($"\ttotalTrip: {startToLastThing} + {lastThingToFirstStore} + {firstStoreToLastStore} + {lastStoreToJob}  = {totalTrip}");
                 Debug.WriteLine($"\tmaxTotalTrip: {origTrip} * {settings.Opportunity_MaxTotalTripPctOrigTrip} = {maxTotalTrip}");
                 Debug.WriteLine($"\tnewLegs: {startToLastThing} + {firstStoreToLastStore} + {lastStoreToJob} = {newLegs}");

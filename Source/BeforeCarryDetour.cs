@@ -21,7 +21,7 @@ namespace JobsOfOpportunity
         {
             [HarmonyPostfix]
             // clear this so our code that ran for `HasJobOnThing` can re-run for `JobOnThing`
-            static void ClearTempDetour(Pawn pawn) => haulDetours.Remove(pawn);
+            static void ClearTempDetour(Pawn pawn) => haulDetours.GetValueSafe(pawn)?.Deactivate();
         }
 
         [HarmonyPatch(typeof(WorkGiver_ConstructDeliverResources), "ResourceDeliverJobFor")]
@@ -83,19 +83,6 @@ namespace JobsOfOpportunity
             }
         }
 
-        public class BeforeCarryDetour : HaulDetour
-        {
-            public override string GetLoadReport(string text) => "HaulBeforeCarry_LoadReport".ModTranslate(text.Named("ORIGINAL"), destTarget.Label.Named("DESTINATION"));
-        }
-
-        public class PuahBeforeCarryDetour : PuahDetour
-        {
-            public IntVec3 storeCell;
-
-            public override string GetLoadReport(string text)   => "HaulBeforeCarry_LoadReport".ModTranslate(text.Named("ORIGINAL"), destTarget.Label.Named("DESTINATION"));
-            public override string GetUnloadReport(string text) => "HaulBeforeCarry_UnloadReport".ModTranslate(text.Named("ORIGINAL"), destTarget.Label.Named("DESTINATION"));
-        }
-
         // #BeforeBillDetour #BeforeSupplyDetour
         public static Job BeforeCarryDetourJob(Pawn pawn, LocalTargetInfo carryTarget, Thing thing) {
             if (thing.ParentHolder is Pawn_InventoryTracker) return null;
@@ -129,10 +116,14 @@ namespace JobsOfOpportunity
                     }
                 }
 
-                var puahJob = PuahJob(new PuahBeforeCarryDetour { destTarget = carryTarget, storeCell = storeCell }, pawn, thing, storeCell);
-                if (puahJob != null) return puahJob;
+                if (havePuah && settings.UsePickUpAndHaulPlus) {
+                    var detour = SetOrAddDetour(pawn, DetourType.PuahBeforeCarry, storeCell: storeCell, carryTarget: carryTarget);
+                    detour.TrackPuahThing(thing, storeCell);
+                    var puahJob = PuahJob(pawn, thing);
+                    if (puahJob is not null) return puahJob;
+                }
 
-                haulDetours.SetOrAdd(pawn, new BeforeCarryDetour { destTarget = carryTarget });
+                SetOrAddDetour(pawn, DetourType.BeforeCarry, carryTarget: carryTarget);
                 return HaulAIUtility.HaulToCellStorageJob(pawn, thing, storeCell, false);
             }
 

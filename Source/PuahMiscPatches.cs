@@ -102,7 +102,7 @@ namespace JobsOfOpportunity
             [HarmonyPrefix]
             static void HaulToEqualPriority(Pawn pawn, Thing thing) {
                 if (!settings.Enabled || !settings.UsePickUpAndHaulPlus || !settings.HaulBeforeCarry_ToEqualPriority) return;
-                if (!(haulDetours.GetValueSafe(pawn) is PuahBeforeCarryDetour)) return;
+                if (haulDetours.GetValueSafe(pawn)?.type != DetourType.PuahBeforeCarry) return;
                 var haulDestination = StoreUtility.CurrentHaulDestinationOf(thing);
                 if (haulDestination == null) return;
 
@@ -138,48 +138,43 @@ namespace JobsOfOpportunity
                 var carriedThings         = Traverse.Create(hauledToInventoryComp).Method("GetHashSet").GetValue<HashSet<Thing>>(); // Traverse is cached
                 if (!carriedThings.Any()) return Halt(__result = default);
 
-                (Thing thing, IntVec3 storeCell) GetDefHaul(PuahDetour puah_, Thing thing) {
+                // just loaded game, or half-state from toggling settings, etc.
+                var detour = SetOrAddDetour(pawn, DetourType.ExistingElsePuah);
+
+#if DEBUG
+                Debug.WriteLine($"{pawn}");
+                Debug.WriteLine($"{detour.puah_defHauls.Count} Hauls:");
+                foreach (var defHaul in detour.puah_defHauls)
+                    Debug.WriteLine($"\t{defHaul.Key}");
+
+                Debug.WriteLine($"{detour.puah_defHauls.Count} Unloads:");
+                foreach (var haul in detour.puah_defHauls)
+                    Debug.WriteLine($"\t{haul.Value.GetSlotGroup(pawn.Map)}");
+#endif
+
+                (Thing thing, IntVec3 storeCell) GetDefHaul(Thing thing) {
                     // It's completely possible storage has changed; that's fine. This is just a guess for order.
-                    if (puah_.defHauls.TryGetValue(thing.def, out var storeCell))
+                    if (detour.puah_defHauls.TryGetValue(thing.def, out var storeCell))
                         return (thing, storeCell);
 
                     // should only be necessary after loading, because detours aren't saved in game file like CompHauledToInventory
                     if (TryFindBestBetterStoreCellFor_ClosestToTarget(
-                            thing,
-                            (puah_ as PuahOpportunityDetour)?.destTarget ?? IntVec3.Invalid,
-                            (puah_ as PuahBeforeCarryDetour)?.destTarget ?? IntVec3.Invalid,
-                            pawn, pawn.Map, StoreUtility.CurrentStoragePriorityOf(thing), pawn.Faction, out storeCell, false)) {
+                            thing, detour.opportunity_jobTarget, detour.beforeCarry_carryTarget,
+                            pawn,  pawn.Map,                     StoreUtility.CurrentStoragePriorityOf(thing), pawn.Faction, out storeCell, false)) {
                         // cache for next
-                        puah_.defHauls.Add(thing.def, storeCell);
+                        detour.puah_defHauls.Add(thing.def, storeCell);
                     }
                     return (thing, storeCell);
                 }
 
-                // just loaded game, or half-state from toggling settings, etc.
-                if (!(haulDetours.GetValueSafe(pawn) is PuahDetour puahDetour)) {
-                    puahDetour = new PuahDetour();
-                    haulDetours.SetOrAdd(pawn, puahDetour);
-                }
-
-#if DEBUG
-                Debug.WriteLine($"{pawn}");
-                Debug.WriteLine($"{puahDetour.defHauls.Count} Hauls:");
-                foreach (var defHaul in puahDetour.defHauls)
-                    Debug.WriteLine($"\t{defHaul.Key}");
-
-                Debug.WriteLine($"{puahDetour.defHauls.Count} Unloads:");
-                foreach (var haul in puahDetour.defHauls)
-                    Debug.WriteLine($"\t{haul.Value.GetSlotGroup(pawn.Map)}");
-#endif
-
-                var closestHaul = carriedThings.Select(t => GetDefHaul(puahDetour, t))
+                var closestHaul = carriedThings.Select(GetDefHaul)
                     .Where(x => x.storeCell.IsValid).DefaultIfEmpty()
                     .MinBy(x => x.storeCell.DistanceTo(pawn.Position));
                 var closestSlotGroup = closestHaul.storeCell.IsValid ? closestHaul.storeCell.GetSlotGroup(pawn.Map) : null;
 
                 var firstThingToUnload = closestSlotGroup == null
                     ? closestHaul.thing
-                    : carriedThings.Select(t => GetDefHaul(puahDetour, t))
+                    : carriedThings.Select(GetDefHaul)
                         .Where(x => x.storeCell.IsValid && x.storeCell.GetSlotGroup(pawn.Map) == closestSlotGroup)
                         .DefaultIfEmpty() // should at least find closestHaul, but guard against future changes
                         .MinBy(x => (x.thing.def.FirstThingCategory?.index, x.thing.def.defName)).thing;

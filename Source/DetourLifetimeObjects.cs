@@ -2,7 +2,6 @@
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using HarmonyLib;
 using RimWorld;
 using Verse;
@@ -12,57 +11,89 @@ namespace JobsOfOpportunity
 {
     partial class Mod
     {
-        public static readonly Dictionary<Pawn, HaulDetour> haulDetours = new Dictionary<Pawn, HaulDetour>();
+        public static readonly Dictionary<Pawn, HaulDetour> haulDetours = new();
 
-    #region lifetime objects
-        public abstract class HaulDetour
+        public enum DetourType { Inactive, Opportunity, BeforeCarry, ExistingElsePuah, Puah, PuahOpportunity, PuahBeforeCarry }
+
+        // 'record' for a pretty `Debug.WriteLine(detour);`
+        public partial record HaulDetour
         {
-            public          LocalTargetInfo destTarget;
-            public abstract string          GetLoadReport(string text);
-        }
+            public DetourType                    type;
+            public Dictionary<ThingDef, IntVec3> puah_defHauls = new();
 
-        // technically normal PUAH hauls aren't a detour, unless you count the unloading improvements...
-        public class PuahDetour : HaulDetour
-        {
-            public Dictionary<ThingDef, IntVec3> defHauls = new Dictionary<ThingDef, IntVec3>();
+            public IntVec3         opportunity_startCell;
+            public LocalTargetInfo opportunity_jobTarget;
+            // reminder that storeCell is just *some* cell in our stockpile, actual unload cell is determined at unload
+            public List<(Thing thing, IntVec3 storeCell)> opportunity_hauls = new();
 
-            public override string GetLoadReport(string text)   => "PickUpAndHaulPlus_LoadReport".ModTranslate(text.Named("ORIGINAL"));
-            public virtual  string GetUnloadReport(string text) => "PickUpAndHaulPlus_UnloadReport".ModTranslate(text.Named("ORIGINAL"));
+            public IntVec3         beforeCarry_storeCell;
+            public LocalTargetInfo beforeCarry_carryTarget;
 
-            public void TrackPuahThing(Thing thing, IntVec3 storeCell, bool prepend = false, bool trackDef = true, [CallerMemberName] string callerName = "") {
-#if DEBUG
-                // make deterministic, but merges and initial hauls will still fluctuate
-                storeCell = storeCell.GetSlotGroup(thing.Map).CellsList[0];
-#endif
+            public void Deactivate() {
+                type = DetourType.Inactive;
+                puah_defHauls.Clear();
+                opportunity_hauls.Clear();
+            }
+
+            public void TrackPuahThing(Thing thing, IntVec3 storeCell, bool prepend = false, bool trackDef = true) {
                 if (trackDef)
-                    defHauls.SetOrAdd(thing.def, storeCell);
-
-                if (this is PuahOpportunityDetour opportunity) {
+                    puah_defHauls.SetOrAdd(thing.def, storeCell);
+                if (type == DetourType.PuahOpportunity) {
                     // already here because a thing merged into it, or duplicate from HasJobOnThing()
                     // we want to recalculate with the newer store cell since some time has passed
-                    if (opportunity.hauls.LastOrDefault().thing == thing)
-                        opportunity.hauls.Pop();
+                    if (opportunity_hauls.LastOrDefault().thing == thing)
+                        opportunity_hauls.Pop();
 
-                    // special case
                     if (prepend) {
-                        if (opportunity.hauls.FirstOrDefault().thing == thing)
-                            opportunity.hauls.RemoveAt(0);
-                        opportunity.hauls.Insert(0, (thing, storeCell));
+                        if (opportunity_hauls.FirstOrDefault().thing == thing)
+                            opportunity_hauls.RemoveAt(0);
+                        opportunity_hauls.Insert(0, (thing, storeCell));
                     } else
-                        opportunity.hauls.Add((thing, storeCell));
+                        opportunity_hauls.Add((thing, storeCell));
                 }
+            }
 
-#if DEBUG
-                if (!callerName.EndsWith("IfOpportune"))
-                    Debug.WriteLine($"{RealTime.frameCount} {this} {callerName}: {thing} -> {storeCell}");
-#endif
+            public void GetJobReport(ref string text, bool isLoad) {
+                if (type == DetourType.Inactive) return;
+                text = text.TrimEnd('.');
+                var suffix = isLoad ? "_LoadReport" : "_UnloadReport";
+                text = type switch {
+                    DetourType.Puah => ("PickUpAndHaulPlus" + suffix).ModTranslate(text.Named("ORIGINAL")),
+                    DetourType.Opportunity or DetourType.PuahOpportunity
+                        => ("Opportunity" + suffix).ModTranslate(text.Named("ORIGINAL"), opportunity_jobTarget.Label.Named("DESTINATION")),
+                    DetourType.BeforeCarry or DetourType.PuahBeforeCarry
+                        => ("HaulBeforeCarry" + suffix).ModTranslate(text.Named("ORIGINAL"), beforeCarry_carryTarget.Label.Named("DESTINATION")),
+                    _ => text,
+                };
             }
         }
 
-        static Job PuahJob(PuahDetour puahDetour, Pawn pawn, Thing thing, IntVec3 storeCell) {
-            if (!settings.Enabled || !havePuah || !settings.UsePickUpAndHaulPlus) return null;
-            haulDetours.SetOrAdd(pawn, puahDetour);
-            puahDetour.TrackPuahThing(thing, storeCell);
+        public static HaulDetour SetOrAddDetour(Pawn pawn, DetourType type,
+            IntVec3? startCell = null, LocalTargetInfo? jobTarget = null,
+            IntVec3? storeCell = null, LocalTargetInfo? carryTarget = null) {
+            if (!haulDetours.TryGetValue(pawn, out var detour)) {
+                detour            = new HaulDetour();
+                haulDetours[pawn] = detour;
+            }
+
+            if (type == DetourType.ExistingElsePuah) {
+                if (detour.type == DetourType.PuahOpportunity || detour.type == DetourType.PuahBeforeCarry)
+                    return detour;
+                type = DetourType.Puah;
+            }
+
+            detour.opportunity_startCell   = startCell ?? IntVec3.Invalid;
+            detour.opportunity_jobTarget   = jobTarget ?? LocalTargetInfo.Invalid;
+            detour.beforeCarry_storeCell   = storeCell ?? IntVec3.Invalid;
+            detour.beforeCarry_carryTarget = carryTarget ?? LocalTargetInfo.Invalid;
+
+            detour.Deactivate(); // wipe lists
+            detour.type = type;  // reactivate
+            Debug.WriteLine(detour);
+            return detour;
+        }
+
+        static Job PuahJob(Pawn pawn, Thing thing) {
             var puahWorkGiver = DefDatabase<WorkGiverDef>.GetNamed("HaulToInventory").Worker; // dictionary lookup
             return (Job)PuahMethod_WorkGiver_HaulToInventory_JobOnThing.Invoke(puahWorkGiver, new object[] { pawn, thing, false });
         }
@@ -72,29 +103,21 @@ namespace JobsOfOpportunity
             [HarmonyPostfix]
             static void TrackInitialHaul(WorkGiver_Scanner __instance, Job __result, Pawn pawn, Thing thing) {
                 if (__result == null || !settings.Enabled || !settings.UsePickUpAndHaulPlus) return;
-
-                if (!(haulDetours.GetValueSafe(pawn) is PuahDetour puahDetour)) {
-                    puahDetour = new PuahDetour();
-                    haulDetours.SetOrAdd(pawn, puahDetour);
-                }
-
                 // thing from parameter because targetA is null because things are in queues instead
                 //  https://github.com/Mehni/PickUpAndHaul/blob/af50a05a8ae5ca64d9b95fee8f593cf91f13be3d/Source/PickUpAndHaul/WorkGiver_HaulToInventory.cs#L98
-                // JobOnThing() can run additional times (e.g. haulMoreWork toil) so don't assume this is already added if it's an OpportunityDetour / BeforeCarryDetour
-                puahDetour.TrackPuahThing(thing, __result.targetB.Cell, prepend: true);
+                // PUAH has a `haulMoreWork` toil that can re-trigger `JobOnThing()` for every type of detour
+                var detour = SetOrAddDetour(pawn, DetourType.ExistingElsePuah);
+                detour.TrackPuahThing(thing, __result.targetB.Cell, prepend: true);
             }
         }
-    #endregion
 
     #region reports
         [HarmonyPatch(typeof(JobDriver_HaulToCell), nameof(JobDriver_HaulToCell.GetReport))]
         static class JobDriver_HaulToCell__GetReport_Patch
         {
             [HarmonyPostfix]
-            static void GetDetourReport(JobDriver_HaulToCell __instance, ref string __result) {
-                if (!haulDetours.TryGetValue(__instance.pawn, out var detour)) return;
-                __result = detour.GetLoadReport(__result.TrimEnd('.'));
-            }
+            static void GetDetourReport(JobDriver_HaulToCell __instance, ref string __result) =>
+                haulDetours.GetValueSafe(__instance.pawn)?.GetJobReport(ref __result, isLoad: true);
         }
 
         [HarmonyPatch]
@@ -106,14 +129,11 @@ namespace JobsOfOpportunity
             [HarmonyPostfix]
             static void GetDetourReport(JobDriver __instance, ref string __result) {
                 if (!settings.Enabled || !settings.UsePickUpAndHaulPlus) return;
-                // this nesting order so we don't lookup outside of our own mod code
-                if (PuahType_JobDriver_HaulToInventory.IsInstanceOfType(__instance)) {
-                    if (haulDetours.GetValueSafe(__instance.pawn) is PuahDetour puahDetour)
-                        __result = puahDetour.GetLoadReport(__result.TrimEnd('.'));
-                } else if (PuahType_JobDriver_UnloadYourHauledInventory.IsInstanceOfType(__instance)) {
-                    if (haulDetours.GetValueSafe(__instance.pawn) is PuahDetour puahDetour)
-                        __result = puahDetour.GetUnloadReport(__result.TrimEnd('.'));
-                }
+
+                var isLoad   = PuahType_JobDriver_HaulToInventory.IsInstanceOfType(__instance);
+                var isUnload = PuahType_JobDriver_UnloadYourHauledInventory.IsInstanceOfType(__instance);
+                if (isLoad || isUnload)
+                    haulDetours.GetValueSafe(__instance.pawn)?.GetJobReport(ref __result, isLoad);
             }
         }
     #endregion
@@ -126,8 +146,9 @@ namespace JobsOfOpportunity
             static void ClearDetourOnFinish(JobDriver __instance) =>
                 __instance.AddFinishAction(
                     () => {
-                        if (haulDetours.TryGetValue(__instance.pawn, out var detour) && !(detour is PuahDetour))
-                            haulDetours.Remove(__instance.pawn);
+                        var detour = haulDetours.GetValueSafe(__instance.pawn);
+                        if (detour?.type == DetourType.Opportunity || detour?.type == DetourType.BeforeCarry)
+                            detour.Deactivate();
                     });
         }
 
@@ -138,7 +159,7 @@ namespace JobsOfOpportunity
             static MethodBase TargetMethod() => PuahMethod_JobDriver_UnloadYourHauledInventory_MakeNewToils;
 
             [HarmonyPostfix]
-            static void ClearDetourOnFinish(JobDriver __instance) => __instance.AddFinishAction(() => haulDetours.Remove(__instance.pawn));
+            static void ClearDetourOnFinish(JobDriver __instance) => __instance.AddFinishAction(() => haulDetours.GetValueSafe(__instance.pawn)?.Deactivate());
         }
 
         [HarmonyPatch(typeof(Pawn_JobTracker), nameof(Pawn_JobTracker.ClearQueuedJobs))]
@@ -147,7 +168,7 @@ namespace JobsOfOpportunity
             [HarmonyPostfix]
             static void ClearDetour(Pawn ___pawn) {
                 if (___pawn != null)
-                    haulDetours.Remove(___pawn);
+                    haulDetours.GetValueSafe(___pawn)?.Deactivate();
             }
         }
     #endregion

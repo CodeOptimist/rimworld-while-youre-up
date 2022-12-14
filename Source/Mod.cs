@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using CodeOptimist;
 using HarmonyLib;
+using JetBrains.Annotations;
 using RimWorld;
 using Verse;
 using Verse.AI;
@@ -95,7 +96,7 @@ namespace JobsOfOpportunity
         public override string SettingsCategory() => mod.Content.Name;
 
         public static bool AlreadyHauling(Pawn pawn) {
-            if (haulDetours.ContainsKey(pawn)) return true;
+            if (haulDetours.TryGetValue(pawn, out var detour) && detour.type != DetourType.Inactive) return true;
 
             // because we may load a game with an incomplete haul
             if (havePuah) {
@@ -138,5 +139,10 @@ namespace JobsOfOpportunity
         public static string ModTranslate(this string key, params NamedArgument[] args) {
             return $"{Mod.modId}_{key}".Translate(args).Resolve();
         }
+
+        // same as HarmonyLib's `GeneralExtensions.GetValueSafe()` but with `[CanBeNull]` for ReSharper,
+        //  otherwise forgetting the ? and throwing an NRE is a real concern
+        [CanBeNull]
+        public static T GetValueSafe<S, T>(this Dictionary<S, T> dictionary, S key) => dictionary.TryGetValue(key, out var obj) ? obj : default;
     }
 }

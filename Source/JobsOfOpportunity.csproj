@@ -5,6 +5,7 @@
 	<PropertyGroup>
 		<ProjectGuid>{6367C120-5B04-4F1F-A497-2715743251A9}</ProjectGuid>
 		<TargetFramework>net472</TargetFramework>
+		<LangVersion>9.0</LangVersion>
 		<AssemblyTitle>JobsOfOpportunity</AssemblyTitle>
 		<Product>JobsOfOpportunity</Product>
 		<Copyright>Copyright © 2020-$([System.DateTime]::Now.Year) Christopher Galpin</Copyright>
