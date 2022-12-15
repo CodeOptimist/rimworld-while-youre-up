@@ -126,25 +126,38 @@ namespace JobsOfOpportunity
 
             enum Tab { Opportunity, OpportunityAdvanced, BeforeCarryDetour, PickUpAndHaul }
 
-            // todo why is build filter XML filled with junk?! v1.4 change?
-            // C:\Users\Chris\AppData\LocalLow\Ludeon Studios\RimWorld by Ludeon Studios\Config\Mod_JobsOfOpportunity_Mod.xml
             [SuppressMessage("ReSharper", "StringLiteralTypo")]
             [SuppressMessage("ReSharper", "CommentTypo")]
             public static void ResetFilters() {
-                settings.opportunityDefaultBuildingFilter.SetAllowAll(null, true);
-                settings.hbcDefaultBuildingFilter.SetDisallowAll();
-
                 foreach (var modCategoryDef in storageBuildingCategoryDef.childCategories) {
-                    modCategoryDef.treeNode.SetOpen(1, false);
-
-                    // todo move to XML
                     var mod = LoadedModManager.RunningModsListForReading.FirstOrDefault(x => x.Name == modCategoryDef.label);
+
+                    modCategoryDef.treeNode.SetOpen(1, false);
+                    switch (mod?.PackageId) {
+                        case "ludeon.rimworld": // Core
+                            modCategoryDef.treeNode.SetOpen(1, true);
+                            break;
+                    }
+
+                    // allow everything for opportunities by default, since it's a core/vanilla feature
+                    settings.opportunityDefaultBuildingFilter.SetAllow(modCategoryDef, true);
+                    switch (mod?.PackageId) {
+                        case "lwm.deepstorage": // LWM's Deep Storage
+                            // deny-listed because storing has a delay, so not really "opportunistic"
+                            // todo maybe we can check its settings to see if the delay is enabled though?
+                            settings.opportunityDefaultBuildingFilter.SetAllow(modCategoryDef, false);
+                            break;
+                    }
+
+                    settings.hbcDefaultBuildingFilter.SetAllow(modCategoryDef, false);
                     switch (mod?.PackageId) {
                         // Most of these are from ZzZombo#9297, blame him for everything. 🙃
                         case "buddy1913.expandedstorageboxes":      // Buddy's Expanded Storage Boxes
                         case "im.skye.rimworld.deepstorageplus":    // Deep Storage Plus
                         case "jangodsoul.simplestorage":            // [JDS] Simple Storage
                         case "jangodsoul.simplestorage.ref":        // [JDS] Simple Storage - Refrigeration
+                        case "ludeon.rimworld":                     // Core
+                        case "lwm.deepstorage":                     // LWM's Deep Storage
                         case "mlie.displaycases":                   // Display Cases (Continued)
                         case "mlie.eggincubator":                   // Egg Incubator
                         case "mlie.extendedstorage":                // Extended Storage (Continued)
@@ -163,13 +176,8 @@ namespace JobsOfOpportunity
                         case "vanillaexpanded.vfefarming":          // Vanilla Furniture Expanded - Farming
                         case "vanillaexpanded.vfespacer":           // Vanilla Furniture Expanded - Spacer Module
                         case "vanillaexpanded.vfesecurity":         // Vanilla Furniture Expanded - Security
-                            settings.hbcDefaultBuildingFilter.SetAllow(modCategoryDef, true);
-                            break;
-                        case "ludeon.rimworld": // Core
-                            modCategoryDef.treeNode.SetOpen(1, true);
-                            goto case "vanillaexpanded.vfecore";
-                        case "lwm.deepstorage": // LWM's Deep Storage
-                            settings.opportunityDefaultBuildingFilter.SetAllow(modCategoryDef, false);
+                            // determined to be actual containers for storage (and not just repurposing `Building_Storage`)
+                            // todo maybe we can automate that by checking subclass or something?
                             settings.hbcDefaultBuildingFilter.SetAllow(modCategoryDef, true);
                             break;
                     }
