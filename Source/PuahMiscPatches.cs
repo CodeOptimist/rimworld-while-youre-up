@@ -83,22 +83,10 @@ namespace JobsOfOpportunity
         static readonly List<Thing> thingsInReducedPriorityStore = new();
 
         [HarmonyPatch]
-        static class Puah_ListerHaulables_ThingsPotentiallyNeedingHauling_Patch
-        {
-            static bool       Prepare()      => havePuah;
-            static MethodBase TargetMethod() => AccessTools.DeclaredMethod(typeof(ListerHaulables), nameof(ListerHaulables.ThingsPotentiallyNeedingHauling));
-
-            [HarmonyPostfix]
-            static void IncludeThingsInReducedPriorityStore(ref List<Thing> __result) {
-                if (!thingsInReducedPriorityStore.NullOrEmpty())
-                    __result.AddRange(thingsInReducedPriorityStore);
-            }
-        }
-
-        [HarmonyPatch]
         static partial class Puah_WorkGiver_HaulToInventory__JobOnThing_Patch
         {
-            // todo I guess this isn't a feature without PUAH; we should change that?
+            // This feature is currently PUAH only.
+            // The implementation is optimized more for simplicity than performance, so I'm not perfectly happy.
             [HarmonyPrefix]
             static void HaulToEqualPriority(Pawn pawn, Thing thing) {
                 if (!settings.Enabled || !settings.UsePickUpAndHaulPlus || !settings.HaulBeforeCarry_ToEqualPriority) return;
@@ -118,6 +106,19 @@ namespace JobsOfOpportunity
                 reducedPriorityStore = null;
                 thingsInReducedPriorityStore.Clear();
                 map?.haulDestinationManager.Notify_HaulDestinationChangedPriority();
+            }
+        }
+
+        [HarmonyPatch]
+        static class Puah_ListerHaulables_ThingsPotentiallyNeedingHauling_Patch
+        {
+            static bool       Prepare()      => havePuah;
+            static MethodBase TargetMethod() => AccessTools.DeclaredMethod(typeof(ListerHaulables), nameof(ListerHaulables.ThingsPotentiallyNeedingHauling));
+
+            [HarmonyPostfix]
+            static void IncludeThingsInReducedPriorityStore(ref List<Thing> __result) {
+                if (!thingsInReducedPriorityStore.NullOrEmpty())
+                    __result.AddRange(thingsInReducedPriorityStore);
             }
         }
     #endregion

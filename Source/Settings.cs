@@ -308,9 +308,11 @@ namespace JobsOfOpportunity
                         hbcDoubleStd.Label("HaulBeforeCarry_Intro".ModTranslate());
                         hbcDoubleStd.DrawBool(ref settings.HaulBeforeCarry_Supplies, nameof(settings.HaulBeforeCarry_Supplies));
                         hbcDoubleStd.DrawBool(ref settings.HaulBeforeCarry_Bills,    nameof(settings.HaulBeforeCarry_Bills));
-                        hbcDoubleStd.Gap();
-                        hbcDoubleStd.Label("HaulBeforeCarry_EqualPriority".ModTranslate());
-                        hbcDoubleStd.DrawBool(ref settings.HaulBeforeCarry_ToEqualPriority, nameof(settings.HaulBeforeCarry_ToEqualPriority));
+                        if (havePuah && settings.UsePickUpAndHaulPlus) {
+                            hbcDoubleStd.Gap();
+                            hbcDoubleStd.Label("HaulBeforeCarry_EqualPriority".ModTranslate());
+                            hbcDoubleStd.DrawBool(ref settings.HaulBeforeCarry_ToEqualPriority, nameof(settings.HaulBeforeCarry_ToEqualPriority));
+                        }
 
                         hbcDoubleStd.NewColumn();
                         hbcDoubleStd.Label("HaulBeforeCarry_Tab".ModTranslate());
