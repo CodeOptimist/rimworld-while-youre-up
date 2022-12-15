@@ -21,6 +21,8 @@ namespace JobsOfOpportunity
             Autotests_ColonyMaker.DeleteAllSpawnedPawns();
             GenDebug.ClearArea(Autotests_ColonyMaker.overRect, Find.CurrentMap);
 
+            Autotests_ColonyMaker.Map.wealthWatcher.ForceRecount();
+
             Autotests_ColonyMaker.TryGetFreeRect(90, 30, out var pawnAndThingRect);
             foreach (var thingDef in from def in DefDatabase<ThingDef>.AllDefs
                      where typeof(Building_WorkTable).IsAssignableFrom(def.thingClass)
@@ -39,8 +41,13 @@ namespace JobsOfOpportunity
                 DebugThingPlaceHelper.DebugSpawn(itemDef, pawnAndThingRect.RandomCell, -1, true);
 
             var pawnCount = 30;
+            var allWork   = Enumerable.Repeat(TimeAssignmentDefOf.Work, 24).ToList();
             for (var i = 0; i < pawnCount; i++) {
                 var pawn = PawnGenerator.GeneratePawn(Faction.OfPlayer.def.basicMemberKind, Faction.OfPlayer);
+                pawn.needs.mood.thoughts.memories.TryGainMemory(ThoughtDefOf.NewColonyOptimism);
+                pawn.needs.mood.thoughts.memories.TryGainMemory(ThoughtDefOf.NewColonyHope);
+                pawn.timetable.times = allWork;
+
                 foreach (var w in DefDatabase<WorkTypeDef>.AllDefs) {
                     if (!pawn.WorkTypeIsDisabled(w))
                         pawn.workSettings.SetPriority(w, 3);
@@ -50,8 +57,8 @@ namespace JobsOfOpportunity
             }
 
             var designated = new Designator_ZoneAddStockpile_Resources();
-            for (var _ = 0; _ < 6; _++) {
-                Autotests_ColonyMaker.TryGetFreeRect(7, 7, out var stockpileRect);
+            for (var _ = 0; _ < 7; _++) {
+                Autotests_ColonyMaker.TryGetFreeRect(8, 8, out var stockpileRect);
                 stockpileRect = stockpileRect.ContractedBy(1);
                 designated.DesignateMultiCell(stockpileRect.Cells);
                 ((Zone_Stockpile)Autotests_ColonyMaker.Map.zoneManager.ZoneAt(stockpileRect.CenterCell)).settings.Priority = StoragePriority.Normal;

@@ -98,9 +98,9 @@ namespace JobsOfOpportunity
             public float startToThing, startToThingPctOrigTrip;
             public float storeToJob,   storeToJobPctOrigTrip;
 
-            [TweakValue("WhileYoureUp", 1.1f, 3f)]
+            [TweakValue("WhileYoureUp.Opportunity", 1.1f, 3f)]
             // ReSharper disable once FieldCanBeMadeReadOnly.Local
-            public static float heuristicExpandFactor = 2f;
+            public static float HeuristicExpandFactor = 2f;
 
             public static MaxRanges operator *(MaxRanges maxRanges, float multiplier) {
                 maxRanges.expandCount             += 1;
@@ -129,7 +129,7 @@ namespace JobsOfOpportunity
                         //  (i.e. thing already close to pawn, storage close to job). Excellent opportunities may satisfy neither of these,
                         // but it's the best cheap heuristic we have, and better than random.
                         // todo a smaller number, maybe 1.1f? might actually perform much better here? it's a TweakValue now
-                        maxRanges *= MaxRanges.heuristicExpandFactor;
+                        maxRanges *= MaxRanges.HeuristicExpandFactor;
                         i         =  0;
                     }
 
