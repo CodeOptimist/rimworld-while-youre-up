@@ -14,9 +14,8 @@ namespace JobsOfOpportunity
 {
     partial class Mod
     {
-        [TweakValue("WhileYoureUp")]
-        // ReSharper disable once FieldCanBeMadeReadOnly.Local
-        public static bool pauseOnPawnUnloadingBamboozled;
+        [TweakValue("WhileYoureUp.Unloading")] public static bool DumpIfFullStoreAndOthersInopportune = true;
+
         static readonly Dictionary<Thing, IntVec3> cachedStoreCells = new();
 
         [HarmonyPatch]
@@ -85,7 +84,7 @@ namespace JobsOfOpportunity
                 //  should we really be getting stockpile closest to target??? need to add new pawn travel distance to calculation
                 if (!foundCell.IsValid && !TryFindBestBetterStoreCellFor_ClosestToTarget( // call our own
                         t, jobTarget, carryTarget, carrier, map, currentPriority, faction, out foundCell,
-                        // True here may give us a shorter path, giving special hauls a better chance
+                        // True here may give us a shorter path, giving detours a better chance.
                         needAccurateResult: !puahCallStack.Contains(PuahMethod_WorkGiver_HaulToInventory_HasJobOnThing)
                                             && (jobTarget.IsValid || carryTarget.IsValid)
                                             && Find.TickManager.CurTimeSpeed == TimeSpeed.Normal,
@@ -95,48 +94,46 @@ namespace JobsOfOpportunity
                 if (canCache)
                     cachedStoreCells.SetOrAdd(t, foundCell);
 
-                // since unloading occurs many ticks later than loading, circumstances may have changed
-                // if we're only hauling because it was opportune, and the goal posts have been moved,
-                // let's throw a (figurative) fit and drop everything so we aren't further delayed from the original non-haul job
+                // Since unloading occurs many ticks later than loading, circumstances may have changed.
+                // If we're only hauling because it was opportune, and the goal posts have been moved,
+                //  let's check if they've moved farther than we're willing to tolerate.
                 if (isUnloadJob) {
-                    if (detour?.type == DetourType.PuahOpportunity && detour.puah_defHauls.TryGetValue(t.def, out var originalFoundCell)) {
-                        if (foundCell.GetSlotGroup(map) != originalFoundCell.GetSlotGroup(map)) {
-                            var distance           = carrier.Position.DistanceTo(foundCell) + foundCell.DistanceTo(detour.opportunity_jobTarget.Cell);
-                            var distanceToOriginal = carrier.Position.DistanceTo(originalFoundCell) + originalFoundCell.DistanceTo(detour.opportunity_jobTarget.Cell);
-                            if (distance > distanceToOriginal) {
-#if DEBUG
-                                if (pauseOnPawnUnloadingBamboozled) {
-                                    map.debugDrawer.debugCells.Clear();
-                                    map.debugDrawer.debugLines.Clear();
-                                }
+                    if (!DumpIfFullStoreAndOthersInopportune && !DebugViewSettings.drawOpportunisticJobs) return Halt(__result = true);
+                    if (detour?.type != DetourType.PuahOpportunity || !detour.puah_defHauls.TryGetValue(t.def, out var originalFoundCell)) return Halt(__result = true);
+                    if (foundCell.GetSlotGroup(map) == originalFoundCell.GetSlotGroup(map)) return Halt(__result = true);
 
-                                if (pauseOnPawnUnloadingBamboozled || DebugViewSettings.drawOpportunisticJobs) {
-                                    for (var _ = 0; _ < 3; _++) {
-                                        var duration = 600;
-                                        map.debugDrawer.FlashCell(foundCell,                         0.26f, carrier.Name.ToStringShort, duration);
-                                        map.debugDrawer.FlashCell(t.Position,                        0.62f, carrier.Name.ToStringShort, duration);
-                                        map.debugDrawer.FlashCell(originalFoundCell,                 0.22f, carrier.Name.ToStringShort, duration);
-                                        map.debugDrawer.FlashCell(detour.opportunity_jobTarget.Cell, 0.0f,  carrier.Name.ToStringShort, duration);
+                    var newStoreCell = foundCell; // "cannot use 'out' parameter 'foundCell' inside local function declaration"
+                    bool IsNewStoreOpportune() {
+                        // For these checks let's take it as a given that our unloading pawn is at `originalFoundCell` by now.
+                        //  This isn't necessarily true?, but since we found the distance acceptable if we did make it there,
+                        //  let's use that as our basis and check for a detour from that original detour.
+                        // Obviously a detour from a detour can be longer than we originally allowed, but this is an exceptional
+                        //  circumstance; we would really prefer the pawn to unload rather than dump their items.
+                        var storeToNewStore = originalFoundCell.DistanceTo(newStoreCell);
+                        var storeToJob      = originalFoundCell.DistanceTo(detour.opportunity_jobTarget.Cell);
+                        if (storeToNewStore > storeToJob * settings.Opportunity_MaxNewLegsPctOrigTrip) return false;
+                        var newStoreToJob = newStoreCell.DistanceTo(detour.opportunity_jobTarget.Cell);
+                        if (storeToNewStore + newStoreToJob > storeToJob * settings.Opportunity_MaxTotalTripPctOrigTrip) return false;
+                        return true;
+                    }
 
-                                        map.debugDrawer.FlashLine(carrier.Position,  foundCell,                         duration, SimpleColor.Yellow);
-                                        map.debugDrawer.FlashLine(foundCell,         detour.opportunity_jobTarget.Cell, duration, SimpleColor.Yellow);
-                                        map.debugDrawer.FlashLine(t.Position,        originalFoundCell,                 duration, SimpleColor.Green);
-                                        map.debugDrawer.FlashLine(originalFoundCell, detour.opportunity_jobTarget.Cell, duration, SimpleColor.Green);
-                                    }
-                                }
+                    if (!DumpIfFullStoreAndOthersInopportune || IsNewStoreOpportune())
+                        return Halt(__result = true);
 
-                                if (pauseOnPawnUnloadingBamboozled) {
-                                    if (!Find.Selector.AnyPawnSelected) {
-                                        CameraJumper.TryJumpAndSelect(carrier);
-                                        Find.TickManager.Pause();
-                                    }
-                                }
-#endif
-                                return Halt(__result = false);
-                            }
+                    if (DebugViewSettings.drawOpportunisticJobs) {
+                        for (var _ = 0; _ < 3; _++) {
+                            var duration = 600;
+                            map.debugDrawer.FlashCell(foundCell,                         0.26f, carrier.Name.ToStringShort, duration);
+                            map.debugDrawer.FlashCell(originalFoundCell,                 0.22f, carrier.Name.ToStringShort, duration);
+                            map.debugDrawer.FlashCell(detour.opportunity_jobTarget.Cell, 0.0f,  carrier.Name.ToStringShort, duration);
+
+                            map.debugDrawer.FlashLine(originalFoundCell, foundCell,                         duration, SimpleColor.Yellow);
+                            map.debugDrawer.FlashLine(foundCell,         detour.opportunity_jobTarget.Cell, duration, SimpleColor.Yellow);
+                            map.debugDrawer.FlashLine(originalFoundCell, detour.opportunity_jobTarget.Cell, duration, SimpleColor.Green);
                         }
                     }
-                    return Halt(__result = true);
+
+                    return Halt(__result = false); // Denied! Find a desperate spot instead.
                 }
 
                 if (detour?.type == DetourType.PuahOpportunity) {

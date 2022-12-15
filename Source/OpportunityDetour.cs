@@ -217,7 +217,7 @@ namespace JobsOfOpportunity
             if (storeToJob > maxRanges.storeToJob) return CanHaulResult.RangeFail;
             if (storeToJob > pawnToJob * maxRanges.storeToJobPctOrigTrip) return CanHaulResult.RangeFail;
 
-            if (startToThing + storeToJob > pawnToJob * settings.Opportunity_MaxNewLegsPctOrigTrip)
+            if (startToThing + storeToJob > pawnToJob * settings.Opportunity_MaxNewLegsPctOrigTrip) // #MaxNewLeg
                 return CanHaulResult.HardFail;
             var thingToStore = thing.Position.DistanceTo(storeCell);
             if (startToThing + thingToStore + storeToJob > pawnToJob * settings.Opportunity_MaxTotalTripPctOrigTrip)
