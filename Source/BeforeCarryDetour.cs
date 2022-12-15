@@ -89,7 +89,7 @@ namespace JobsOfOpportunity
             // proper way is to recheck after grabbing everything, but here's a simple hack to at least avoid it with stone chunks
             if (MassUtility.WillBeOverEncumberedAfterPickingUp(pawn, thing, 2)) return null; // already going for 1, so 2 to check for another
 
-            if (!TryFindBestBetterStoreCellFor_ClosestToTarget(
+            if (!TryFindBestBetterStoreCellFor_MidwayToTarget(
                     thing, IntVec3.Invalid, carryTarget, pawn, pawn.Map, StoreUtility.CurrentStoragePriorityOf(thing), pawn.Faction, out var storeCell, true)) return null;
 
             var fromHereDist  = thing.Position.DistanceTo(carryTarget.Cell);

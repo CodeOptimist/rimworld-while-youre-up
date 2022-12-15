@@ -203,7 +203,7 @@ namespace JobsOfOpportunity
 
             var currentPriority = StoreUtility.CurrentStoragePriorityOf(thing);
             if (!opportunityCachedStoreCells.TryGetValue(thing, out storeCell)) {
-                if (!TryFindBestBetterStoreCellFor_ClosestToTarget(
+                if (!TryFindBestBetterStoreCellFor_MidwayToTarget(
                         thing, jobTarget, IntVec3.Invalid, pawn, pawn.Map, currentPriority, pawn.Faction, out storeCell, maxRanges.expandCount == 0))
                     return CanHaulResult.HardFail;
             }

@@ -80,9 +80,7 @@ namespace JobsOfOpportunity
                 var jobTarget   = detour?.opportunity_jobTarget ?? LocalTargetInfo.Invalid;
                 var carryTarget = detour?.beforeCarry_carryTarget ?? LocalTargetInfo.Invalid;
 
-                // todo during the UNLOAD job the pawn has moved!
-                //  should we really be getting stockpile closest to target??? need to add new pawn travel distance to calculation
-                if (!foundCell.IsValid && !TryFindBestBetterStoreCellFor_ClosestToTarget( // call our own
+                if (!foundCell.IsValid && !TryFindBestBetterStoreCellFor_MidwayToTarget( // call our own
                         t, jobTarget, carryTarget, carrier, map, currentPriority, faction, out foundCell,
                         // True here may give us a shorter path, giving detours a better chance.
                         needAccurateResult: !puahCallStack.Contains(PuahMethod_WorkGiver_HaulToInventory_HasJobOnThing)
@@ -175,7 +173,7 @@ namespace JobsOfOpportunity
             }
         }
 
-        public static bool TryFindBestBetterStoreCellFor_ClosestToTarget(Thing thing, LocalTargetInfo opportunity, LocalTargetInfo beforeCarry,
+        public static bool TryFindBestBetterStoreCellFor_MidwayToTarget(Thing thing, LocalTargetInfo opportunity, LocalTargetInfo beforeCarry,
             Pawn carrier, Map map, StoragePriority currentPriority, Faction faction,
             out IntVec3 foundCell, bool needAccurateResult, HashSet<IntVec3> skipCells = null) {
             var closestSlot        = IntVec3.Invalid;
@@ -213,10 +211,11 @@ namespace JobsOfOpportunity
 
                 if (!slotGroup.parent.Accepts(thing)) continue; // original
 
-                // closest to target
-                var position = opportunity.IsValid  ? opportunity.Cell :
-                    beforeCarry.IsValid             ? beforeCarry.Cell :
-                    thing.SpawnedOrAnyParentSpawned ? thing.PositionHeld : carrier.PositionHeld; // original
+                // closest to halfway to target
+                var thingPos     = thing.SpawnedOrAnyParentSpawned ? thing.PositionHeld : carrier.PositionHeld;
+                var detourTarget = opportunity.IsValid ? opportunity.Cell : beforeCarry.IsValid ? beforeCarry.Cell : IntVec3.Invalid;
+                var detourMidway = detourTarget.IsValid ? new IntVec3((detourTarget.x + thingPos.x) / 2, detourTarget.y, (detourTarget.z + thingPos.z) / 2) : IntVec3.Invalid;
+                var position     = detourMidway.IsValid ? detourMidway : thingPos; // originally just thingPos
 
                 // original block
                 var maxCheckedCells = needAccurateResult ? (int)Math.Floor((double)slotGroup.CellsList.Count * Rand.Range(0.005f, 0.018f)) : 0;

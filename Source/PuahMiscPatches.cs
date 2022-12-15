@@ -159,7 +159,7 @@ namespace JobsOfOpportunity
                         return (thing, storeCell);
 
                     // should only be necessary after loading, because detours aren't saved in game file like CompHauledToInventory
-                    if (TryFindBestBetterStoreCellFor_ClosestToTarget(
+                    if (TryFindBestBetterStoreCellFor_MidwayToTarget(
                             thing, detour.opportunity_jobTarget, detour.beforeCarry_carryTarget,
                             pawn,  pawn.Map,                     StoreUtility.CurrentStoragePriorityOf(thing), pawn.Faction, out storeCell, false)) {
                         // cache for next
