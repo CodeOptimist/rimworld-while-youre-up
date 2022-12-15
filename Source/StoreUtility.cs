@@ -39,7 +39,6 @@ namespace JobsOfOpportunity
         [HarmonyPatch]
         static class StoreUtility__TryFindBestBetterStoreCellFor_Patch
         {
-            // todo explain havePuah here... I think because features w/o PUAH are implemented elsewhere?
             static bool       Prepare()      => havePuah;
             static MethodBase TargetMethod() => AccessTools.DeclaredMethod(typeof(StoreUtility), nameof(StoreUtility.TryFindBestBetterStoreCellFor));
 
@@ -49,8 +48,9 @@ namespace JobsOfOpportunity
                 Faction faction, out IntVec3 foundCell, bool needAccurateResult) {
                 foundCell = IntVec3.Invalid;
 
+                // we're only patching `TryFindBestBetterStoreCellFor` to hook into PUAH
+                // elsewhere we call our `TryFindBestBetterStoreCellFor_MidwayToTarget` directly 
                 if (carrier is null || !settings.Enabled || !settings.UsePickUpAndHaulPlus) return Continue();
-                // unload job is ongoing, multiple ticks
                 var isUnloadJob = carrier.CurJobDef == DefDatabase<JobDef>.GetNamed("UnloadYourHauledInventory");
                 if (!puahCallStack.Any() && !isUnloadJob) return Continue();
 
@@ -121,10 +121,11 @@ namespace JobsOfOpportunity
                     if (DebugViewSettings.drawOpportunisticJobs) {
                         for (var _ = 0; _ < 3; _++) {
                             var duration = 600;
-                            map.debugDrawer.FlashCell(foundCell,                         0.26f, carrier.Name.ToStringShort, duration);
-                            map.debugDrawer.FlashCell(originalFoundCell,                 0.22f, carrier.Name.ToStringShort, duration);
-                            map.debugDrawer.FlashCell(detour.opportunity_jobTarget.Cell, 0.0f,  carrier.Name.ToStringShort, duration);
+                            map.debugDrawer.FlashCell(foundCell,                         0.26f, carrier.Name.ToStringShort, duration); // yellow
+                            map.debugDrawer.FlashCell(originalFoundCell,                 0.22f, carrier.Name.ToStringShort, duration); // orange
+                            map.debugDrawer.FlashCell(detour.opportunity_jobTarget.Cell, 0.0f,  carrier.Name.ToStringShort, duration); // red
 
+                            // yellow: longer new; green: shorter old (longer is worse in this case, hence swapped colors)
                             map.debugDrawer.FlashLine(originalFoundCell, foundCell,                         duration, SimpleColor.Yellow);
                             map.debugDrawer.FlashLine(foundCell,         detour.opportunity_jobTarget.Cell, duration, SimpleColor.Yellow);
                             map.debugDrawer.FlashLine(originalFoundCell, detour.opportunity_jobTarget.Cell, duration, SimpleColor.Green);

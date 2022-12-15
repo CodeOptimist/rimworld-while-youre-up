@@ -152,11 +152,12 @@ namespace JobsOfOpportunity
                             if (DebugViewSettings.drawOpportunisticJobs) {
                                 for (var _ = 0; _ < 3; _++) {
                                     var duration = 600;
-                                    pawn.Map.debugDrawer.FlashCell(pawn.Position,  0.50f, pawn.Name.ToStringShort, duration);
-                                    pawn.Map.debugDrawer.FlashCell(thing.Position, 0.62f, pawn.Name.ToStringShort, duration);
-                                    pawn.Map.debugDrawer.FlashCell(storeCell,      0.22f, pawn.Name.ToStringShort, duration);
-                                    pawn.Map.debugDrawer.FlashCell(jobTarget.Cell, 0.0f,  pawn.Name.ToStringShort, duration);
+                                    pawn.Map.debugDrawer.FlashCell(pawn.Position,  0.50f, pawn.Name.ToStringShort, duration); // green
+                                    pawn.Map.debugDrawer.FlashCell(thing.Position, 0.62f, pawn.Name.ToStringShort, duration); // cyan
+                                    pawn.Map.debugDrawer.FlashCell(storeCell,      0.22f, pawn.Name.ToStringShort, duration); // orange
+                                    pawn.Map.debugDrawer.FlashCell(jobTarget.Cell, 0.0f,  pawn.Name.ToStringShort, duration); // red
 
+                                    // red: shorter old; green: longer new
                                     pawn.Map.debugDrawer.FlashLine(pawn.Position,  jobTarget.Cell, duration, SimpleColor.Red);
                                     pawn.Map.debugDrawer.FlashLine(pawn.Position,  thing.Position, duration, SimpleColor.Green);
                                     pawn.Map.debugDrawer.FlashLine(thing.Position, storeCell,      duration, SimpleColor.Green);
