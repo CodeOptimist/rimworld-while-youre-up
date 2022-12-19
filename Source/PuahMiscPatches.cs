@@ -142,7 +142,7 @@ namespace JobsOfOpportunity
                 // just loaded game, or half-state from toggling settings, etc.
                 var detour = SetOrAddDetour(pawn, DetourType.ExistingElsePuah);
 
-#if DEBUG
+#if false
                 Debug.WriteLine($"{pawn}");
                 Debug.WriteLine($"{detour.puah_defHauls.Count} Hauls:");
                 foreach (var defHaul in detour.puah_defHauls)

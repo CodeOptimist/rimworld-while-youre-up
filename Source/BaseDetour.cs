@@ -165,6 +165,7 @@ namespace JobsOfOpportunity
                     () => {
                         var detour = detours.GetValueSafe(__instance.pawn);
                         if (detour is not null) {
+                            // #AvoidConsecutiveOpportunities 
                             if (detour.type == DetourType.PuahOpportunity)
                                 detour.opportunity_puah_unloadedTick = RealTime.frameCount;
                             detour.Deactivate();

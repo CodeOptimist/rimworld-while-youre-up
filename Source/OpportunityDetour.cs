@@ -82,6 +82,7 @@ namespace JobsOfOpportunity
                 if (pawn.health.hediffSet.BleedRateTotal > 0.001f) return null;
 
                 var detour = detours.GetValueSafe(pawn);
+                // #AvoidConsecutiveOpportunities
                 if (detour?.opportunity_puah_unloadedTick > 0 && RealTime.frameCount - detour.opportunity_puah_unloadedTick <= 5) return null;
 
                 // use first ingredient location if bill
@@ -322,7 +323,7 @@ namespace JobsOfOpportunity
                 Debug.Assert(thing is not null, nameof(thing) + " is not null");
                 puah_defHauls.SetOrAdd(thing.def, foundCell);
 
-#if DEBUG
+#if false
                 var storeCells = haulsByUnloadDistance.Select(x => x.storeCell).ToList();
                 Debug.WriteLine($"APPROVED {thing} -> {foundCell} for {pawn}");
                 Debug.WriteLine(

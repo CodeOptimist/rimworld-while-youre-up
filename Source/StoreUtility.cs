@@ -14,7 +14,7 @@ namespace JobsOfOpportunity
 {
     partial class Mod
     {
-        [TweakValue("WhileYoureUp.Unloading")] public static bool DumpIfFullStoreAndOthersInopportune = true;
+        [TweakValue("WhileYoureUp.Unloading")] public static bool DumpIfStoreFilledAndAltsInopportune = true;
 
         static readonly Dictionary<Thing, IntVec3> cachedStoreCells = new();
 
@@ -96,7 +96,7 @@ namespace JobsOfOpportunity
                 // If we're only hauling because it was opportune, and the goal posts have been moved,
                 //  let's check if they've moved farther than we're willing to tolerate.
                 if (isUnloadJob) {
-                    if (!DumpIfFullStoreAndOthersInopportune && !DebugViewSettings.drawOpportunisticJobs) return Halt(__result = true);
+                    if (!DumpIfStoreFilledAndAltsInopportune && !DebugViewSettings.drawOpportunisticJobs) return Halt(__result = true);
                     if (detour?.type != DetourType.PuahOpportunity || !detour.puah_defHauls.TryGetValue(t.def, out var originalFoundCell)) return Halt(__result = true);
                     if (foundCell.GetSlotGroup(map) == originalFoundCell.GetSlotGroup(map)) return Halt(__result = true);
 
@@ -115,7 +115,7 @@ namespace JobsOfOpportunity
                         return true;
                     }
 
-                    if (!DumpIfFullStoreAndOthersInopportune || IsNewStoreOpportune())
+                    if (!DumpIfStoreFilledAndAltsInopportune || IsNewStoreOpportune())
                         return Halt(__result = true);
 
                     if (DebugViewSettings.drawOpportunisticJobs) {

@@ -90,7 +90,7 @@ namespace JobsOfOpportunity
             if (MassUtility.WillBeOverEncumberedAfterPickingUp(pawn, thing, 2)) return null; // already going for 1, so 2 to check for another
 
             if (!TryFindBestBetterStoreCellFor_MidwayToTarget(
-                    thing, IntVec3.Invalid, carryTarget, pawn, pawn.Map, StoreUtility.CurrentStoragePriorityOf(thing), pawn.Faction, out var storeCell, true)) return null;
+                    thing, LocalTargetInfo.Invalid, carryTarget, pawn, pawn.Map, StoreUtility.CurrentStoragePriorityOf(thing), pawn.Faction, out var storeCell, true)) return null;
 
             var fromHereDist  = thing.Position.DistanceTo(carryTarget.Cell);
             var fromStoreDist = storeCell.DistanceTo(carryTarget.Cell);
