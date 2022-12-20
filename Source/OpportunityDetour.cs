@@ -14,7 +14,7 @@ namespace JobsOfOpportunity
 {
     partial class Mod
     {
-        public static readonly Dictionary<Thing, IntVec3> opportunityCachedStoreCells = new(); // #CacheTick
+        public static readonly Dictionary<Thing, IntVec3> opportunityDetourStoreCellCache = new();
 
         [HarmonyPatch(typeof(Pawn_JobTracker), nameof(Pawn_JobTracker.TryOpportunisticJob))]
         static class Pawn_JobTracker__TryOpportunisticJob_Patch
@@ -183,7 +183,7 @@ namespace JobsOfOpportunity
             }
 
             var result = _OpportunityJob();
-            opportunityCachedStoreCells.Clear(); // #CacheTick
+            opportunityDetourStoreCellCache.Clear(); // #Cache
             return result;
         }
 
@@ -204,7 +204,7 @@ namespace JobsOfOpportunity
             if (!HaulAIUtility.PawnCanAutomaticallyHaulFast(pawn, thing, false)) return CanHaulResult.HardFail;
 
             var currentPriority = StoreUtility.CurrentStoragePriorityOf(thing);
-            if (!opportunityCachedStoreCells.TryGetValue(thing, out storeCell)) {
+            if (!opportunityDetourStoreCellCache.TryGetValue(thing, out storeCell)) {
                 if (!TryFindBestBetterStoreCellFor_MidwayToTarget(
                         thing, jobTarget, IntVec3.Invalid, pawn, pawn.Map, currentPriority, pawn.Faction, out storeCell, maxRanges.expandCount == 0))
                     return CanHaulResult.HardFail;
@@ -212,8 +212,8 @@ namespace JobsOfOpportunity
             // else
             //     Debug.WriteLine($"{RealTime.frameCount} Cache hit! (Size: {opportunityCachedStoreCells.Count}) CanHaulResult");
 
-            // we need storeCell everywhere, so cache it
-            opportunityCachedStoreCells.SetOrAdd(thing, storeCell);
+            // this won't change for a given thing as our same unmoved pawn loops through haulables, so cache it
+            opportunityDetourStoreCellCache.SetOrAdd(thing, storeCell);
 
             var storeToJob = storeCell.DistanceTo(jobTarget.Cell);
             if (storeToJob > maxRanges.storeToJob) return CanHaulResult.RangeFail;

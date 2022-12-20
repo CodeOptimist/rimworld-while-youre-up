@@ -178,6 +178,8 @@ namespace JobsOfOpportunity
                         case "vanillaexpanded.vfesecurity":         // Vanilla Furniture Expanded - Security
                             // determined to be actual containers for storage (and not just repurposing `Building_Storage`)
                             // todo maybe we can automate that by checking subclass or something?
+                            // does this from PUAH help us?
+                            // `haulDestination is Thing destinationAsThing && (nonSlotGroupThingOwner = destinationAsThing.TryGetInnerInteractableThingOwner()) != null`
                             settings.hbcDefaultBuildingFilter.SetAllow(modCategoryDef, true);
                             break;
                     }

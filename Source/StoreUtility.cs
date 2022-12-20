@@ -16,7 +16,9 @@ namespace JobsOfOpportunity
     {
         [TweakValue("WhileYoureUp.Unloading")] public static bool DumpIfStoreFilledAndAltsInopportune = true;
 
-        static readonly Dictionary<Thing, IntVec3> cachedStoreCells = new();
+        // So long as we are within a given job check/assignment of PUAH's `WorkGiver_HaulToInventory`
+        //  we can cache store cell by thing and reuse it since pawn, distance, etc. will remain the same. #Cache
+        static readonly Dictionary<Thing, IntVec3> puahStoreCellCache = new();
 
         [HarmonyPatch]
         static class Puah_WorkGiver_HaulToInventory__TryFindBestBetterStoreCellFor_Patch
@@ -59,13 +61,17 @@ namespace JobsOfOpportunity
 
                 // unload job happens over multiple ticks
                 var canCache = !isUnloadJob;
-                if (canCache) { // todo #CacheTick
-                    if (cachedStoreCells.Count == 0)
-                        cachedStoreCells.AddRange(opportunityCachedStoreCells); // inherit cache if available (will be same tick)
-                    if (!cachedStoreCells.TryGetValue(t, out foundCell))
+                if (canCache) {
+                    if (puahStoreCellCache.Count == 0) {
+                        // Opportunity detours clear their cache immediately after, so this is only non-empty
+                        //  if we're executing within an opportunity detour, which makes it safe to use.
+                        // This is the source for the majority of our cache hits, but see below. #Cache
+                        puahStoreCellCache.AddRange(opportunityDetourStoreCellCache);
+                    }
+                    if (!puahStoreCellCache.TryGetValue(t, out foundCell))
                         foundCell = IntVec3.Invalid;
-                    // else
-                    //     Debug.WriteLine($"{RealTime.frameCount} Cache hit! (Size: {cachedStoreCells.Count}) {MethodBase.GetCurrentMethod().Name}");
+                    else
+                        Debug.WriteLine($"{RealTime.frameCount} {carrier} Cache hit! (Size: {puahStoreCellCache.Count}) {MethodBase.GetCurrentMethod()!.Name}");
 
                     // we reproduce PUAH's skipCells in our own TryFindStore but we also need it here with caching
                     if (foundCell.IsValid && hasSkipCells) {
@@ -89,8 +95,10 @@ namespace JobsOfOpportunity
                         hasSkipCells ? skipCells : null))
                     return Halt(__result = false);
 
+                // PUAH can repeat a store lookup on its own outside the context of `OpportunityJob()`
+                // —whether from dedicated "Haul" work, or triggered by another WYU detour—though it's seldom. #Cache
                 if (canCache)
-                    cachedStoreCells.SetOrAdd(t, foundCell);
+                    puahStoreCellCache.SetOrAdd(t, foundCell);
 
                 // Since unloading occurs many ticks later than loading, circumstances may have changed.
                 // If we're only hauling because it was opportune, and the goal posts have been moved,

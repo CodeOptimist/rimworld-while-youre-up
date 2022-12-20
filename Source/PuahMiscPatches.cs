@@ -22,11 +22,8 @@ namespace JobsOfOpportunity
             if (!puahCallStack.Any()) return;
 
             puahCallStack.Pop();
-            if (!puahCallStack.Any()) {
-                // todo: keep the cache until the tick changes; verify at the very end if destination still accepts thing
-                //  to handle cache going stale within the same tick (uncommon but possible). #CacheTick 
-                cachedStoreCells.Clear();
-            }
+            if (!puahCallStack.Any())
+                puahStoreCellCache.Clear(); // Clear at the end of PUAH's `WorkGiver` job check/assignment. #Cache
         }
 
         [HarmonyPatch]
