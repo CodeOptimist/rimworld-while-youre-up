@@ -91,7 +91,7 @@ namespace JobsOfOpportunity
             }
         }
 
-        enum CanHaulResult { RangeFail, HardFail, Success }
+        enum CanHaulResult { RangeFail, HardFail, PrePathSuccess, Success }
 
         struct MaxRanges
         {
@@ -122,8 +122,9 @@ namespace JobsOfOpportunity
                     storeToJobPctOrigTrip   = settings.Opportunity_MaxStoreToJobPctOrigTrip,
                 };
 
-                var i         = 0;
-                var haulables = new List<Thing>(pawn.Map.listerHaulables.ThingsPotentiallyNeedingHauling());
+                var forcePathfinding = false;
+                var i                = 0;
+                var haulables        = new List<Thing>(pawn.Map.listerHaulables.ThingsPotentiallyNeedingHauling());
                 while (haulables.Count > 0) {
                     if (i == haulables.Count) {
                         // By expanding gradually, our slow checks will be performed in the most optimistic order that we can check for cheaply
@@ -135,7 +136,7 @@ namespace JobsOfOpportunity
                     }
 
                     var thing   = haulables[i];
-                    var canHaul = CanHaul(pawn, thing, jobTarget, maxRanges, out var storeCell);
+                    var canHaul = CanHaul(pawn, thing, jobTarget, maxRanges, out var storeCell, forcePathfinding);
                     switch (canHaul) {
                         case CanHaulResult.RangeFail:
                             if (settings.Opportunity_PathChecker == Settings.PathCheckerEnum.Vanilla)
@@ -146,6 +147,9 @@ namespace JobsOfOpportunity
                         case CanHaulResult.HardFail:
                             haulables.RemoveAt(i);
                             continue;
+                        case CanHaulResult.PrePathSuccess:
+                            forcePathfinding = true;
+                            continue; // repeat
                         case CanHaulResult.Success:
                             // todo test our heuristic expand factor more thoroughly
                             Debug.WriteLine($"Checked: {1 - (haulables.Count - 1) / (float)pawn.Map.listerHaulables.haulables.Count:P}. Expansions: {maxRanges.expandCount}");
@@ -187,7 +191,7 @@ namespace JobsOfOpportunity
             return result;
         }
 
-        static CanHaulResult CanHaul(Pawn pawn, Thing thing, LocalTargetInfo jobTarget, MaxRanges maxRanges, out IntVec3 storeCell) {
+        static CanHaulResult CanHaul(Pawn pawn, Thing thing, LocalTargetInfo jobTarget, MaxRanges maxRanges, out IntVec3 storeCell, bool forcePathfinding) {
             storeCell = IntVec3.Invalid;
             var pawnToJob = pawn.Position.DistanceTo(jobTarget.Cell);
 
@@ -225,7 +229,10 @@ namespace JobsOfOpportunity
             if (startToThing + thingToStore + storeToJob > pawnToJob * settings.Opportunity_MaxTotalTripPctOrigTrip)
                 return CanHaulResult.HardFail;
 
-            if (settings.Opportunity_PathChecker == Settings.PathCheckerEnum.Pathfinding) {
+            if (settings.Opportunity_PathChecker == Settings.PathCheckerEnum.Vanilla)
+                return CanHaulResult.Success;
+            
+            if (forcePathfinding || settings.Opportunity_PathChecker == Settings.PathCheckerEnum.Pathfinding) {
                 float GetPathCost(IntVec3 start, LocalTargetInfo dest, PathEndMode peMode) {
                     var pawnPath = pawn.Map.pathFinder.FindPath(start, dest, TraverseParms.For(pawn), peMode);
                     var result   = pawnPath.TotalCost;
@@ -248,18 +255,11 @@ namespace JobsOfOpportunity
 
                 if (pawnToThingPathCost + thingToStorePathCost + storeToJobPathCost > pawnToJobPathCost * settings.Opportunity_MaxTotalTripPctOrigTrip)
                     return CanHaulResult.HardFail;
+
+                return CanHaulResult.Success;
             }
 
-            // try for the very best initially, so we're at least as good as vanilla
-            else if (maxRanges.expandCount == 0) {
-                if (!pawn.Position.WithinRegions(thing.Position, pawn.Map, settings.Opportunity_MaxStartToThingRegionLookCount, TraverseParms.For(pawn)))
-                    return CanHaulResult.RangeFail;
-
-                if (!storeCell.WithinRegions(jobTarget.Cell, pawn.Map, settings.Opportunity_MaxStoreToJobRegionLookCount, TraverseParms.For(pawn)))
-                    return CanHaulResult.RangeFail;
-            }
-
-            return CanHaulResult.Success;
+            return CanHaulResult.PrePathSuccess;
         }
 
         partial record BaseDetour
