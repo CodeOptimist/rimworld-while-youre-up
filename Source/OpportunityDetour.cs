@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -12,16 +13,15 @@ using Debug = System.Diagnostics.Debug;
 
 namespace JobsOfOpportunity
 {
+    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
     partial class Mod
     {
-        public static readonly Dictionary<Thing, IntVec3> opportunityDetourStoreCellCache = new();
+        static readonly Dictionary<Thing, IntVec3> opportunityDetourStoreCellCache = new();
 
         [HarmonyPatch(typeof(Pawn_JobTracker), nameof(Pawn_JobTracker.TryOpportunisticJob))]
         static class Pawn_JobTracker__TryOpportunisticJob_Patch
         {
-            static bool IsEnabled() {
-                return settings.Enabled;
-            }
+            static bool IsEnabled() => settings.Enabled;
 
             [HarmonyTranspiler]
             static IEnumerable<CodeInstruction> _TryOpportunisticJob(IEnumerable<CodeInstruction> _codes, ILGenerator generator, MethodBase __originalMethod) {
@@ -114,7 +114,7 @@ namespace JobsOfOpportunity
             }
         }
 
-        public static Job OpportunityJob(Pawn pawn, LocalTargetInfo jobTarget) {
+        static Job OpportunityJob(Pawn pawn, LocalTargetInfo jobTarget) {
             Job _OpportunityJob() {
                 var maxRanges = new MaxRanges {
                     startToThing            = settings.Opportunity_MaxStartToThing,
@@ -243,8 +243,10 @@ namespace JobsOfOpportunity
 
                 var pawnToThingPathCost = GetPathCost(pawn.Position, thing, PathEndMode.ClosestTouch);
                 if (pawnToThingPathCost == 0) return CanHaulResult.HardFail;
+
                 var storeToJobPathCost = GetPathCost(storeCell, jobTarget, PathEndMode.Touch);
                 if (storeToJobPathCost == 0) return CanHaulResult.HardFail;
+
                 var pawnToJobPathCost = GetPathCost(pawn.Position, jobTarget, PathEndMode.Touch);
                 if (pawnToJobPathCost == 0) return CanHaulResult.HardFail;
 
@@ -321,8 +323,7 @@ namespace JobsOfOpportunity
                     return false;
                 }
 
-                Debug.Assert(thing is not null, nameof(thing) + " is not null");
-                puah_defHauls.SetOrAdd(thing.def, foundCell);
+                puah_defHauls.SetOrAdd(thing!.def, foundCell);
 
 #if false
                 var storeCells = haulsByUnloadDistance.Select(x => x.storeCell).ToList();

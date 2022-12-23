@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using HarmonyLib;
@@ -13,8 +14,11 @@ using Debug = System.Diagnostics.Debug;
 
 namespace JobsOfOpportunity
 {
+    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
     partial class Mod
     {
+        // ReSharper disable once MemberCanBePrivate.Global
+        // ReSharper disable once FieldCanBeMadeReadOnly.Global
         [TweakValue("WhileYoureUp.Unloading")] public static bool DumpIfStoreFilledAndAltsInopportune = true;
 
         // So long as we are within a given job check/assignment of PUAH's `WorkGiver_HaulToInventory`
@@ -32,6 +36,7 @@ namespace JobsOfOpportunity
             static bool Use_DetourAware_TryFindStore(ref bool __result, Thing thing, Pawn carrier, Map map, StoragePriority currentPriority, Faction faction,
                 ref IntVec3 foundCell) {
                 if (!settings.Enabled || !settings.UsePickUpAndHaulPlus) return Continue();
+
                 // patched below to keep our code in one place
                 __result = StoreUtility.TryFindBestBetterStoreCellFor(thing, carrier, map, currentPriority, faction, out foundCell);
                 return Halt();
@@ -54,6 +59,7 @@ namespace JobsOfOpportunity
                 // we're only patching `TryFindBestBetterStoreCellFor` to hook into PUAH
                 // elsewhere we call our `TryFindBestBetterStoreCellFor_MidwayToTarget` directly 
                 if (carrier is null || !settings.Enabled || !settings.UsePickUpAndHaulPlus) return Continue();
+
                 var isUnloadJob = carrier.CurJobDef == DefDatabase<JobDef>.GetNamed("UnloadYourHauledInventory");
                 if (!puahCallStack.Any() && !isUnloadJob) return Continue();
 
@@ -84,6 +90,7 @@ namespace JobsOfOpportunity
                 }
 
                 var detour      = detours.GetValueSafe(carrier);
+                Debug.WriteLine($"Carrier: {carrier} {detour?.type}");
                 var jobTarget   = detour?.opportunity_jobTarget ?? LocalTargetInfo.Invalid;
                 var carryTarget = detour?.beforeCarry_carryTarget ?? LocalTargetInfo.Invalid;
 
@@ -157,13 +164,16 @@ namespace JobsOfOpportunity
                     var foundCellGroup = foundCell.GetSlotGroup(map);
 
                     // only grab extra things going to the same store
-                    if (foundCellGroup != detour.beforeCarry_puah_storeCell.GetSlotGroup(map)) return Halt(__result = false);
+                    if (foundCellGroup != detour.beforeCarry_puah_storeCell.GetSlotGroup(map))
+                        return Halt(__result = false);
+                    
                     // Debug.WriteLine($"{t} is destined for same storage {foundCellGroup} {foundCell}");
 
                     if (foundCellGroup.Settings.Priority == t.Position.GetSlotGroup(map)?.Settings?.Priority) {
                         if (carrier.CurJobDef == JobDefOf.HaulToContainer && carrier.CurJob.targetC.Thing is Frame frame) {
                             if (!frame.cachedMaterialsNeeded.Select(x => x.thingDef).Contains(t.def))
                                 return Halt(__result = false);
+
                             Debug.WriteLine(
                                 $"APPROVED {t} {t.Position} as needed supplies for {detour.beforeCarry_carryTarget}"
                                 + $" headed to same-priority storage {foundCellGroup} {foundCell}.");
@@ -172,6 +182,7 @@ namespace JobsOfOpportunity
                         if (carrier.CurJobDef == JobDefOf.DoBill) {
                             if (!carrier.CurJob.targetQueueB.Select(x => x.Thing?.def).Contains(t.def))
                                 return Halt(__result = false);
+
                             Debug.WriteLine(
                                 $"APPROVED {t} {t.Position} as ingredients for {detour.beforeCarry_carryTarget}"
                                 + $" headed to same-priority storage {foundCellGroup} {foundCell}.");
@@ -187,7 +198,7 @@ namespace JobsOfOpportunity
             }
         }
 
-        public static bool TryFindBestBetterStoreCellFor_MidwayToTarget(Thing thing, LocalTargetInfo opportunity, LocalTargetInfo beforeCarry,
+        static bool TryFindBestBetterStoreCellFor_MidwayToTarget(Thing thing, LocalTargetInfo opportunity, LocalTargetInfo beforeCarry,
             Pawn carrier, Map map, StoragePriority currentPriority, Faction faction,
             out IntVec3 foundCell, bool needAccurateResult, HashSet<IntVec3> skipCells = null) {
             var closestSlot        = IntVec3.Invalid;
@@ -214,10 +225,11 @@ namespace JobsOfOpportunity
                     // #ToEqualPriority
                     if (!settings.HaulBeforeCarry_ToEqualPriority && slotGroup.Settings.Priority == currentPriority) break;
                     if (settings.HaulBeforeCarry_ToEqualPriority && thing.Position.IsValid && slotGroup == map.haulDestinationManager.SlotGroupAt(thing.Position)) continue;
-
                     if (stockpile is not null && !settings.HaulBeforeCarry_ToStockpiles) continue;
+
                     if (buildingStorage is not null) {
                         if (!settings.HaulBeforeCarry_BuildingFilter.Allows(buildingStorage.def)) continue;
+
                         // if we don't consider it suitable for opportunities (e.g. slow storing) we won't consider it suitable for same-priority delivery
                         if (slotGroup.Settings.Priority == currentPriority && !settings.Opportunity_BuildingFilter.Allows(buildingStorage.def)) continue;
                     }

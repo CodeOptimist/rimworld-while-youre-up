@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -14,6 +15,7 @@ using Debug = System.Diagnostics.Debug;
 
 namespace JobsOfOpportunity
 {
+    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
     partial class Mod : Verse.Mod
     {
     #region other mods
@@ -74,8 +76,8 @@ namespace JobsOfOpportunity
         static bool      foundConfig;
 
         // Prefix for our XML keys (language translations); PackageId may change (e.g. "__copy__" suffix).
-        public static   string  modId   = "CodeOptimist.WhileYoureUp";
-        static readonly Harmony harmony = new(modId); // just a unique id
+        public static readonly string  modId   = "CodeOptimist.WhileYoureUp";
+        static readonly        Harmony harmony = new(modId); // just a unique id
 
         public Mod(ModContentPack content) : base(content) {
             mod       = this;  // static reference to mod for e.g. mod name in log messages
@@ -95,7 +97,7 @@ namespace JobsOfOpportunity
         // name in "Mod options" and top of settings window
         public override string SettingsCategory() => mod.Content.Name;
 
-        public static bool AlreadyHauling(Pawn pawn) {
+        static bool AlreadyHauling(Pawn pawn) {
             if (detours.TryGetValue(pawn, out var detour) && detour.type != DetourType.Inactive) return true;
 
             // because we may load a game with an incomplete haul
@@ -136,9 +138,7 @@ namespace JobsOfOpportunity
 
     static class Extensions
     {
-        public static string ModTranslate(this string key, params NamedArgument[] args) {
-            return $"{Mod.modId}_{key}".Translate(args).Resolve();
-        }
+        public static string ModTranslate(this string key, params NamedArgument[] args) => $"{Mod.modId}_{key}".Translate(args).Resolve();
 
         // same as HarmonyLib's `GeneralExtensions.GetValueSafe()` but with `[CanBeNull]` for ReSharper,
         //  otherwise forgetting the ? and throwing an NRE is a real concern

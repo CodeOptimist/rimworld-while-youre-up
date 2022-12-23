@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using HarmonyLib;
@@ -10,9 +11,10 @@ using Debug = System.Diagnostics.Debug;
 
 namespace JobsOfOpportunity
 {
+    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
     partial class Mod
     {
-        public static readonly Dictionary<Pawn, BaseDetour> detours = new();
+        static readonly Dictionary<Pawn, BaseDetour> detours = new();
 
         public enum DetourType { Inactive, Opportunity, BeforeCarry, ExistingElsePuah, Puah, PuahOpportunity, PuahBeforeCarry }
 
@@ -21,13 +23,13 @@ namespace JobsOfOpportunity
         {
             public DetourType type;
 
-            public Dictionary<ThingDef, IntVec3> puah_defHauls = new();
+            public readonly Dictionary<ThingDef, IntVec3> puah_defHauls = new();
 
             public IntVec3         opportunity_puah_startCell;
             public LocalTargetInfo opportunity_jobTarget; // vanilla & PUAH
             public int             opportunity_puah_unloadedTick;
             // reminder that storeCell is just *some* cell in our stockpile, actual unload cell is determined at unload
-            public List<(Thing thing, IntVec3 storeCell)> opportunity_hauls = new();
+            readonly List<(Thing thing, IntVec3 storeCell)> opportunity_hauls = new();
 
             public IntVec3         beforeCarry_puah_storeCell;
             public LocalTargetInfo beforeCarry_carryTarget; // vanilla & PUAH
@@ -58,6 +60,7 @@ namespace JobsOfOpportunity
 
             public void GetJobReport(ref string text, bool isLoad) {
                 if (type == DetourType.Inactive) return;
+
                 text = text.TrimEnd('.');
                 var suffix = isLoad ? "_LoadReport" : "_UnloadReport";
                 text = type switch {
@@ -71,7 +74,7 @@ namespace JobsOfOpportunity
             }
         }
 
-        public static BaseDetour SetOrAddDetour(Pawn pawn, DetourType type,
+        static BaseDetour SetOrAddDetour(Pawn pawn, DetourType type,
             IntVec3? startCell = null, LocalTargetInfo? jobTarget = null,
             IntVec3? storeCell = null, LocalTargetInfo? carryTarget = null) {
             if (!detours.TryGetValue(pawn, out var detour)) {
@@ -79,9 +82,15 @@ namespace JobsOfOpportunity
                 detours[pawn] = detour;
             }
 
+            BaseDetour Result(BaseDetour result) {
+                Debug.WriteLine($"{pawn} {type}; {result.type}");
+                return result;
+            }
+
             if (type == DetourType.ExistingElsePuah) {
                 if (detour.type is DetourType.PuahOpportunity or DetourType.PuahBeforeCarry)
-                    return detour;
+                    return Result(detour);
+
                 type = DetourType.Puah;
             }
 
@@ -92,7 +101,7 @@ namespace JobsOfOpportunity
 
             detour.Deactivate(); // wipe lists
             detour.type = type;  // reactivate
-            return detour;
+            return Result(detour);
         }
 
         static Job PuahJob(Pawn pawn, Thing thing) {
@@ -105,6 +114,7 @@ namespace JobsOfOpportunity
             [HarmonyPostfix]
             static void TrackInitialHaul(Job __result, Pawn pawn, Thing thing) {
                 if (__result is null || !settings.Enabled || !settings.UsePickUpAndHaulPlus) return;
+
                 // thing from parameter because targetA is null because things are in queues instead
                 //  https://github.com/Mehni/PickUpAndHaul/blob/af50a05a8ae5ca64d9b95fee8f593cf91f13be3d/Source/PickUpAndHaul/WorkGiver_HaulToInventory.cs#L98
                 // PUAH has a `haulMoreWork` toil that can re-trigger `JobOnThing()` for every type of detour

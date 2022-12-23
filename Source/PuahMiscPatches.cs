@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using HarmonyLib;
@@ -9,6 +10,7 @@ using Debug = System.Diagnostics.Debug;
 
 namespace JobsOfOpportunity
 {
+    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
     partial class Mod
     {
     #region PUAH call stack
@@ -88,6 +90,7 @@ namespace JobsOfOpportunity
             static void HaulToEqualPriority(Pawn pawn, Thing thing) {
                 if (!settings.Enabled || !settings.UsePickUpAndHaulPlus || !settings.HaulBeforeCarry_ToEqualPriority) return;
                 if (detours.GetValueSafe(pawn)?.type != DetourType.PuahBeforeCarry) return;
+
                 var haulDestination = StoreUtility.CurrentHaulDestinationOf(thing);
                 if (haulDestination is null) return;
 
@@ -177,6 +180,7 @@ namespace JobsOfOpportunity
                         .DefaultIfEmpty() // should at least find closestHaul, but guard against future changes
                         .MinBy(x => (x.thing.def.FirstThingCategory?.index, x.thing.def.defName)).thing;
 
+                // ReSharper disable once ConvertIfStatementToNullCoalescingExpression
                 if (firstThingToUnload is null)
                     firstThingToUnload = carriedThings.MinBy(t => (t.def.FirstThingCategory?.index, t.def.defName));
 

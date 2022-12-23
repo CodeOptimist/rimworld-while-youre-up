@@ -14,6 +14,7 @@ using Debug = System.Diagnostics.Debug;
 
 namespace JobsOfOpportunity
 {
+    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
     partial class Mod
     {
         [HarmonyPatch]
@@ -102,6 +103,7 @@ namespace JobsOfOpportunity
                 var storageBuildings = DefDatabase<ThingDef>.AllDefsListForReading.Where(x => storageBuildingTypes.Contains(x.thingClass)).ToList();
                 foreach (var storageMod in storageBuildings.Select(x => x.modContentPack).Distinct()) {
                     if (storageMod is null) continue;
+
                     var modCategoryDef = new ThingCategoryDef { label = storageMod.Name };
                     storageBuildingCategoryDef.childCategories.Add(modCategoryDef);
                     modCategoryDef.childThingDefs.AddRange(storageBuildings.Where(x => x.modContentPack == storageMod).Select(x => x));
@@ -128,7 +130,7 @@ namespace JobsOfOpportunity
 
             [SuppressMessage("ReSharper", "StringLiteralTypo")]
             [SuppressMessage("ReSharper", "CommentTypo")]
-            public static void ResetFilters() {
+            static void ResetFilters() {
                 foreach (var modCategoryDef in storageBuildingCategoryDef.childCategories) {
                     var mod = LoadedModManager.RunningModsListForReading.FirstOrDefault(x => x.Name == modCategoryDef.label);
 

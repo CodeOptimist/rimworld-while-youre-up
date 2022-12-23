@@ -1,9 +1,11 @@
-﻿using System.Linq;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using RimWorld;
 using Verse;
 
 namespace JobsOfOpportunity
 {
+    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
     partial class Mod
     {
         [DebugAction("Autotests", "Make colony (While You're Up)", allowedGameStates = AllowedGameStates.PlayingOnMap)]

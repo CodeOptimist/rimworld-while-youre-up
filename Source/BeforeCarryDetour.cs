@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -12,6 +13,7 @@ using Debug = System.Diagnostics.Debug;
 
 namespace JobsOfOpportunity
 {
+    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
     partial class Mod
     {
         // [HarmonyPatch(typeof(WorkGiver_ConstructDeliverResources), nameof(WorkGiver_ConstructDeliverResources.HasJobOnThing))]
@@ -70,7 +72,7 @@ namespace JobsOfOpportunity
             }
 
             static Job BeforeSupplyDetourJob(Pawn pawn, ThingDefCountClass need, Thing constructible, Thing th) {
-                if (!settings.HaulBeforeCarry_Supplies || !settings.Enabled || AlreadyHauling(pawn)) return null;
+                if (!settings.Enabled || !settings.HaulBeforeCarry_Supplies || AlreadyHauling(pawn)) return null;
                 if (pawn.WorkTagIsDisabled(WorkTags.ManualDumb | WorkTags.Hauling | WorkTags.AllWork)) return null; // like TryOpportunisticJob()
 
                 var mostThing = WorkGiver_ConstructDeliverResources.resourcesAvailable.DefaultIfEmpty().MaxBy(x => x.stackCount);
@@ -83,8 +85,9 @@ namespace JobsOfOpportunity
         }
 
         // #BeforeBillDetour #BeforeSupplyDetour
-        public static Job BeforeCarryDetourJob(Pawn pawn, LocalTargetInfo carryTarget, Thing thing) {
+        static Job BeforeCarryDetourJob(Pawn pawn, LocalTargetInfo carryTarget, Thing thing) {
             if (thing.ParentHolder is Pawn_InventoryTracker) return null;
+
             // try to avoid haul-before-carry when there are no extras to grab
             // proper way is to recheck after grabbing everything, but here's a simple hack to at least avoid it with stone chunks
             if (MassUtility.WillBeOverEncumberedAfterPickingUp(pawn, thing, 2)) return null; // already going for 1, so 2 to check for another
