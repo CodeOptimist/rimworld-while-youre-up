@@ -6,6 +6,7 @@ using System.Linq;
 using System.Reflection;
 using HarmonyLib;
 using RimWorld;
+using UnityEngine;
 using Verse;
 // ReSharper disable once RedundantUsingDirective
 using Debug = System.Diagnostics.Debug;
@@ -138,6 +139,10 @@ namespace JobsOfOpportunity
                             map.debugDrawer.FlashLine(foundCell,         detour.opportunity_jobTarget.Cell, duration, SimpleColor.Yellow);
                             map.debugDrawer.FlashLine(originalFoundCell, detour.opportunity_jobTarget.Cell, duration, SimpleColor.Green);
                         }
+
+                        MoteMaker.ThrowText(originalFoundCell.ToVector3(), carrier.Map, "Debug_CellOccupied".ModTranslate(), new Color(0.94f, 0.85f, 0f)); // orange
+                        MoteMaker.ThrowText(foundCell.ToVector3(),         carrier.Map, "Debug_TooFar".ModTranslate(),       Color.yellow);
+                        MoteMaker.ThrowText(carrier.DrawPos,               carrier.Map, "Debug_Dropping".ModTranslate(),     Color.green);
                     }
 
                     return Halt(__result = false); // Denied! Find a desperate spot instead.
