@@ -82,7 +82,8 @@ namespace JobsOfOpportunity
                 if (pawn.health.hediffSet.BleedRateTotal > 0.001f) return null;
 
                 var detour = detours.GetValueSafe(pawn);
-                // #AvoidConsecutiveOpportunities
+                // We check within 5. I expected it to be exactly 1 tick later, but it's sometimes 2, I'm not sure why.
+                // PUAH job re-triggering to haul more maybe? #AvoidConsecutiveOpportunities
                 if (detour?.opportunity_puah_unloadedTick > 0 && RealTime.frameCount - detour.opportunity_puah_unloadedTick <= 5) return null;
 
                 // use first ingredient location if bill

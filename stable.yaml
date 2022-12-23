@@ -57,12 +57,6 @@ footer: |-
 
 
   [h1]Known Issues[/h1]
-  [i]• Not taking into account travel time around walls.[/i]
-  This is a consequence of the trade-off between maximum opportunities and good performance.
-  You can change [i]Path checking[/i] within the settings to [i]Pathfinding[/i] but it may reduce performance.
-  You can also set it to [i]Vanilla[/i] but it will reduce opportunities.
-  (Building a door in the wall will also work, if possible.)
-
   [i]• Hauling resources to storage ("closer to") despite no extras.[/i]
   Will occasionally happen with Pick Up And Haul. Not easily fixed.
 
@@ -200,7 +194,7 @@ updates:
   - at: 2.0.0
     desc: |-
       • Added job reports for [i]Haul extra resources[/i] and efficient unloading.
-      • Updated [i]Draw colored paths[/i] to include resource hauls (magenta & cyan).
+      • Updated [i]Draw pawn detours[/i] to include resource hauls (magenta & cyan).
       • Updated for RimWorld 1.3.
 
   - at: 2.1.0
@@ -209,7 +203,7 @@ updates:
         - A̶d̶d̶e̶d̶ ̶"̶S̶t̶o̶c̶k̶p̶i̶l̶e̶s̶ ̶o̶n̶l̶y̶"̶ ̶s̶e̶t̶t̶i̶n̶g̶ ̶(̶o̶n̶ ̶b̶y̶ ̶d̶e̶f̶a̶u̶l̶t̶)̶.̶
         - Switched to vanilla-style settings window (future room for a storage building allow-list).
 
-      • Setting for [i]Draw colored paths[/i] is now saved.
+      • Setting for [i]Draw colored path detours[/i] is now saved.
           Try it out, it's fun! See tooltip for description.
 
   - at: 2.1.1
@@ -364,14 +358,14 @@ keyed:
   - name: OpportunityAdvanced_Text2
     value: |-
       Vanilla(*Gray): Maximum distances/ratios to limit opportunities in exchange for performance.(/Gray)
-      Default, Pathfinding(*Gray): Dropped as limits, but kept as a performance heuristic.(/Gray)
+      Default, Pathfinding(*Gray): Ignored as limits, but kept as a performance heuristic.(/Gray)
       (*Gray)That heuristic checks paths within these ranges first, while slowly expanding them.(/Gray)
 
   - name: OpportunityAdvanced_Text3
     value: |-
-      Vanilla(*Gray): Maximum region-looks (a faster, less-accurate form of pathfinding—see tooltip).(/Gray)
-      Default(*Gray): Used once then ignored to maximize opportunities and performance, but imperfect. (/Gray)
-      Pathfinding(*Gray): Ignored. Uses real pathfinding instead of region-look.(/Gray)
+      Vanilla(*Gray): Maximum region-looks (a distance-limited pathfinding alternative—see tooltip).(/Gray)
+      Default(*Gray): Ignored. Checks pathfinding after search—no opportunity if it fails.(/Gray)
+      Pathfinding(*Gray): Ignored. Uses pathfinding to search; will find an opportunity if present.(/Gray)
 
   - name: HaulBeforeCarry_LoadReport
     value: '{{ORIGINAL}}, headed closer to {{DESTINATION}}.'
@@ -425,6 +419,14 @@ keyed:
         - |
           (*Gray)Pawns hauling extra supplies or ingredients to closer storage will also grab non-resources.(/Gray)
 
+  - name: Debug_CellOccupied
+    value: Cell occupied
+
+  - name: Debug_TooFar
+    value: Too far
+
+  - name: Debug_Dropping
+    value: Dropping
 
 settings:
   - name: Enabled
@@ -438,27 +440,29 @@ settings:
     desc: Details in tab when enabled.
 
   - name: DrawSpecialHauls
-    title: Draw colored paths
+    title: Draw colored path detours
     desc: |-
       Original job paths are red, new opportunistic paths are green.
 
       Original ingredient/supply paths are magenta, new optimal paths are cyan.
+      
+      Yellow paths are rejected, inopportune unloading alternatives when original cell has become occupied.
 
       (This is sync'd to vanilla's [i]Development mode → inspector icon → Visibility → Draw Opportunistic Jobs[/i].)
 
   - name: Opportunity_PathChecker
     title: Path checking
     desc: |-
-      Our default is performant, but impassable walls or locked doors may confuse pawns—generally worth it for more opportunities.
+      Our default is performant, but impassable walls and locked doors are ignored until a final check—which means no opportunity if it fails. These circumstances are more common with a mountain base.
       
-      Pathfinding is preferable for small colonies or fast machines.
+      "Pathfinding during search" is slower, but guaranteed to find an opportunity if it exists. Recommended for small colonies, fast machines, or those desperate for hauls in a mountain base.
 
   - name: Opportunity_PathChecker_Default
-    title: "By region, then skipped (default)\nFPS ✔️\tOpportunities ✔️\tPerfect ✖️"
+    title: "Pathfind after search (default)\nFPS ✔️\tOpportunities: Most"
   - name: Opportunity_PathChecker_Vanilla
-    title: "By region (vanilla)\nFPS ✔️\tOpportunities ✖️\tPerfect ✔️"
+    title: "Region-look (vanilla)\nFPS ✔️\tOpportunities: Few"
   - name: Opportunity_PathChecker_Pathfinding
-    title: "Pathfinding\nFPS ✖️\tOpportunities ✔️\tPerfect ✔️"
+    title: "Pathfinding during search\nFPS ✖️\tOpportunities: All"
 
   - name: Opportunity_TweakVanilla
     title: Show advanced settings tab...
