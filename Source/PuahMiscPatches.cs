@@ -170,7 +170,7 @@ namespace JobsOfOpportunity
 
                 var closestHaul = carriedThings.Select(GetDefHaul)
                     .Where(x => x.storeCell.IsValid).DefaultIfEmpty()
-                    .MinBy(x => x.storeCell.DistanceTo(pawn.Position));
+                    .MinBy(x => x.storeCell.DistanceToSquared(pawn.Position));
                 var closestSlotGroup = closestHaul.storeCell.IsValid ? closestHaul.storeCell.GetSlotGroup(pawn.Map) : null;
 
                 var firstThingToUnload = closestSlotGroup is null

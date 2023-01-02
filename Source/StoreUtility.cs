@@ -89,7 +89,7 @@ namespace JobsOfOpportunity
                     }
                 }
 
-                var detour      = detours.GetValueSafe(carrier);
+                var detour = detours.GetValueSafe(carrier);
                 Debug.WriteLine($"Carrier: {carrier} {detour?.type}");
                 var jobTarget   = detour?.opportunity_jobTarget ?? LocalTargetInfo.Invalid;
                 var carryTarget = detour?.beforeCarry_carryTarget ?? LocalTargetInfo.Invalid;
@@ -123,10 +123,13 @@ namespace JobsOfOpportunity
                         //  let's use that as our basis and check for a detour from that original detour.
                         // Obviously a detour from a detour can be longer than we originally allowed, but this is an exceptional
                         //  circumstance; we would really prefer the pawn to unload rather than dump their items.
+                        var storeToNewStoreSquared = originalFoundCell.DistanceToSquared(newStoreCell);
+                        var storeToJobSquared      = originalFoundCell.DistanceToSquared(detour.opportunity_jobTarget.Cell);
+                        if (storeToNewStoreSquared > storeToJobSquared * settings.Opportunity_MaxNewLegsPctOrigTrip.Squared()) return false;
+                        
                         var storeToNewStore = originalFoundCell.DistanceTo(newStoreCell);
+                        var newStoreToJob   = newStoreCell.DistanceTo(detour.opportunity_jobTarget.Cell);
                         var storeToJob      = originalFoundCell.DistanceTo(detour.opportunity_jobTarget.Cell);
-                        if (storeToNewStore > storeToJob * settings.Opportunity_MaxNewLegsPctOrigTrip) return false;
-                        var newStoreToJob = newStoreCell.DistanceTo(detour.opportunity_jobTarget.Cell);
                         if (storeToNewStore + newStoreToJob > storeToJob * settings.Opportunity_MaxTotalTripPctOrigTrip) return false;
                         return true;
                     }
@@ -166,7 +169,7 @@ namespace JobsOfOpportunity
                     // only grab extra things going to the same store
                     if (foundCellGroup != detour.beforeCarry_puah_storeCell.GetSlotGroup(map))
                         return Halt(__result = false);
-                    
+
                     // Debug.WriteLine($"{t} is destined for same storage {foundCellGroup} {foundCell}");
 
                     if (foundCellGroup.Settings.Priority == t.Position.GetSlotGroup(map)?.Settings?.Priority) {

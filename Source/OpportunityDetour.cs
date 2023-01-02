@@ -194,13 +194,15 @@ namespace JobsOfOpportunity
 
         static CanHaulResult CanHaul(Pawn pawn, Thing thing, LocalTargetInfo jobTarget, MaxRanges maxRanges, out IntVec3 storeCell, bool forcePathfinding) {
             storeCell = IntVec3.Invalid;
-            var pawnToJob = pawn.Position.DistanceTo(jobTarget.Cell);
+
+            var startToThingSquared = pawn.Position.DistanceToSquared(thing.Position);
+            if (startToThingSquared > maxRanges.startToThing.Squared()) return CanHaulResult.RangeFail;
+            var pawnToJobSquared = pawn.Position.DistanceToSquared(jobTarget.Cell);
+            if (startToThingSquared > pawnToJobSquared * maxRanges.startToThingPctOrigTrip.Squared()) return CanHaulResult.RangeFail;
 
             var startToThing = pawn.Position.DistanceTo(thing.Position);
-            if (startToThing > maxRanges.startToThing) return CanHaulResult.RangeFail;
-            if (startToThing > pawnToJob * maxRanges.startToThingPctOrigTrip) return CanHaulResult.RangeFail;
-
-            var thingToJob = thing.Position.DistanceTo(jobTarget.Cell);
+            var thingToJob   = thing.Position.DistanceTo(jobTarget.Cell);
+            var pawnToJob    = pawn.Position.DistanceTo(jobTarget.Cell);
             // if this one exceeds the maximum the next maxTotalTripPctOrigTrip check certainly will
             if (startToThing + thingToJob > pawnToJob * settings.Opportunity_MaxTotalTripPctOrigTrip)
                 return CanHaulResult.HardFail;
@@ -220,10 +222,11 @@ namespace JobsOfOpportunity
             // this won't change for a given thing as our same unmoved pawn loops through haulables, so cache it
             opportunityDetourStoreCellCache.SetOrAdd(thing, storeCell);
 
-            var storeToJob = storeCell.DistanceTo(jobTarget.Cell);
-            if (storeToJob > maxRanges.storeToJob) return CanHaulResult.RangeFail;
-            if (storeToJob > pawnToJob * maxRanges.storeToJobPctOrigTrip) return CanHaulResult.RangeFail;
+            var storeToJobSquared = storeCell.DistanceToSquared(jobTarget.Cell);
+            if (storeToJobSquared > maxRanges.storeToJob.Squared()) return CanHaulResult.RangeFail;
+            if (storeToJobSquared > pawnToJobSquared * maxRanges.storeToJobPctOrigTrip.Squared()) return CanHaulResult.RangeFail;
 
+            var storeToJob = storeCell.DistanceTo(jobTarget.Cell);
             if (startToThing + storeToJob > pawnToJob * settings.Opportunity_MaxNewLegsPctOrigTrip) // #MaxNewLeg
                 return CanHaulResult.HardFail;
             var thingToStore = thing.Position.DistanceTo(storeCell);
@@ -288,7 +291,7 @@ namespace JobsOfOpportunity
                         // only used for distance checks, so it's perfectly correct if due to close-together or oddly-shaped stockpiles these cells
                         //  aren't ordered by their parent stockpile
                         // actual unloading cells are determined on-the-fly (even extras if don't fit, etc.) but this represents them with equal correctness
-                        var closestHaul = pending.MinBy(x => x.storeCell.DistanceTo(ordered.Last().storeCell));
+                        var closestHaul = pending.MinBy(x => x.storeCell.DistanceToSquared(ordered.Last().storeCell));
                         ordered.Add(closestHaul);
                         pending.Remove(closestHaul);
                     }

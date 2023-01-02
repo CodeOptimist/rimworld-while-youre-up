@@ -144,5 +144,8 @@ namespace JobsOfOpportunity
         //  otherwise forgetting the ? and throwing an NRE is a real concern
         [CanBeNull]
         public static T GetValueSafe<S, T>(this Dictionary<S, T> dictionary, S key) => dictionary.TryGetValue(key, out var obj) ? obj : default;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float Squared(this float val) => val * val;
     }
 }

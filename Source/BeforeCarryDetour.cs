@@ -95,11 +95,11 @@ namespace JobsOfOpportunity
             if (!TryFindBestBetterStoreCellFor_MidwayToTarget(
                     thing, LocalTargetInfo.Invalid, carryTarget, pawn, pawn.Map, StoreUtility.CurrentStoragePriorityOf(thing), pawn.Faction, out var storeCell, true)) return null;
 
-            var fromHereDist  = thing.Position.DistanceTo(carryTarget.Cell);
-            var fromStoreDist = storeCell.DistanceTo(carryTarget.Cell);
-            Debug.WriteLine($"Carry from here: {fromHereDist}; carry from store: {fromStoreDist}");
+            var fromHereSquared  = thing.Position.DistanceToSquared(carryTarget.Cell);
+            var fromStoreSquared = storeCell.DistanceToSquared(carryTarget.Cell);
+            Debug.WriteLine($"Carry from here: {thing.Position.DistanceTo(carryTarget.Cell)};carry from store: {storeCell.DistanceTo(carryTarget.Cell)}");
 
-            if (fromStoreDist < fromHereDist) {
+            if (fromStoreSquared < fromHereSquared) {
                 Debug.WriteLine(
                     $"'{pawn}' prefixed job with haul for '{thing.Label}'"
                     + $" because '{storeCell.GetSlotGroup(pawn.Map)}' is closer to original destination '{carryTarget} {carryTarget.Cell}'.");
