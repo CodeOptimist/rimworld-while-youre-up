@@ -71,7 +71,7 @@ namespace JobsOfOpportunity
         static readonly bool haveCommonSense = new List<object> { CsType_CommonSense, CsType_Settings, CsField_Settings_HaulingOverBills }.All(x => x is not null);
     #endregion
 
-        static Verse.Mod mod; // static reference for e.g. mod name in log messages
+        static Verse.Mod mod;
         static Settings  settings;
         static bool      foundConfig;
 
@@ -97,20 +97,6 @@ namespace JobsOfOpportunity
         // name in "Mod options" and top of settings window
         public override string SettingsCategory() => mod.Content.Name;
 
-        static bool AlreadyHauling(Pawn pawn) {
-            if (detours.TryGetValue(pawn, out var detour) && detour.type != DetourType.Inactive) return true;
-
-            // because we may load a game with an incomplete haul
-            if (havePuah) {
-                var hauledToInventoryComp = (ThingComp)PuahMethod_CompHauledToInventory_GetComp.Invoke(pawn, null);
-                var takenToInventory      = Traverse.Create(hauledToInventoryComp).Field<HashSet<Thing>>("takenToInventory").Value; // traverse is cached
-                if (takenToInventory is not null && takenToInventory.Any(t => t is not null))
-                    return true;
-            }
-
-            return false;
-        }
-
         [HarmonyPatch(typeof(JobUtility), nameof(JobUtility.TryStartErrorRecoverJob))]
         static class JobUtility__TryStartErrorRecoverJob_Patch
         {
@@ -127,7 +113,7 @@ namespace JobsOfOpportunity
                 }
             }
 
-            public static Job CatchStandingJob(Pawn pawn, Job job, [CallerMemberName] string callerName = "") {
+            public static Job CatchStanding_Job(Pawn pawn, Job job, [CallerMemberName] string callerName = "") {
                 lastPawn       = pawn;
                 lastFrameCount = RealTime.frameCount;
                 lastCallerName = callerName;
@@ -138,10 +124,11 @@ namespace JobsOfOpportunity
 
     static class Extensions
     {
+        // `Resolve()` supports colored text e.g. `<Threat>text</Threat>`
         public static string ModTranslate(this string key, params NamedArgument[] args) => $"{Mod.modId}_{key}".Translate(args).Resolve();
 
-        // same as HarmonyLib's `GeneralExtensions.GetValueSafe()` but with `[CanBeNull]` for ReSharper,
-        //  otherwise forgetting the ? and throwing an NRE is a real concern
+        // same as HarmonyLib's `GeneralExtensions.GetValueSafe()` but with `[CanBeNull]` for ReSharper/Rider,
+        //  otherwise forgetting the `?` and throwing an NRE is a real concern.
         [CanBeNull]
         public static T GetValueSafe<S, T>(this Dictionary<S, T> dictionary, S key) => dictionary.TryGetValue(key, out var obj) ? obj : default;
 

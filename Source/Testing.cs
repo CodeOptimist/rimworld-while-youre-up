@@ -9,7 +9,7 @@ namespace JobsOfOpportunity
     partial class Mod
     {
         [DebugAction("Autotests", "Make colony (While You're Up)", allowedGameStates = AllowedGameStates.PlayingOnMap)]
-        static void MakeColonyWYU() {
+        static void MakeColonyWyu() {
             var godMode = DebugSettings.godMode;
             DebugSettings.godMode                   = true;
             DebugViewSettings.drawOpportunisticJobs = true;

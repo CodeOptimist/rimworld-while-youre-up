@@ -16,7 +16,7 @@ namespace JobsOfOpportunity
     [SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
     partial class Mod
     {
-        static readonly Dictionary<Thing, IntVec3> opportunityDetourStoreCellCache = new();
+        static readonly Dictionary<Thing, IntVec3> opportunityStoreCellCache = new();
 
         [HarmonyPatch(typeof(Pawn_JobTracker), nameof(Pawn_JobTracker.TryOpportunisticJob))]
         static class Pawn_JobTracker__TryOpportunisticJob_Patch
@@ -30,7 +30,7 @@ namespace JobsOfOpportunity
                 var skipMod            = generator.DefineLabel();
 
                 t.TryInsertCodes(
-                    -3,
+                    offset: -3,
                     (i, codes) => i == listerHaulablesIdx,
                     (i, codes) => new List<CodeInstruction> {
                         new(OpCodes.Call, AccessTools.DeclaredMethod(typeof(Pawn_JobTracker__TryOpportunisticJob_Patch), nameof(IsEnabled))),
@@ -46,13 +46,17 @@ namespace JobsOfOpportunity
                 return t.GetFinalCodes();
             }
 
-            // vanilla checks for job.def.allowOpportunisticPrefix and lots of other things before this
-            // our settings.Enabled check is done prior to this in the transpiler
+            // vanilla checks for `job.def.allowOpportunisticPrefix` and lots of other things before this
+            // our `settings.Enabled` check is done prior to this in the transpiler
             static Job TryOpportunisticJob(Pawn_JobTracker jobTracker, Job job) {
                 // Debug.WriteLine($"Opportunity checking {job}");
-                var pawn = Traverse.Create(jobTracker).Field("pawn").GetValue<Pawn>();
+                var pawn = Traverse.Create(jobTracker).Field("pawn").GetValue<Pawn>(); // `Traverse` is cached
                 if (AlreadyHauling(pawn)) return null;
 
+                Job puahOrHtcJob;
+
+                // we had to transpile to implement :BeforeSupplyDetour, but lucky for us we can implement
+                //  :BeforeBillDetour right here from `TryOpportunisticJob()` that we're already modifying
                 if (job.def == JobDefOf.DoBill && settings.HaulBeforeCarry_Bills) {
                     Debug.WriteLine($"Bill: '{job.bill}' label: '{job.bill.Label}'");
                     Debug.WriteLine($"Recipe: '{job.bill.recipe}' workerClass: '{job.bill.recipe.workerClass}'");
@@ -70,8 +74,9 @@ namespace JobsOfOpportunity
                         // permitted when bleeding because facilitates whatever bill is important enough to do while bleeding
                         //  may save precious time going back for ingredients... unless we want only 1 medicine ASAP; it's a trade-off
 
-                        var storeJob = BeforeCarryDetourJob(pawn, job.targetA, ingredient.Thing); // #BeforeBillDetour
-                        if (storeJob is not null) return JobUtility__TryStartErrorRecoverJob_Patch.CatchStandingJob(pawn, storeJob);
+                        puahOrHtcJob = BeforeCarryDetour_Job(pawn, job.targetA, ingredient.Thing); // :BeforeBillDetour
+                        if (puahOrHtcJob is not null)
+                            return JobUtility__TryStartErrorRecoverJob_Patch.CatchStanding_Job(pawn, puahOrHtcJob);
                     }
                 }
 
@@ -82,13 +87,15 @@ namespace JobsOfOpportunity
                 if (pawn.health.hediffSet.BleedRateTotal > 0.001f) return null;
 
                 var detour = detours.GetValueSafe(pawn);
-                // We check within 5. I expected it to be exactly 1 tick later, but it's sometimes 2, I'm not sure why.
-                // PUAH job re-triggering to haul more maybe? #AvoidConsecutiveOpportunities
+                // We'll check for a repeat opportunity within 5 ticks.
+                // I expected repeats to be exactly 1 tick later, but it's sometimes 2, I'm not sure why.
+                //  A PUAH job re-triggering maybe? :RepeatOpportunity
                 if (detour?.opportunity_puah_unloadedTick > 0 && RealTime.frameCount - detour.opportunity_puah_unloadedTick <= 5) return null;
 
-                // use first ingredient location if bill
+                // use first ingredient location if bill because our pawn will go directly to it
                 var jobTarget = job.def == JobDefOf.DoBill ? job.targetQueueB?.FirstOrDefault() ?? job.targetA : job.targetA;
-                return JobUtility__TryStartErrorRecoverJob_Patch.CatchStandingJob(pawn, OpportunityJob(pawn, jobTarget));
+                puahOrHtcJob = Opportunity_Job(pawn, jobTarget);
+                return JobUtility__TryStartErrorRecoverJob_Patch.CatchStanding_Job(pawn, puahOrHtcJob);
             }
         }
 
@@ -96,13 +103,14 @@ namespace JobsOfOpportunity
 
         struct MaxRanges
         {
+            [TweakValue("WhileYoureUp.Opportunity", 1.1f, 3f)]
+            // ReSharper disable once FieldCanBeMadeReadOnly.Local
+            public static float HeuristicRangeExpandFactor = 2f;
+
             public int   expandCount;
             public float startToThing, startToThingPctOrigTrip;
             public float storeToJob,   storeToJobPctOrigTrip;
 
-            [TweakValue("WhileYoureUp.Opportunity", 1.1f, 3f)]
-            // ReSharper disable once FieldCanBeMadeReadOnly.Local
-            public static float HeuristicExpandFactor = 2f;
 
             public static MaxRanges operator *(MaxRanges maxRanges, float multiplier) {
                 maxRanges.expandCount             += 1;
@@ -114,8 +122,8 @@ namespace JobsOfOpportunity
             }
         }
 
-        static Job OpportunityJob(Pawn pawn, LocalTargetInfo jobTarget) {
-            Job _OpportunityJob() {
+        static Job Opportunity_Job(Pawn pawn, LocalTargetInfo jobTarget) {
+            Job _Opportunity_Job() {
                 var maxRanges = new MaxRanges {
                     startToThing            = settings.Opportunity_MaxStartToThing,
                     startToThingPctOrigTrip = settings.Opportunity_MaxStartToThingPctOrigTrip,
@@ -128,11 +136,10 @@ namespace JobsOfOpportunity
                 var haulables        = new List<Thing>(pawn.Map.listerHaulables.ThingsPotentiallyNeedingHauling());
                 while (haulables.Count > 0) {
                     if (i == haulables.Count) {
-                        // By expanding gradually, our slow checks will be performed in the most optimistic order that we can check for cheaply
-                        //  (i.e. thing already close to pawn, storage close to job). Excellent opportunities may satisfy neither of these,
-                        // but it's the best cheap heuristic we have, and better than random.
-                        // todo a smaller number, maybe 1.1f? might actually perform much better here? it's a TweakValue now
-                        maxRanges *= MaxRanges.HeuristicExpandFactor;
+                        // By expanding our cheap range checks gradually, our expensive checks will be performed in the most optimistic order.
+                        // It won't always help—a detour can be far away yet still perfectly along our path—but it's a good performance heuristic.
+                        // todo A smaller number might perform better in the worst (but rarer) cases? It's a TweakValue now.
+                        maxRanges *= MaxRanges.HeuristicRangeExpandFactor;
                         i         =  0;
                     }
 
@@ -179,22 +186,26 @@ namespace JobsOfOpportunity
                                 if (puahJob is not null) return puahJob;
                             }
 
-                            SetOrAddDetour(pawn, DetourType.Opportunity, jobTarget: jobTarget);
-                            return HaulAIUtility.HaulToCellStorageJob(pawn, thing, storeCell, false);
+                            SetOrAddDetour(pawn, DetourType.HtcOpportunity, jobTarget: jobTarget);
+                            var htcJob = HaulAIUtility.HaulToCellStorageJob(pawn, thing, storeCell, false);
+                            return htcJob;
                     }
                 }
 
                 return null;
             }
 
-            var result = _OpportunityJob();
-            opportunityDetourStoreCellCache.Clear(); // #Cache
+            var result = _Opportunity_Job();
+            opportunityStoreCellCache.Clear(); // :Cache
             return result;
         }
 
         static CanHaulResult CanHaul(Pawn pawn, Thing thing, LocalTargetInfo jobTarget, MaxRanges maxRanges, out IntVec3 storeCell, bool forcePathfinding) {
             storeCell = IntVec3.Invalid;
 
+            // I don't know if avoiding `Sqrt()` is currently faster in Unity, but it's easy enough (when not summing distances).
+            // https://www.youtube.com/watch?v=pgoetgxecw8&t=370s
+            // https://dev.to/iamscottcab/exploring-the-myth-calculating-square-root-is-expensive-44ka :Sqrt
             var startToThingSquared = pawn.Position.DistanceToSquared(thing.Position);
             if (startToThingSquared > maxRanges.startToThing.Squared()) return CanHaulResult.RangeFail;
             var pawnToJobSquared = pawn.Position.DistanceToSquared(jobTarget.Cell);
@@ -203,7 +214,7 @@ namespace JobsOfOpportunity
             var startToThing = pawn.Position.DistanceTo(thing.Position);
             var thingToJob   = thing.Position.DistanceTo(jobTarget.Cell);
             var pawnToJob    = pawn.Position.DistanceTo(jobTarget.Cell);
-            // if this one exceeds the maximum the next maxTotalTripPctOrigTrip check certainly will
+            // if this one exceeds the maximum the next `maxTotalTripPctOrigTrip` check certainly will
             if (startToThing + thingToJob > pawnToJob * settings.Opportunity_MaxTotalTripPctOrigTrip)
                 return CanHaulResult.HardFail;
             if (pawn.Map.reservationManager.FirstRespectedReserver(thing, pawn) is not null) return CanHaulResult.HardFail;
@@ -211,26 +222,24 @@ namespace JobsOfOpportunity
             if (!HaulAIUtility.PawnCanAutomaticallyHaulFast(pawn, thing, false)) return CanHaulResult.HardFail;
 
             var currentPriority = StoreUtility.CurrentStoragePriorityOf(thing);
-            if (!opportunityDetourStoreCellCache.TryGetValue(thing, out storeCell)) {
+            if (!opportunityStoreCellCache.TryGetValue(thing, out storeCell)) {
                 if (!TryFindBestBetterStoreCellFor_MidwayToTarget(
                         thing, jobTarget, IntVec3.Invalid, pawn, pawn.Map, currentPriority, pawn.Faction, out storeCell, maxRanges.expandCount == 0))
                     return CanHaulResult.HardFail;
             }
-            // else
-            //     Debug.WriteLine($"{RealTime.frameCount} Cache hit! (Size: {opportunityCachedStoreCells.Count}) CanHaulResult");
 
             // this won't change for a given thing as our same unmoved pawn loops through haulables, so cache it
-            opportunityDetourStoreCellCache.SetOrAdd(thing, storeCell);
+            opportunityStoreCellCache.SetOrAdd(thing, storeCell);
 
-            var storeToJobSquared = storeCell.DistanceToSquared(jobTarget.Cell);
+            var storeToJobSquared = storeCell.DistanceToSquared(jobTarget.Cell); // :Sqrt
             if (storeToJobSquared > maxRanges.storeToJob.Squared()) return CanHaulResult.RangeFail;
             if (storeToJobSquared > pawnToJobSquared * maxRanges.storeToJobPctOrigTrip.Squared()) return CanHaulResult.RangeFail;
 
             var storeToJob = storeCell.DistanceTo(jobTarget.Cell);
-            if (startToThing + storeToJob > pawnToJob * settings.Opportunity_MaxNewLegsPctOrigTrip) // #MaxNewLeg
+            if (startToThing + storeToJob > pawnToJob * settings.Opportunity_MaxNewLegsPctOrigTrip) // :MaxNewLeg
                 return CanHaulResult.HardFail;
             var thingToStore = thing.Position.DistanceTo(storeCell);
-            if (startToThing + thingToStore + storeToJob > pawnToJob * settings.Opportunity_MaxTotalTripPctOrigTrip)
+            if (startToThing + thingToStore + storeToJob > pawnToJob * settings.Opportunity_MaxTotalTripPctOrigTrip) // :MaxTotalTrip
                 return CanHaulResult.HardFail;
 
             if (settings.Opportunity_PathChecker == Settings.PathCheckerEnum.Vanilla)
@@ -272,7 +281,7 @@ namespace JobsOfOpportunity
         {
             public bool TrackPuahThingIfOpportune(Thing thing, Pawn pawn, ref IntVec3 foundCell) {
                 var isPrepend = pawn.carryTracker?.CarriedThing == thing;
-                TrackPuahThing(thing, foundCell, isPrepend, trackDef: false);
+                TrackPuahThing(thing, foundCell, isPrepend, trackDef: false); // :TrackDef
 
                 var curPos           = opportunity_puah_startCell;
                 var startToLastThing = 0f;
@@ -316,17 +325,14 @@ namespace JobsOfOpportunity
                 var maxTotalTrip      = origTrip * settings.Opportunity_MaxTotalTripPctOrigTrip;
                 var newLegs           = startToLastThing + firstStoreToLastStore + lastStoreToJob;
                 var maxNewLegs        = origTrip * settings.Opportunity_MaxNewLegsPctOrigTrip;
-                var exceedsMaxTrip    = totalTrip > maxTotalTrip;
-                var exceedsMaxNewLegs = newLegs > maxNewLegs;
-                var isRejected        = exceedsMaxTrip || exceedsMaxNewLegs;
 
-                if (isRejected) {
+                if (totalTrip > maxTotalTrip || newLegs > maxNewLegs) {
                     foundCell = IntVec3.Invalid;
                     opportunity_hauls.RemoveAt(isPrepend ? 0 : opportunity_hauls.Count - 1);
                     return false;
                 }
 
-                puah_defHauls.SetOrAdd(thing!.def, foundCell);
+                puah_defHauls.SetOrAdd(thing!.def, foundCell); // :TrackDef
 
 #if false
                 var storeCells = haulsByUnloadDistance.Select(x => x.storeCell).ToList();

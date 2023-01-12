@@ -15,17 +15,17 @@ namespace JobsOfOpportunity
     {
     #region PUAH call stack
         // so our StoreUtility code can know from where within Pick Up And Haul it's executing
-        static readonly List<MethodBase> puahCallStack = new();
+        static readonly List<MethodBase> puahToInventoryCallStack = new();
 
-        static void PushMethod(MethodBase method) => puahCallStack.Add(method);
+        static void PushHtiMethod(MethodBase method) => puahToInventoryCallStack.Add(method);
 
-        static void PopMethod() {
+        static void PopHtiMethod() {
             // shouldn't happen unless another mod skipped one of our Prefix PushMethods (breaking our mod)
-            if (!puahCallStack.Any()) return;
+            if (!puahToInventoryCallStack.Any()) return;
 
-            puahCallStack.Pop();
-            if (!puahCallStack.Any())
-                puahStoreCellCache.Clear(); // Clear at the end of PUAH's `WorkGiver` job check/assignment. #Cache
+            puahToInventoryCallStack.Pop();
+            if (!puahToInventoryCallStack.Any())
+                puahStoreCellCache.Clear(); // Clear at the end of PUAH's `WorkGiver` job check/assignment. :Cache
         }
 
         [HarmonyPatch]
@@ -33,8 +33,8 @@ namespace JobsOfOpportunity
         {
             static bool       Prepare()                           => havePuah;
             static MethodBase TargetMethod()                      => PuahMethod_WorkGiver_HaulToInventory_HasJobOnThing;
-            static void       Prefix(MethodBase __originalMethod) => PushMethod(__originalMethod);
-            static void       Postfix()                           => PopMethod();
+            static void       Prefix(MethodBase __originalMethod) => PushHtiMethod(__originalMethod);
+            static void       Postfix()                           => PopHtiMethod();
         }
 
         [HarmonyPatch]
@@ -45,10 +45,10 @@ namespace JobsOfOpportunity
 
             // priority to order correctly with our other Prefix/Postfix
             [HarmonyPriority(Priority.HigherThanNormal)]
-            static void Prefix(MethodBase __originalMethod) => PushMethod(__originalMethod);
+            static void Prefix(MethodBase __originalMethod) => PushHtiMethod(__originalMethod);
 
             [HarmonyPriority(Priority.LowerThanNormal)]
-            static void Postfix() => PopMethod();
+            static void Postfix() => PopHtiMethod();
         }
 
         [HarmonyPatch]
@@ -57,8 +57,8 @@ namespace JobsOfOpportunity
             static bool       Prepare()      => havePuah;
             static MethodBase TargetMethod() => PuahMethod_WorkGiver_HaulToInventory_AllocateThingAt;
 
-            static void Prefix(MethodBase __originalMethod) => PushMethod(__originalMethod);
-            static void Postfix()                           => PopMethod();
+            static void Prefix(MethodBase __originalMethod) => PushHtiMethod(__originalMethod);
+            static void Postfix()                           => PopHtiMethod();
         }
     #endregion
 
@@ -74,7 +74,7 @@ namespace JobsOfOpportunity
             [HarmonyPostfix]
             static void GetReducedPriority(StorageSettings __instance, ref StoragePriority __result) {
                 // least disruptive way to support hauling between stores of equal priority
-                if (__instance == reducedPriorityStore && __result > StoragePriority.Unstored) // #ReducedPriority
+                if (__instance == reducedPriorityStore && __result > StoragePriority.Unstored) // :ReducedPriority
                     __result -= 1;
             }
         }
@@ -94,7 +94,7 @@ namespace JobsOfOpportunity
                 var haulDestination = StoreUtility.CurrentHaulDestinationOf(thing);
                 if (haulDestination is null) return;
 
-                reducedPriorityStore = haulDestination.GetStoreSettings(); // #ReducedPriority
+                reducedPriorityStore = haulDestination.GetStoreSettings(); // :ReducedPriority
                 thingsInReducedPriorityStore.AddRange(
                     thing.GetSlotGroup().CellsList.SelectMany(cell => cell.GetThingList(thing.Map).Where(cellThing => cellThing.def.EverHaulable)));
                 thing.Map.haulDestinationManager.Notify_HaulDestinationChangedPriority();
@@ -130,13 +130,13 @@ namespace JobsOfOpportunity
             static bool       Prepare()      => havePuah;
             static MethodBase TargetMethod() => PuahMethod_JobDriver_UnloadYourHauledInventory_FirstUnloadableThing;
 
-            // todo #PatchNeighborCheck
+            // todo :PatchNeighborCheck
             [HarmonyPrefix]
             static bool DetourAwareFirstUnloadableThing(ref ThingCount __result, Pawn pawn) {
                 if (!settings.Enabled || !settings.UsePickUpAndHaulPlus) return Continue();
 
                 var hauledToInventoryComp = (ThingComp)PuahMethod_CompHauledToInventory_GetComp.Invoke(pawn, null);
-                var carriedThings         = Traverse.Create(hauledToInventoryComp).Method("GetHashSet").GetValue<HashSet<Thing>>(); // Traverse is cached
+                var carriedThings         = Traverse.Create(hauledToInventoryComp).Method("GetHashSet").GetValue<HashSet<Thing>>(); // `Traverse` is cached
                 if (!carriedThings.Any()) return Halt(__result = default);
 
                 // just loaded game, or half-state from toggling settings, etc.
@@ -158,7 +158,7 @@ namespace JobsOfOpportunity
                     if (detour.puah_defHauls.TryGetValue(thing.def, out var storeCell))
                         return (thing, storeCell);
 
-                    // should only be necessary after loading, because detours aren't saved in game file like CompHauledToInventory
+                    // should only be necessary after loading, because detours aren't saved in game file like `CompHauledToInventory`
                     if (TryFindBestBetterStoreCellFor_MidwayToTarget(
                             thing, detour.opportunity_jobTarget, detour.beforeCarry_carryTarget,
                             pawn,  pawn.Map,                     StoreUtility.CurrentStoragePriorityOf(thing), pawn.Faction, out storeCell, false)) {

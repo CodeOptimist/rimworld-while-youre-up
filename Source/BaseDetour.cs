@@ -16,7 +16,21 @@ namespace JobsOfOpportunity
     {
         static readonly Dictionary<Pawn, BaseDetour> detours = new();
 
-        public enum DetourType { Inactive, Opportunity, BeforeCarry, ExistingElsePuah, Puah, PuahOpportunity, PuahBeforeCarry }
+        public enum DetourType { Inactive, HtcOpportunity, HtcBeforeCarry, ExistingElsePuah, Puah, PuahOpportunity, PuahBeforeCarry }
+
+        static bool AlreadyHauling(Pawn pawn) {
+            if (detours.TryGetValue(pawn, out var detour) && detour.type != DetourType.Inactive) return true;
+
+            // because we may load a game with an incomplete haul
+            if (havePuah) {
+                var hauledToInventoryComp = (ThingComp)PuahMethod_CompHauledToInventory_GetComp.Invoke(pawn, null);
+                var takenToInventory      = Traverse.Create(hauledToInventoryComp).Field<HashSet<Thing>>("takenToInventory").Value; // `Traverse` is cached
+                if (takenToInventory is not null && takenToInventory.Any(t => t is not null))
+                    return true;
+            }
+
+            return false;
+        }
 
         // 'record' for a pretty `Debug.WriteLine(detour);`
         public partial record BaseDetour
@@ -26,13 +40,13 @@ namespace JobsOfOpportunity
             public readonly Dictionary<ThingDef, IntVec3> puah_defHauls = new();
 
             public IntVec3         opportunity_puah_startCell;
-            public LocalTargetInfo opportunity_jobTarget; // vanilla & PUAH
+            public LocalTargetInfo opportunity_jobTarget; // HTC (HaulToCell) & PUAH
             public int             opportunity_puah_unloadedTick;
             // reminder that storeCell is just *some* cell in our stockpile, actual unload cell is determined at unload
             readonly List<(Thing thing, IntVec3 storeCell)> opportunity_hauls = new();
 
             public IntVec3         beforeCarry_puah_storeCell;
-            public LocalTargetInfo beforeCarry_carryTarget; // vanilla & PUAH
+            public LocalTargetInfo beforeCarry_carryTarget; // HTC & PUAH
 
             public void Deactivate() {
                 type = DetourType.Inactive;
@@ -43,9 +57,11 @@ namespace JobsOfOpportunity
             public void TrackPuahThing(Thing thing, IntVec3 storeCell, bool prepend = false, bool trackDef = true) {
                 if (trackDef)
                     puah_defHauls.SetOrAdd(thing.def, storeCell);
+
                 if (type == DetourType.PuahOpportunity) {
-                    // already here because a thing merged into it, or duplicate from HasJobOnThing()
+                    // already here because a thing merged into it, or duplicate from `HasJobOnThing()`
                     // we want to recalculate with the newer store cell since some time has passed
+                    // (this check does not belong in the `else` below)
                     if (opportunity_hauls.LastOrDefault().thing == thing)
                         opportunity_hauls.Pop();
 
@@ -65,9 +81,9 @@ namespace JobsOfOpportunity
                 var suffix = isLoad ? "_LoadReport" : "_UnloadReport";
                 text = type switch {
                     DetourType.Puah => ("PickUpAndHaulPlus" + suffix).ModTranslate(text.Named("ORIGINAL")),
-                    DetourType.Opportunity or DetourType.PuahOpportunity
+                    DetourType.HtcOpportunity or DetourType.PuahOpportunity
                         => ("Opportunity" + suffix).ModTranslate(text.Named("ORIGINAL"), opportunity_jobTarget.Label.Named("DESTINATION")),
-                    DetourType.BeforeCarry or DetourType.PuahBeforeCarry
+                    DetourType.HtcBeforeCarry or DetourType.PuahBeforeCarry
                         => ("HaulBeforeCarry" + suffix).ModTranslate(text.Named("ORIGINAL"), beforeCarry_carryTarget.Label.Named("DESTINATION")),
                     _ => text,
                 };
@@ -115,10 +131,10 @@ namespace JobsOfOpportunity
             static void TrackInitialHaul(Job __result, Pawn pawn, Thing thing) {
                 if (__result is null || !settings.Enabled || !settings.UsePickUpAndHaulPlus) return;
 
-                // thing from parameter because targetA is null because things are in queues instead
-                //  https://github.com/Mehni/PickUpAndHaul/blob/af50a05a8ae5ca64d9b95fee8f593cf91f13be3d/Source/PickUpAndHaul/WorkGiver_HaulToInventory.cs#L98
                 // PUAH has a `haulMoreWork` toil that can re-trigger `JobOnThing()` for every type of detour
                 var detour = SetOrAddDetour(pawn, DetourType.ExistingElsePuah);
+                // thing from parameter because targetA is null because things are in queues instead
+                //  https://github.com/Mehni/PickUpAndHaul/blob/af50a05a8ae5ca64d9b95fee8f593cf91f13be3d/Source/PickUpAndHaul/WorkGiver_HaulToInventory.cs#L98
                 detour.TrackPuahThing(thing, __result.targetB.Cell, prepend: true);
             }
         }
@@ -158,7 +174,7 @@ namespace JobsOfOpportunity
                 __instance.AddFinishAction(
                     () => {
                         var detour = detours.GetValueSafe(__instance.pawn);
-                        if (detour?.type is DetourType.Opportunity or DetourType.BeforeCarry)
+                        if (detour?.type is DetourType.HtcOpportunity or DetourType.HtcBeforeCarry)
                             detour.Deactivate();
                     });
         }
@@ -175,7 +191,7 @@ namespace JobsOfOpportunity
                     () => {
                         var detour = detours.GetValueSafe(__instance.pawn);
                         if (detour is not null) {
-                            // #AvoidConsecutiveOpportunities 
+                            // :RepeatOpportunity
                             if (detour.type == DetourType.PuahOpportunity)
                                 detour.opportunity_puah_unloadedTick = RealTime.frameCount;
                             detour.Deactivate();

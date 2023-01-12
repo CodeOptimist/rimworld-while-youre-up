@@ -22,22 +22,23 @@ namespace JobsOfOpportunity
         [TweakValue("WhileYoureUp.Unloading")] public static bool DumpIfStoreFilledAndAltsInopportune = true;
 
         // So long as we are within a given job check/assignment of PUAH's `WorkGiver_HaulToInventory`
-        //  we can cache store cell by thing and reuse it since pawn, distance, etc. will remain the same. #Cache
+        //  we can cache store cell by thing and reuse it since pawn, distance, etc. will remain the same. :Cache
         static readonly Dictionary<Thing, IntVec3> puahStoreCellCache = new();
 
         [HarmonyPatch]
         static class Puah_WorkGiver_HaulToInventory__TryFindBestBetterStoreCellFor_Patch
         {
-            static bool       Prepare()      => havePuah;
+            static bool Prepare() => havePuah;
+
+            // PUAH's version of this adds `skipCells`, but PUAH *also* calls the vanilla version (indirectly).
+            // To keep things simple we just point PUAH's version back toward vanilla's and only patch vanilla's (w/`skipCells` support).
             static MethodBase TargetMethod() => PuahMethod_WorkGiver_HaulToInventory_TryFindBestBetterStoreCellFor;
 
-            // todo #PatchNeighborCheck
+            // todo :PatchNeighborCheck
             [HarmonyPrefix]
             static bool Use_DetourAware_TryFindStore(ref bool __result, Thing thing, Pawn carrier, Map map, StoragePriority currentPriority, Faction faction,
                 ref IntVec3 foundCell) {
                 if (!settings.Enabled || !settings.UsePickUpAndHaulPlus) return Continue();
-
-                // patched below to keep our code in one place
                 __result = StoreUtility.TryFindBestBetterStoreCellFor(thing, carrier, map, currentPriority, faction, out foundCell);
                 return Halt();
             }
@@ -47,24 +48,21 @@ namespace JobsOfOpportunity
         [HarmonyPatch]
         static class StoreUtility__TryFindBestBetterStoreCellFor_Patch
         {
+            // We patch `TryFindBestBetterStoreCellFor()` to implement our detour logic into PUAH.
+            // This isn't needed for the `htcOpportunity` and `htcBeforeCarry` detours since they're a simple `HaulToCellStorageJob()` call.
             static bool       Prepare()      => havePuah;
             static MethodBase TargetMethod() => AccessTools.DeclaredMethod(typeof(StoreUtility), nameof(StoreUtility.TryFindBestBetterStoreCellFor));
 
-            // todo #PatchNeighborCheck
+            // todo :PatchNeighborCheck
             [HarmonyPrefix]
             static bool DetourAware_TryFindStore(ref bool __result, Thing t, Pawn carrier, Map map, StoragePriority currentPriority,
                 Faction faction, out IntVec3 foundCell, bool needAccurateResult) {
                 foundCell = IntVec3.Invalid;
-
-                // we're only patching `TryFindBestBetterStoreCellFor` to hook into PUAH
-                // elsewhere we call our `TryFindBestBetterStoreCellFor_MidwayToTarget` directly 
                 if (carrier is null || !settings.Enabled || !settings.UsePickUpAndHaulPlus) return Continue();
-
                 var isUnloadJob = carrier.CurJobDef == DefDatabase<JobDef>.GetNamed("UnloadYourHauledInventory");
-                if (!puahCallStack.Any() && !isUnloadJob) return Continue();
-
                 var skipCells    = (HashSet<IntVec3>)PuahField_WorkGiver_HaulToInventory_SkipCells.GetValue(null);
-                var hasSkipCells = puahCallStack.Contains(PuahMethod_WorkGiver_HaulToInventory_AllocateThingAt);
+                var hasSkipCells = puahToInventoryCallStack.Contains(PuahMethod_WorkGiver_HaulToInventory_AllocateThingAt);
+                if (!puahToInventoryCallStack.Any() && !isUnloadJob) return Continue();
 
                 // unload job happens over multiple ticks
                 var canCache = !isUnloadJob;
@@ -72,18 +70,18 @@ namespace JobsOfOpportunity
                     if (puahStoreCellCache.Count == 0) {
                         // Opportunity detours clear their cache immediately after, so this is only non-empty
                         //  if we're executing within an opportunity detour, which makes it safe to use.
-                        // This is the source for the majority of our cache hits, but see below. #Cache
-                        puahStoreCellCache.AddRange(opportunityDetourStoreCellCache);
+                        // This is the source for the majority of our cache hits, but see below. :Cache
+                        puahStoreCellCache.AddRange(opportunityStoreCellCache);
                     }
                     if (!puahStoreCellCache.TryGetValue(t, out foundCell))
                         foundCell = IntVec3.Invalid;
                     else
                         Debug.WriteLine($"{RealTime.frameCount} {carrier} Cache hit! (Size: {puahStoreCellCache.Count}) {MethodBase.GetCurrentMethod()!.Name}");
 
-                    // we reproduce PUAH's skipCells in our own TryFindStore but we also need it here with caching
                     if (foundCell.IsValid && hasSkipCells) {
+                    // we reproduce PUAH's `skipCells` within `…MidwayToTarget()` below but we also need it here with caching
                         if (skipCells.Contains(foundCell))
-                            foundCell = IntVec3.Invalid; // cache is no good, skipCells will be used below
+                            foundCell = IntVec3.Invalid; // cache is no good; skipCells will be used below
                         else                             // successful cache hit
                             skipCells.Add(foundCell);    // not used below, but the next call of this method, like PUAH
                     }
@@ -97,14 +95,14 @@ namespace JobsOfOpportunity
                 if (!foundCell.IsValid && !TryFindBestBetterStoreCellFor_MidwayToTarget( // call our own
                         t, jobTarget, carryTarget, carrier, map, currentPriority, faction, out foundCell,
                         // True here may give us a shorter path, giving detours a better chance.
-                        needAccurateResult: !puahCallStack.Contains(PuahMethod_WorkGiver_HaulToInventory_HasJobOnThing)
+                        needAccurateResult: !puahToInventoryCallStack.Contains(PuahMethod_WorkGiver_HaulToInventory_HasJobOnThing)
                                             && (jobTarget.IsValid || carryTarget.IsValid)
                                             && Find.TickManager.CurTimeSpeed == TimeSpeed.Normal,
                         hasSkipCells ? skipCells : null))
                     return Halt(__result = false);
 
-                // PUAH can repeat a store lookup on its own outside the context of `OpportunityJob()`
-                // —whether from dedicated "Haul" work, or triggered by another WYU detour—though it's seldom. #Cache
+                // PUAH can repeat a store lookup on its own outside the context of `Opportunity_Job()`
+                // —both from dedicated "Haul" labor, or from `BeforeCarry_Job()`, but it's seldom. :Cache
                 if (canCache)
                     puahStoreCellCache.SetOrAdd(t, foundCell);
 
@@ -113,24 +111,25 @@ namespace JobsOfOpportunity
                 //  let's check if they've moved farther than we're willing to tolerate.
                 if (isUnloadJob) {
                     if (!DumpIfStoreFilledAndAltsInopportune && !DebugViewSettings.drawOpportunisticJobs) return Halt(__result = true);
-                    if (detour?.type != DetourType.PuahOpportunity || !detour.puah_defHauls.TryGetValue(t.def, out var originalFoundCell)) return Halt(__result = true);
-                    if (foundCell.GetSlotGroup(map) == originalFoundCell.GetSlotGroup(map)) return Halt(__result = true);
+                    if (detour?.type != DetourType.PuahOpportunity) return Halt(__result = true);
+                    if (!detour.puah_defHauls.TryGetValue(t.def, out var storeCell)) return Halt(__result = true);
+                    if (foundCell.GetSlotGroup(map) == storeCell.GetSlotGroup(map)) return Halt(__result = true);
 
                     var newStoreCell = foundCell; // "cannot use 'out' parameter 'foundCell' inside local function declaration"
                     bool IsNewStoreOpportune() {
                         // For these checks let's take it as a given that our unloading pawn is at `originalFoundCell` by now.
                         //  This isn't necessarily true?, but since we found the distance acceptable if we did make it there,
                         //  let's use that as our basis and check for a detour from that original detour.
-                        // Obviously a detour from a detour can be longer than we originally allowed, but this is an exceptional
-                        //  circumstance; we would really prefer the pawn to unload rather than dump their items.
-                        var storeToNewStoreSquared = originalFoundCell.DistanceToSquared(newStoreCell);
-                        var storeToJobSquared      = originalFoundCell.DistanceToSquared(detour.opportunity_jobTarget.Cell);
-                        if (storeToNewStoreSquared > storeToJobSquared * settings.Opportunity_MaxNewLegsPctOrigTrip.Squared()) return false;
-                        
-                        var storeToNewStore = originalFoundCell.DistanceTo(newStoreCell);
+                        // Obviously a detour from a detour can be longer than we originally allowed,
+                        //  but we would prefer the pawn to unload rather than dump their items.
+                        var storeToNewStoreSquared = storeCell.DistanceToSquared(newStoreCell); // :Sqrt
+                        var storeToJobSquared      = storeCell.DistanceToSquared(detour.opportunity_jobTarget.Cell);
+                        if (storeToNewStoreSquared > storeToJobSquared * settings.Opportunity_MaxNewLegsPctOrigTrip.Squared()) return false; // :MaxNewLeg
+
+                        var storeToNewStore = storeCell.DistanceTo(newStoreCell);
                         var newStoreToJob   = newStoreCell.DistanceTo(detour.opportunity_jobTarget.Cell);
-                        var storeToJob      = originalFoundCell.DistanceTo(detour.opportunity_jobTarget.Cell);
-                        if (storeToNewStore + newStoreToJob > storeToJob * settings.Opportunity_MaxTotalTripPctOrigTrip) return false;
+                        var storeToJob      = storeCell.DistanceTo(detour.opportunity_jobTarget.Cell);
+                        if (storeToNewStore + newStoreToJob > storeToJob * settings.Opportunity_MaxTotalTripPctOrigTrip) return false; // :MaxTotalTrip
                         return true;
                     }
 
@@ -141,18 +140,18 @@ namespace JobsOfOpportunity
                         for (var _ = 0; _ < 3; _++) {
                             var duration = 600;
                             map.debugDrawer.FlashCell(foundCell,                         0.26f, carrier.Name.ToStringShort, duration); // yellow
-                            map.debugDrawer.FlashCell(originalFoundCell,                 0.22f, carrier.Name.ToStringShort, duration); // orange
+                            map.debugDrawer.FlashCell(storeCell,                         0.22f, carrier.Name.ToStringShort, duration); // orange
                             map.debugDrawer.FlashCell(detour.opportunity_jobTarget.Cell, 0.0f,  carrier.Name.ToStringShort, duration); // red
 
                             // yellow: longer new; green: shorter old (longer is worse in this case, hence swapped colors)
-                            map.debugDrawer.FlashLine(originalFoundCell, foundCell,                         duration, SimpleColor.Yellow);
-                            map.debugDrawer.FlashLine(foundCell,         detour.opportunity_jobTarget.Cell, duration, SimpleColor.Yellow);
-                            map.debugDrawer.FlashLine(originalFoundCell, detour.opportunity_jobTarget.Cell, duration, SimpleColor.Green);
+                            map.debugDrawer.FlashLine(storeCell, foundCell,                         duration, SimpleColor.Yellow);
+                            map.debugDrawer.FlashLine(foundCell, detour.opportunity_jobTarget.Cell, duration, SimpleColor.Yellow);
+                            map.debugDrawer.FlashLine(storeCell, detour.opportunity_jobTarget.Cell, duration, SimpleColor.Green);
                         }
 
-                        MoteMaker.ThrowText(originalFoundCell.ToVector3(), carrier.Map, "Debug_CellOccupied".ModTranslate(), new Color(0.94f, 0.85f, 0f)); // orange
-                        MoteMaker.ThrowText(foundCell.ToVector3(),         carrier.Map, "Debug_TooFar".ModTranslate(),       Color.yellow);
-                        MoteMaker.ThrowText(carrier.DrawPos,               carrier.Map, "Debug_Dropping".ModTranslate(),     Color.green);
+                        MoteMaker.ThrowText(storeCell.ToVector3(), carrier.Map, "Debug_CellOccupied".ModTranslate(), new Color(0.94f, 0.85f, 0f)); // orange
+                        MoteMaker.ThrowText(foundCell.ToVector3(), carrier.Map, "Debug_TooFar".ModTranslate(),       Color.yellow);
+                        MoteMaker.ThrowText(carrier.DrawPos,       carrier.Map, "Debug_Dropping".ModTranslate(),     Color.green);
                     }
 
                     return Halt(__result = false); // Denied! Find a desperate spot instead.
@@ -193,7 +192,7 @@ namespace JobsOfOpportunity
                     }
                 }
 
-                if (puahCallStack.Contains(PuahMethod_WorkGiver_HaulToInventory_AllocateThingAt)) {
+                if (puahToInventoryCallStack.Contains(PuahMethod_WorkGiver_HaulToInventory_AllocateThingAt)) {
                     detour = SetOrAddDetour(carrier, DetourType.ExistingElsePuah);
                     detour.TrackPuahThing(t, foundCell);
                 }
@@ -214,7 +213,7 @@ namespace JobsOfOpportunity
                 // original: if (slotGroup.Settings.Priority <= currentPriority) break;
                 if (slotGroup.Settings.Priority < currentPriority) break;
                 if (slotGroup.Settings.Priority == StoragePriority.Unstored) break;
-                if (slotGroup.Settings.Priority == currentPriority && !beforeCarry.IsValid) break; // #ToEqualPriority
+                if (slotGroup.Settings.Priority == currentPriority && !beforeCarry.IsValid) break; // :ToEqualPriority
 
                 var stockpile       = slotGroup.parent as Zone_Stockpile;
                 var buildingStorage = slotGroup.parent as Building_Storage;
@@ -225,7 +224,7 @@ namespace JobsOfOpportunity
                 }
 
                 if (beforeCarry.IsValid) {
-                    // #ToEqualPriority
+                    // :ToEqualPriority
                     if (!settings.HaulBeforeCarry_ToEqualPriority && slotGroup.Settings.Priority == currentPriority) break;
                     if (settings.HaulBeforeCarry_ToEqualPriority && thing.Position.IsValid && slotGroup == map.haulDestinationManager.SlotGroupAt(thing.Position)) continue;
                     if (stockpile is not null && !settings.HaulBeforeCarry_ToStockpiles) continue;
