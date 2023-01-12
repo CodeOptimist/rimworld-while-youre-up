@@ -279,52 +279,57 @@ namespace JobsOfOpportunity
 
         partial record BaseDetour
         {
+            readonly List<(Thing thing, IntVec3 storeCell)> opportunity_puah_haulsByUnloadDistanceOrdered = new(16);
+            readonly List<(Thing thing, IntVec3 storeCell)> opportunity_puah_haulsByUnloadDistancePending = new(16);
+
             public bool TrackPuahThingIfOpportune(Thing thing, Pawn pawn, ref IntVec3 foundCell) {
                 var isPrepend = pawn.carryTracker?.CarriedThing == thing;
                 TrackPuahThing(thing, foundCell, isPrepend, trackDef: false); // :TrackDef
 
-                var curPos           = opportunity_puah_startCell;
                 var startToLastThing = 0f;
-                foreach (var (thing_, _) in opportunity_hauls) {
-                    startToLastThing += curPos.DistanceTo(thing_.Position);
-                    curPos           =  thing_.Position;
+                {
+                    var curPos = opportunity_puah_startCell;
+                    foreach (var (t, _) in opportunity_hauls) {
+                        startToLastThing += curPos.DistanceTo(t.Position);
+                        curPos           =  t.Position;
+                    }
                 }
 
-                // every time, since our foundCell could fit anywhere
-                List<(Thing thing, IntVec3 storeCell)> GetHaulsByUnloadDistance() {
-                    // PUAH WorkGiver always takes us to the first
-                    var ordered = new List<(Thing thing, IntVec3 storeCell)> { opportunity_hauls.First() };
-                    var pending = new List<(Thing thing, IntVec3 storeCell)>(opportunity_hauls.GetRange(1, opportunity_hauls.Count - 1));
+                var haulsByUnloadDistance = opportunity_puah_haulsByUnloadDistanceOrdered;
+                {
+                    var pending = opportunity_puah_haulsByUnloadDistancePending;
+                    haulsByUnloadDistance.Clear();                        // every time, since our foundCell could fit anywhere
+                    haulsByUnloadDistance.Add(opportunity_hauls.First()); // PUAH WorkGiver always takes us to the first
+                    pending.Clear();
+                    pending.AddRange(opportunity_hauls.GetRange(1, opportunity_hauls.Count - 1));
 
                     while (pending.Count > 0) {
-                        // only used for distance checks, so it's perfectly correct if due to close-together or oddly-shaped stockpiles these cells
-                        //  aren't ordered by their parent stockpile
-                        // actual unloading cells are determined on-the-fly (even extras if don't fit, etc.) but this represents them with equal correctness
-                        var closestHaul = pending.MinBy(x => x.storeCell.DistanceToSquared(ordered.Last().storeCell));
-                        ordered.Add(closestHaul);
+                        // It's perfectly correct if due to close-together or oddly-shaped stockpiles these cells aren't ordered by their parent stockpile.
+                        // Actual unloading cells are determined on-the-fly (even extras if don't fit, etc.) but this represents them with equal correctness.
+                        var closestHaul = pending.MinBy(x => x.storeCell.DistanceToSquared(haulsByUnloadDistance.Last().storeCell)); // :Sqrt
+                        haulsByUnloadDistance.Add(closestHaul);
                         pending.Remove(closestHaul);
                     }
-
-                    return ordered;
                 }
 
-                var haulsByUnloadDistance = GetHaulsByUnloadDistance();
-                var lastThingToFirstStore = curPos.DistanceTo(haulsByUnloadDistance.First().storeCell);
+                var lastThingToFirstStore = opportunity_hauls.Last().thing.Position.DistanceTo(haulsByUnloadDistance.First().storeCell);
 
-                curPos = haulsByUnloadDistance.First().storeCell;
                 var firstStoreToLastStore = 0f;
-                foreach (var haul in haulsByUnloadDistance) {
-                    firstStoreToLastStore += curPos.DistanceTo(haul.storeCell);
-                    curPos                =  haul.storeCell;
+                {
+                    var curPos = haulsByUnloadDistance.First().storeCell;
+                    foreach (var (_, storeCell) in haulsByUnloadDistance) {
+                        firstStoreToLastStore += curPos.DistanceTo(storeCell);
+                        curPos                =  storeCell;
+                    }
                 }
 
-                var lastStoreToJob = curPos.DistanceTo(opportunity_jobTarget.Cell);
+                var lastStoreToJob = haulsByUnloadDistance.Last().storeCell.DistanceTo(opportunity_jobTarget.Cell);
 
-                var origTrip          = opportunity_puah_startCell.DistanceTo(opportunity_jobTarget.Cell);
-                var totalTrip         = startToLastThing + lastThingToFirstStore + firstStoreToLastStore + lastStoreToJob;
-                var maxTotalTrip      = origTrip * settings.Opportunity_MaxTotalTripPctOrigTrip;
-                var newLegs           = startToLastThing + firstStoreToLastStore + lastStoreToJob;
-                var maxNewLegs        = origTrip * settings.Opportunity_MaxNewLegsPctOrigTrip;
+                var origTrip     = opportunity_puah_startCell.DistanceTo(opportunity_jobTarget.Cell);
+                var totalTrip    = startToLastThing + lastThingToFirstStore + firstStoreToLastStore + lastStoreToJob;
+                var maxTotalTrip = origTrip * settings.Opportunity_MaxTotalTripPctOrigTrip;
+                var newLegs      = startToLastThing + firstStoreToLastStore + lastStoreToJob;
+                var maxNewLegs   = origTrip * settings.Opportunity_MaxNewLegsPctOrigTrip;
 
                 if (totalTrip > maxTotalTrip || newLegs > maxNewLegs) {
                     foundCell = IntVec3.Invalid;
