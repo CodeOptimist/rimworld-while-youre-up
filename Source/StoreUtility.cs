@@ -60,12 +60,11 @@ namespace JobsOfOpportunity
                 foundCell = IntVec3.Invalid;
                 if (carrier is null || !settings.Enabled || !settings.UsePickUpAndHaulPlus) return Continue();
                 var isUnloadJob = carrier.CurJobDef == DefDatabase<JobDef>.GetNamed("UnloadYourHauledInventory");
-                var skipCells    = (HashSet<IntVec3>)PuahField_WorkGiver_HaulToInventory_SkipCells.GetValue(null);
-                var hasSkipCells = puahToInventoryCallStack.Contains(PuahMethod_WorkGiver_HaulToInventory_AllocateThingAt);
                 if (!puahToInventoryCallStack.Any() && !isUnloadJob) return Continue();
 
-                // unload job happens over multiple ticks
-                var canCache = !isUnloadJob;
+                var canCache      = !isUnloadJob; // unload job happens over multiple ticks
+                var usesSkipCells = puahToInventoryCallStack.Contains(PuahMethod_WorkGiver_HaulToInventory_AllocateThingAt);
+                var skipCells     = usesSkipCells ? (HashSet<IntVec3>)PuahField_WorkGiver_HaulToInventory_SkipCells.GetValue(null) : null;
                 if (canCache) {
                     if (puahStoreCellCache.Count == 0) {
                         // Opportunity detours clear their cache immediately after, so this is only non-empty
@@ -78,8 +77,8 @@ namespace JobsOfOpportunity
                     else
                         Debug.WriteLine($"{RealTime.frameCount} {carrier} Cache hit! (Size: {puahStoreCellCache.Count}) {MethodBase.GetCurrentMethod()!.Name}");
 
-                    if (foundCell.IsValid && hasSkipCells) {
                     // we reproduce PUAH's `skipCells` within `…MidwayToTarget()` below but we also need it here with caching
+                    if (foundCell.IsValid && skipCells is not null) {
                         if (skipCells.Contains(foundCell))
                             foundCell = IntVec3.Invalid; // cache is no good; skipCells will be used below
                         else                             // successful cache hit
@@ -98,7 +97,7 @@ namespace JobsOfOpportunity
                         needAccurateResult: !puahToInventoryCallStack.Contains(PuahMethod_WorkGiver_HaulToInventory_HasJobOnThing)
                                             && (jobTarget.IsValid || carryTarget.IsValid)
                                             && Find.TickManager.CurTimeSpeed == TimeSpeed.Normal,
-                        hasSkipCells ? skipCells : null))
+                        skipCells))
                     return Halt(__result = false);
 
                 // PUAH can repeat a store lookup on its own outside the context of `Opportunity_Job()`
