@@ -46,6 +46,8 @@ namespace JobsOfOpportunity
                 return t.GetFinalCodes();
             }
 
+            static JobDef[] prepareCaravanJobDefs;
+
             // vanilla checks for `job.def.allowOpportunisticPrefix` and lots of other things before this
             // our `settings.Enabled` check is done prior to this in the transpiler
             static Job TryOpportunisticJob(Pawn_JobTracker jobTracker, Job job) {
@@ -80,10 +82,11 @@ namespace JobsOfOpportunity
                     }
                 }
 
-                if (new[] {
-                        JobDefOf.PrepareCaravan_CollectAnimals, JobDefOf.PrepareCaravan_GatherAnimals,
-                        JobDefOf.PrepareCaravan_GatherDownedPawns, JobDefOf.PrepareCaravan_GatherItems,
-                    }.Contains(job.def)) return null;
+                prepareCaravanJobDefs ??= new[] {
+                    JobDefOf.PrepareCaravan_CollectAnimals, JobDefOf.PrepareCaravan_GatherAnimals,
+                    JobDefOf.PrepareCaravan_GatherDownedPawns, JobDefOf.PrepareCaravan_GatherItems,
+                };
+                if (prepareCaravanJobDefs.Contains(job.def)) return null;
                 if (pawn.health.hediffSet.BleedRateTotal > 0.001f) return null;
 
                 var detour = detours.GetValueSafe(pawn);
@@ -111,6 +114,13 @@ namespace JobsOfOpportunity
             public float startToThing, startToThingPctOrigTrip;
             public float storeToJob,   storeToJobPctOrigTrip;
 
+            public void Reset() {
+                expandCount             = 0;
+                startToThing            = settings.Opportunity_MaxStartToThing;
+                startToThingPctOrigTrip = settings.Opportunity_MaxStartToThingPctOrigTrip;
+                storeToJob              = settings.Opportunity_MaxStoreToJob;
+                storeToJobPctOrigTrip   = settings.Opportunity_MaxStoreToJobPctOrigTrip;
+            }
 
             public static MaxRanges operator *(MaxRanges maxRanges, float multiplier) {
                 maxRanges.expandCount             += 1;
@@ -122,18 +132,16 @@ namespace JobsOfOpportunity
             }
         }
 
+        static          MaxRanges   maxRanges;
+        static readonly List<Thing> haulables = new(32);
+
         static Job Opportunity_Job(Pawn pawn, LocalTargetInfo jobTarget) {
             Job _Opportunity_Job() {
-                var maxRanges = new MaxRanges {
-                    startToThing            = settings.Opportunity_MaxStartToThing,
-                    startToThingPctOrigTrip = settings.Opportunity_MaxStartToThingPctOrigTrip,
-                    storeToJob              = settings.Opportunity_MaxStoreToJob,
-                    storeToJobPctOrigTrip   = settings.Opportunity_MaxStoreToJobPctOrigTrip,
-                };
-
                 var forcePathfinding = false;
+                maxRanges.Reset();
+                haulables.Clear();
+                haulables.AddRange(pawn.Map.listerHaulables.ThingsPotentiallyNeedingHauling());
                 var i                = 0;
-                var haulables        = new List<Thing>(pawn.Map.listerHaulables.ThingsPotentiallyNeedingHauling());
                 while (haulables.Count > 0) {
                     if (i == haulables.Count) {
                         // By expanding our cheap range checks gradually, our expensive checks will be performed in the most optimistic order.
@@ -144,7 +152,7 @@ namespace JobsOfOpportunity
                     }
 
                     var thing   = haulables[i];
-                    var canHaul = CanHaul(pawn, thing, jobTarget, maxRanges, out var storeCell, forcePathfinding);
+                    var canHaul = CanHaul(pawn, thing, jobTarget, out var storeCell, forcePathfinding);
                     switch (canHaul) {
                         case CanHaulResult.RangeFail:
                             if (settings.Opportunity_PathChecker == Settings.PathCheckerEnum.Vanilla)
@@ -200,7 +208,7 @@ namespace JobsOfOpportunity
             return result;
         }
 
-        static CanHaulResult CanHaul(Pawn pawn, Thing thing, LocalTargetInfo jobTarget, MaxRanges maxRanges, out IntVec3 storeCell, bool forcePathfinding) {
+        static CanHaulResult CanHaul(Pawn pawn, Thing thing, LocalTargetInfo jobTarget, out IntVec3 storeCell, bool forcePathfinding) {
             storeCell = IntVec3.Invalid;
 
             // I don't know if avoiding `Sqrt()` is currently faster in Unity, but it's easy enough (when not summing distances).
