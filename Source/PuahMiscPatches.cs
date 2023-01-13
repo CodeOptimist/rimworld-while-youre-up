@@ -95,8 +95,7 @@ namespace JobsOfOpportunity
                 if (haulDestination is null) return;
 
                 reducedPriorityStore = haulDestination.GetStoreSettings(); // :ReducedPriority
-                thingsInReducedPriorityStore.AddRange(
-                    thing.GetSlotGroup().CellsList.SelectMany(cell => cell.GetThingList(thing.Map).Where(cellThing => cellThing.def.EverHaulable)));
+                thingsInReducedPriorityStore.AddRange(thing.GetSlotGroup().CellsList.SelectMany(cell => cell.GetThingList(thing.Map).Where(cellThing => cellThing.def.EverHaulable)));
                 thing.Map.haulDestinationManager.Notify_HaulDestinationChangedPriority();
             }
 
@@ -144,26 +143,26 @@ namespace JobsOfOpportunity
 
 #if false
                 Debug.WriteLine($"{pawn}");
-                Debug.WriteLine($"{detour.puah_defHauls.Count} Hauls:");
-                foreach (var defHaul in detour.puah_defHauls)
+                Debug.WriteLine($"{detour.puah.defHauls.Count} Hauls:");
+                foreach (var defHaul in detour.puah.defHauls)
                     Debug.WriteLine($"\t{defHaul.Key}");
 
-                Debug.WriteLine($"{detour.puah_defHauls.Count} Unloads:");
-                foreach (var haul in detour.puah_defHauls)
+                Debug.WriteLine($"{detour.puah.defHauls.Count} Unloads:");
+                foreach (var haul in detour.puah.defHauls)
                     Debug.WriteLine($"\t{haul.Value.GetSlotGroup(pawn.Map)}");
 #endif
 
                 (Thing thing, IntVec3 storeCell) GetDefHaul(Thing thing) {
                     // It's completely possible storage has changed; that's fine. This is just a guess for order.
-                    if (detour.puah_defHauls.TryGetValue(thing.def, out var storeCell))
+                    if (detour.puah.defHauls.TryGetValue(thing.def, out var storeCell))
                         return (thing, storeCell);
 
                     // should only be necessary after loading, because detours aren't saved in game file like `CompHauledToInventory`
                     if (TryFindBestBetterStoreCellFor_MidwayToTarget(
-                            thing, detour.opportunity_jobTarget, detour.beforeCarry_carryTarget,
+                            thing, detour.opportunity.jobTarget, detour.beforeCarry.carryTarget,
                             pawn,  pawn.Map,                     StoreUtility.CurrentStoragePriorityOf(thing), pawn.Faction, out storeCell, false)) {
                         // cache for next
-                        detour.puah_defHauls.Add(thing.def, storeCell);
+                        detour.puah.defHauls.Add(thing.def, storeCell);
                     }
                     return (thing, storeCell);
                 }

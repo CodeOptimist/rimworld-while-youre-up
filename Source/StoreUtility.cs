@@ -88,8 +88,8 @@ namespace JobsOfOpportunity
 
                 var detour = detours.GetValueSafe(carrier);
                 Debug.WriteLine($"Carrier: {carrier} {detour?.type}");
-                var jobTarget   = detour?.opportunity_jobTarget ?? LocalTargetInfo.Invalid;
-                var carryTarget = detour?.beforeCarry_carryTarget ?? LocalTargetInfo.Invalid;
+                var jobTarget   = detour?.opportunity.jobTarget ?? LocalTargetInfo.Invalid;
+                var carryTarget = detour?.beforeCarry.carryTarget ?? LocalTargetInfo.Invalid;
 
                 if (!foundCell.IsValid && !TryFindBestBetterStoreCellFor_MidwayToTarget( // call our own
                         t, jobTarget, carryTarget, carrier, map, currentPriority, faction, out foundCell,
@@ -111,7 +111,7 @@ namespace JobsOfOpportunity
                 if (isUnloadJob) {
                     if (!DumpIfStoreFilledAndAltsInopportune && !DebugViewSettings.drawOpportunisticJobs) return Halt(__result = true);
                     if (detour?.type != DetourType.PuahOpportunity) return Halt(__result = true);
-                    if (!detour.puah_defHauls.TryGetValue(t.def, out var storeCell)) return Halt(__result = true);
+                    if (!detour.puah.defHauls.TryGetValue(t.def, out var storeCell)) return Halt(__result = true);
                     if (foundCell.GetSlotGroup(map) == storeCell.GetSlotGroup(map)) return Halt(__result = true);
 
                     var newStoreCell = foundCell; // "cannot use 'out' parameter 'foundCell' inside local function declaration"
@@ -122,12 +122,12 @@ namespace JobsOfOpportunity
                         // Obviously a detour from a detour can be longer than we originally allowed,
                         //  but we would prefer the pawn to unload rather than dump their items.
                         var storeToNewStoreSquared = storeCell.DistanceToSquared(newStoreCell); // :Sqrt
-                        var storeToJobSquared      = storeCell.DistanceToSquared(detour.opportunity_jobTarget.Cell);
+                        var storeToJobSquared      = storeCell.DistanceToSquared(detour.opportunity.jobTarget.Cell);
                         if (storeToNewStoreSquared > storeToJobSquared * settings.Opportunity_MaxNewLegsPctOrigTrip.Squared()) return false; // :MaxNewLeg
 
                         var storeToNewStore = storeCell.DistanceTo(newStoreCell);
-                        var newStoreToJob   = newStoreCell.DistanceTo(detour.opportunity_jobTarget.Cell);
-                        var storeToJob      = storeCell.DistanceTo(detour.opportunity_jobTarget.Cell);
+                        var newStoreToJob   = newStoreCell.DistanceTo(detour.opportunity.jobTarget.Cell);
+                        var storeToJob      = storeCell.DistanceTo(detour.opportunity.jobTarget.Cell);
                         if (storeToNewStore + newStoreToJob > storeToJob * settings.Opportunity_MaxTotalTripPctOrigTrip) return false; // :MaxTotalTrip
                         return true;
                     }
@@ -140,12 +140,12 @@ namespace JobsOfOpportunity
                             var duration = 600;
                             map.debugDrawer.FlashCell(foundCell,                         0.26f, carrier.Name.ToStringShort, duration); // yellow
                             map.debugDrawer.FlashCell(storeCell,                         0.22f, carrier.Name.ToStringShort, duration); // orange
-                            map.debugDrawer.FlashCell(detour.opportunity_jobTarget.Cell, 0.0f,  carrier.Name.ToStringShort, duration); // red
+                            map.debugDrawer.FlashCell(detour.opportunity.jobTarget.Cell, 0.0f,  carrier.Name.ToStringShort, duration); // red
 
                             // yellow: longer new; green: shorter old (longer is worse in this case, hence swapped colors)
                             map.debugDrawer.FlashLine(storeCell, foundCell,                         duration, SimpleColor.Yellow);
-                            map.debugDrawer.FlashLine(foundCell, detour.opportunity_jobTarget.Cell, duration, SimpleColor.Yellow);
-                            map.debugDrawer.FlashLine(storeCell, detour.opportunity_jobTarget.Cell, duration, SimpleColor.Green);
+                            map.debugDrawer.FlashLine(foundCell, detour.opportunity.jobTarget.Cell, duration, SimpleColor.Yellow);
+                            map.debugDrawer.FlashLine(storeCell, detour.opportunity.jobTarget.Cell, duration, SimpleColor.Green);
                         }
 
                         MoteMaker.ThrowText(storeCell.ToVector3(), carrier.Map, "Debug_CellOccupied".ModTranslate(), new Color(0.94f, 0.85f, 0f)); // orange
@@ -165,7 +165,7 @@ namespace JobsOfOpportunity
                     var foundCellGroup = foundCell.GetSlotGroup(map);
 
                     // only grab extra things going to the same store
-                    if (foundCellGroup != detour.beforeCarry_puah_storeCell.GetSlotGroup(map))
+                    if (foundCellGroup != detour.beforeCarry.puah.storeCell.GetSlotGroup(map))
                         return Halt(__result = false);
 
                     // Debug.WriteLine($"{t} is destined for same storage {foundCellGroup} {foundCell}");
@@ -176,7 +176,7 @@ namespace JobsOfOpportunity
                                 return Halt(__result = false);
 
                             Debug.WriteLine(
-                                $"APPROVED {t} {t.Position} as needed supplies for {detour.beforeCarry_carryTarget}"
+                                $"APPROVED {t} {t.Position} as needed supplies for {detour.beforeCarry.carryTarget}"
                                 + $" headed to same-priority storage {foundCellGroup} {foundCell}.");
                         }
 
@@ -185,7 +185,7 @@ namespace JobsOfOpportunity
                                 return Halt(__result = false);
 
                             Debug.WriteLine(
-                                $"APPROVED {t} {t.Position} as ingredients for {detour.beforeCarry_carryTarget}"
+                                $"APPROVED {t} {t.Position} as ingredients for {detour.beforeCarry.carryTarget}"
                                 + $" headed to same-priority storage {foundCellGroup} {foundCell}.");
                         }
                     }

@@ -33,44 +33,57 @@ namespace JobsOfOpportunity
         }
 
         // 'record' for a pretty `Debug.WriteLine(detour);`
+        // can't use `?` operator with `record struct`, which makes usage with `detours` more annoying
         public partial record BaseDetour
         {
             public DetourType type;
 
-            public readonly Dictionary<ThingDef, IntVec3> puah_defHauls = new();
+            public record struct Puah(Dictionary<ThingDef, IntVec3> defHauls);
+            public Puah puah = new() { defHauls = new Dictionary<ThingDef, IntVec3>(16) };
 
-            public IntVec3         opportunity_puah_startCell;
-            public LocalTargetInfo opportunity_jobTarget; // HTC (HaulToCell) & PUAH
-            public int             opportunity_puah_unloadedTick;
-            // reminder that storeCell is just *some* cell in our stockpile, actual unload cell is determined at unload
-            readonly List<(Thing thing, IntVec3 storeCell)> opportunity_hauls = new();
+            // reminder that `storeCell` is just *some* cell in our stockpile, actual unload cell is determined at unload
+            public record struct Opportunity(LocalTargetInfo jobTarget, List<(Thing thing, IntVec3 storeCell)> hauls)
+            {
+                public record struct OpportunityPuah(IntVec3 startCell, int unloadedTick)
+                {
+                    public static List<(Thing thing, IntVec3 storeCell)> haulsByUnloadDistanceOrdered;
+                    public static List<(Thing thing, IntVec3 storeCell)> haulsByUnloadDistancePending;
+                }
+                public OpportunityPuah puah = new();
+            }
+            public Opportunity opportunity = new() { hauls = new List<(Thing thing, IntVec3 storeCell)>(16) };
 
-            public IntVec3         beforeCarry_puah_storeCell;
-            public LocalTargetInfo beforeCarry_carryTarget; // HTC & PUAH
+            public record struct BeforeCarry(LocalTargetInfo carryTarget)
+            {
+                public record struct BeforeCarryPuah(IntVec3 storeCell);
+                public BeforeCarryPuah puah = new();
+            }
+            // ReSharper disable once RedundantDefaultMemberInitializer
+            public BeforeCarry beforeCarry = new();
 
             public void Deactivate() {
                 type = DetourType.Inactive;
-                puah_defHauls.Clear();
-                opportunity_hauls.Clear();
+                puah.defHauls.Clear();
+                opportunity.hauls.Clear();
             }
 
             public void TrackPuahThing(Thing thing, IntVec3 storeCell, bool prepend = false, bool trackDef = true) {
                 if (trackDef)
-                    puah_defHauls.SetOrAdd(thing.def, storeCell);
+                    puah.defHauls.SetOrAdd(thing.def, storeCell);
 
                 if (type == DetourType.PuahOpportunity) {
                     // already here because a thing merged into it, or duplicate from `HasJobOnThing()`
                     // we want to recalculate with the newer store cell since some time has passed
                     // (this check does not belong in the `else` below)
-                    if (opportunity_hauls.LastOrDefault().thing == thing)
-                        opportunity_hauls.Pop();
+                    if (opportunity.hauls.LastOrDefault().thing == thing)
+                        opportunity.hauls.Pop();
 
                     if (prepend) {
-                        if (opportunity_hauls.FirstOrDefault().thing == thing)
-                            opportunity_hauls.RemoveAt(0);
-                        opportunity_hauls.Insert(0, (thing, storeCell));
+                        if (opportunity.hauls.FirstOrDefault().thing == thing)
+                            opportunity.hauls.RemoveAt(0);
+                        opportunity.hauls.Insert(0, (thing, storeCell));
                     } else
-                        opportunity_hauls.Add((thing, storeCell));
+                        opportunity.hauls.Add((thing, storeCell));
                 }
             }
 
@@ -82,9 +95,9 @@ namespace JobsOfOpportunity
                 text = type switch {
                     DetourType.Puah => ("PickUpAndHaulPlus" + suffix).ModTranslate(text.Named("ORIGINAL")),
                     DetourType.HtcOpportunity or DetourType.PuahOpportunity
-                        => ("Opportunity" + suffix).ModTranslate(text.Named("ORIGINAL"), opportunity_jobTarget.Label.Named("DESTINATION")),
+                        => ("Opportunity" + suffix).ModTranslate(text.Named("ORIGINAL"), opportunity.jobTarget.Label.Named("DESTINATION")),
                     DetourType.HtcBeforeCarry or DetourType.PuahBeforeCarry
-                        => ("HaulBeforeCarry" + suffix).ModTranslate(text.Named("ORIGINAL"), beforeCarry_carryTarget.Label.Named("DESTINATION")),
+                        => ("HaulBeforeCarry" + suffix).ModTranslate(text.Named("ORIGINAL"), beforeCarry.carryTarget.Label.Named("DESTINATION")),
                     _ => text,
                 };
             }
@@ -110,10 +123,10 @@ namespace JobsOfOpportunity
                 type = DetourType.Puah;
             }
 
-            detour.opportunity_puah_startCell = startCell ?? IntVec3.Invalid;
-            detour.opportunity_jobTarget      = jobTarget ?? LocalTargetInfo.Invalid;
-            detour.beforeCarry_puah_storeCell = storeCell ?? IntVec3.Invalid;
-            detour.beforeCarry_carryTarget    = carryTarget ?? LocalTargetInfo.Invalid;
+            detour.opportunity.puah.startCell = startCell ?? IntVec3.Invalid;
+            detour.opportunity.jobTarget      = jobTarget ?? LocalTargetInfo.Invalid;
+            detour.beforeCarry.puah.storeCell = storeCell ?? IntVec3.Invalid;
+            detour.beforeCarry.carryTarget    = carryTarget ?? LocalTargetInfo.Invalid;
 
             detour.Deactivate(); // wipe lists
             detour.type = type;  // reactivate
@@ -193,7 +206,7 @@ namespace JobsOfOpportunity
                         if (detour is not null) {
                             // :RepeatOpportunity
                             if (detour.type == DetourType.PuahOpportunity)
-                                detour.opportunity_puah_unloadedTick = RealTime.frameCount;
+                                detour.opportunity.puah.unloadedTick = RealTime.frameCount;
                             detour.Deactivate();
                         }
                     });

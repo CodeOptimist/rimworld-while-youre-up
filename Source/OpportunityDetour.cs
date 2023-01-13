@@ -93,7 +93,7 @@ namespace JobsOfOpportunity
                 // We'll check for a repeat opportunity within 5 ticks.
                 // I expected repeats to be exactly 1 tick later, but it's sometimes 2, I'm not sure why.
                 //  A PUAH job re-triggering maybe? :RepeatOpportunity
-                if (detour?.opportunity_puah_unloadedTick > 0 && RealTime.frameCount - detour.opportunity_puah_unloadedTick <= 5) return null;
+                if (detour?.opportunity.puah.unloadedTick > 0 && RealTime.frameCount - detour.opportunity.puah.unloadedTick <= 5) return null;
 
                 // use first ingredient location if bill because our pawn will go directly to it
                 var jobTarget = job.def == JobDefOf.DoBill ? job.targetQueueB?.FirstOrDefault() ?? job.targetA : job.targetA;
@@ -141,7 +141,7 @@ namespace JobsOfOpportunity
                 maxRanges.Reset();
                 haulables.Clear();
                 haulables.AddRange(pawn.Map.listerHaulables.ThingsPotentiallyNeedingHauling());
-                var i                = 0;
+                var i = 0;
                 while (haulables.Count > 0) {
                     if (i == haulables.Count) {
                         // By expanding our cheap range checks gradually, our expensive checks will be performed in the most optimistic order.
@@ -287,29 +287,27 @@ namespace JobsOfOpportunity
 
         partial record BaseDetour
         {
-            readonly List<(Thing thing, IntVec3 storeCell)> opportunity_puah_haulsByUnloadDistanceOrdered = new(16);
-            readonly List<(Thing thing, IntVec3 storeCell)> opportunity_puah_haulsByUnloadDistancePending = new(16);
-
             public bool TrackPuahThingIfOpportune(Thing thing, Pawn pawn, ref IntVec3 foundCell) {
                 var isPrepend = pawn.carryTracker?.CarriedThing == thing;
                 TrackPuahThing(thing, foundCell, isPrepend, trackDef: false); // :TrackDef
 
                 var startToLastThing = 0f;
                 {
-                    var curPos = opportunity_puah_startCell;
-                    foreach (var (t, _) in opportunity_hauls) {
+                    var curPos = opportunity.puah.startCell;
+                    foreach (var (t, _) in opportunity.hauls) {
                         startToLastThing += curPos.DistanceTo(t.Position);
                         curPos           =  t.Position;
                     }
                 }
 
-                var haulsByUnloadDistance = opportunity_puah_haulsByUnloadDistanceOrdered;
+                // initialize here since might not have PUAH
+                var haulsByUnloadDistance = Opportunity.OpportunityPuah.haulsByUnloadDistanceOrdered ??= new List<(Thing thing, IntVec3 storeCell)>(16);
                 {
-                    var pending = opportunity_puah_haulsByUnloadDistancePending;
+                    var pending = Opportunity.OpportunityPuah.haulsByUnloadDistancePending ??= new List<(Thing thing, IntVec3 storeCell)>(16);
                     haulsByUnloadDistance.Clear();                        // every time, since our foundCell could fit anywhere
-                    haulsByUnloadDistance.Add(opportunity_hauls.First()); // PUAH WorkGiver always takes us to the first
+                    haulsByUnloadDistance.Add(opportunity.hauls.First()); // PUAH WorkGiver always takes us to the first
                     pending.Clear();
-                    pending.AddRange(opportunity_hauls.GetRange(1, opportunity_hauls.Count - 1));
+                    pending.AddRange(opportunity.hauls.GetRange(1, opportunity.hauls.Count - 1));
 
                     while (pending.Count > 0) {
                         // It's perfectly correct if due to close-together or oddly-shaped stockpiles these cells aren't ordered by their parent stockpile.
@@ -320,7 +318,7 @@ namespace JobsOfOpportunity
                     }
                 }
 
-                var lastThingToFirstStore = opportunity_hauls.Last().thing.Position.DistanceTo(haulsByUnloadDistance.First().storeCell);
+                var lastThingToFirstStore = opportunity.hauls.Last().thing.Position.DistanceTo(haulsByUnloadDistance.First().storeCell);
 
                 var firstStoreToLastStore = 0f;
                 {
@@ -331,9 +329,9 @@ namespace JobsOfOpportunity
                     }
                 }
 
-                var lastStoreToJob = haulsByUnloadDistance.Last().storeCell.DistanceTo(opportunity_jobTarget.Cell);
+                var lastStoreToJob = haulsByUnloadDistance.Last().storeCell.DistanceTo(opportunity.jobTarget.Cell);
 
-                var origTrip     = opportunity_puah_startCell.DistanceTo(opportunity_jobTarget.Cell);
+                var origTrip     = opportunity.puah.startCell.DistanceTo(opportunity.jobTarget.Cell);
                 var totalTrip    = startToLastThing + lastThingToFirstStore + firstStoreToLastStore + lastStoreToJob;
                 var maxTotalTrip = origTrip * settings.Opportunity_MaxTotalTripPctOrigTrip;
                 var newLegs      = startToLastThing + firstStoreToLastStore + lastStoreToJob;
@@ -341,22 +339,22 @@ namespace JobsOfOpportunity
 
                 if (totalTrip > maxTotalTrip || newLegs > maxNewLegs) {
                     foundCell = IntVec3.Invalid;
-                    opportunity_hauls.RemoveAt(isPrepend ? 0 : opportunity_hauls.Count - 1);
+                    opportunity.hauls.RemoveAt(isPrepend ? 0 : opportunity.hauls.Count - 1);
                     return false;
                 }
 
-                puah_defHauls.SetOrAdd(thing!.def, foundCell); // :TrackDef
+                puah.defHauls.SetOrAdd(thing!.def, foundCell); // :TrackDef
 
 #if false
                 var storeCells = haulsByUnloadDistance.Select(x => x.storeCell).ToList();
                 Debug.WriteLine($"APPROVED {thing} -> {foundCell} for {pawn}");
                 Debug.WriteLine(
-                    $"\tstartToLastThing: {pawn} {opportunity_puah_startCell} -> {string.Join(" -> ", opportunity_hauls.Select(x => $"{x.thing} {x.thing.Position}"))} = {startToLastThing}");
+                    $"\tstartToLastThing: {pawn} {opportunity.Puah.startCell} -> {string.Join(" -> ", opportunity.hauls.Select(x => $"{x.thing} {x.thing.Position}"))} = {startToLastThing}");
                 Debug.WriteLine($"\tlastThingToFirstStore: {thing} {thing.Position} -> {storeCells.First().GetSlotGroup(pawn.Map)} {storeCells.First()} = {lastThingToFirstStore}");
                 Debug.WriteLine($"\tfirstStoreToLastStore: {string.Join(" -> ", storeCells.Select(x => $"{x.GetSlotGroup(pawn.Map)} {x}"))} = {firstStoreToLastStore}");
                 Debug.WriteLine(
-                    $"\tlastStoreToJob: {storeCells.Last().GetSlotGroup(pawn.Map)} {storeCells.Last()} -> {opportunity_jobTarget} {opportunity_jobTarget.Cell} = {lastStoreToJob}");
-                Debug.WriteLine($"\torigTrip: {pawn} {opportunity_puah_startCell} -> {opportunity_jobTarget} {opportunity_jobTarget.Cell} = {origTrip}");
+                    $"\tlastStoreToJob: {storeCells.Last().GetSlotGroup(pawn.Map)} {storeCells.Last()} -> {opportunity.jobTarget} {opportunity.jobTarget.Cell} = {lastStoreToJob}");
+                Debug.WriteLine($"\torigTrip: {pawn} {opportunity.Puah.startCell} -> {opportunity.jobTarget} {opportunity.jobTarget.Cell} = {origTrip}");
                 Debug.WriteLine($"\ttotalTrip: {startToLastThing} + {lastThingToFirstStore} + {firstStoreToLastStore} + {lastStoreToJob}  = {totalTrip}");
                 Debug.WriteLine($"\tmaxTotalTrip: {origTrip} * {settings.Opportunity_MaxTotalTripPctOrigTrip} = {maxTotalTrip}");
                 Debug.WriteLine($"\tnewLegs: {startToLastThing} + {firstStoreToLastStore} + {lastStoreToJob} = {newLegs}");
