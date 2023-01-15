@@ -112,7 +112,7 @@ partial class Mod
         }
 
         BaseDetour Result(BaseDetour result) {
-            Debug.WriteLine($"{pawn} {type}; {result.type}");
+            Debug.WriteLine($"{pawn} {type} -> {result.type}");
             return result;
         }
 

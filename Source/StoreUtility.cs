@@ -87,7 +87,7 @@ partial class Mod
             }
 
             var detour = detours.GetValueSafe(carrier);
-            Debug.WriteLine($"Carrier: {carrier} {detour?.type}");
+            // Debug.WriteLine($"Carrier: {carrier} {detour?.type}");
             var jobTarget   = detour?.opportunity.jobTarget ?? LocalTargetInfo.Invalid;
             var carryTarget = detour?.beforeCarry.carryTarget ?? LocalTargetInfo.Invalid;
 

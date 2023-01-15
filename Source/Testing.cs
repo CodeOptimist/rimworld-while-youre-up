@@ -39,6 +39,8 @@ partial class Mod
         var itemDefs = (from def in DefDatabase<ThingDef>.AllDefs
             where DebugThingPlaceHelper.IsDebugSpawnable(def) && def.category == ThingCategory.Item
             select def).ToList();
+
+        // todo we could use Perlin noise for natural item cell grouping?
         foreach (var itemDef in itemDefs)
             DebugThingPlaceHelper.DebugSpawn(itemDef, pawnAndThingRect.RandomCell, -1, true);
 

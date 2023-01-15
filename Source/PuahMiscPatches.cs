@@ -102,9 +102,10 @@ partial class Mod
 
         [HarmonyPostfix]
         static void HaulToEqualPriorityCleanup() {
-            var map = reducedPriorityStore?.HaulDestinationOwner?.Map;
+            if (reducedPriorityStore == null) return; // let's be obvious instead of using `?`
+            var map = reducedPriorityStore.HaulDestinationOwner?.Map;
             reducedPriorityStore = null;
-            thingsInReducedPriorityStore?.Clear();
+            thingsInReducedPriorityStore!.Clear();
             map?.haulDestinationManager.Notify_HaulDestinationChangedPriority();
         }
     }

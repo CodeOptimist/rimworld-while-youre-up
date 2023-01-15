@@ -72,7 +72,7 @@ partial class Mod : Verse.Mod
 #endregion
 
     static Verse.Mod mod;
-    static Settings  settings;
+    static Settings  settings; // static reference since `.modSettings` isn't
     static bool      foundConfig;
 
     // Prefix for our XML keys (language translations); PackageId may change (e.g. "__copy__" suffix).
@@ -83,7 +83,7 @@ partial class Mod : Verse.Mod
         mod       = this;  // static reference to mod for e.g. mod name in log messages
         Gui.modId = modId; // setup for CodeOptimist Gui library
 
-        settings = GetSettings<Settings>();
+        settings = GetSettings<Settings>(); // read settings from file
         if (!foundConfig)
             settings.ExposeData(); // initialize to defaults
 
