@@ -14,7 +14,7 @@ namespace JobsOfOpportunity;
 [SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
 partial class Mod
 {
-    static readonly Dictionary<Pawn, BaseDetour> detours = new();
+    static readonly Dictionary<Pawn, BaseDetour> detours = new(8);
 
     public enum DetourType { Inactive, HtcOpportunity, HtcBeforeCarry, ExistingElsePuah, Puah, PuahOpportunity, PuahBeforeCarry }
 

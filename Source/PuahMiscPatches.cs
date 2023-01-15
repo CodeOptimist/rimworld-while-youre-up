@@ -15,7 +15,7 @@ partial class Mod
 {
 #region PUAH call stack
     // so our StoreUtility code can know from where within Pick Up And Haul it's executing
-    static readonly List<MethodBase> puahToInventoryCallStack = new();
+    static readonly List<MethodBase> puahToInventoryCallStack = new(4);
 
     static void PushHtiMethod(MethodBase method) => puahToInventoryCallStack.Add(method);
 
@@ -79,7 +79,7 @@ partial class Mod
         }
     }
 
-    static readonly List<Thing> thingsInReducedPriorityStore = new();
+    static List<Thing> thingsInReducedPriorityStore;
 
     [HarmonyPatch]
     static partial class Puah_WorkGiver_HaulToInventory__JobOnThing_Patch
@@ -94,7 +94,8 @@ partial class Mod
             var haulDestination = StoreUtility.CurrentHaulDestinationOf(thing);
             if (haulDestination is null) return;
 
-            reducedPriorityStore = haulDestination.GetStoreSettings(); // :ReducedPriority
+            reducedPriorityStore         =   haulDestination.GetStoreSettings(); // :ReducedPriority
+            thingsInReducedPriorityStore ??= new List<Thing>(32);
             thingsInReducedPriorityStore.AddRange(thing.GetSlotGroup().CellsList.SelectMany(cell => cell.GetThingList(thing.Map).Where(cellThing => cellThing.def.EverHaulable)));
             thing.Map.haulDestinationManager.Notify_HaulDestinationChangedPriority();
         }
@@ -103,7 +104,7 @@ partial class Mod
         static void HaulToEqualPriorityCleanup() {
             var map = reducedPriorityStore?.HaulDestinationOwner?.Map;
             reducedPriorityStore = null;
-            thingsInReducedPriorityStore.Clear();
+            thingsInReducedPriorityStore?.Clear();
             map?.haulDestinationManager.Notify_HaulDestinationChangedPriority();
         }
     }

@@ -23,7 +23,7 @@ partial class Mod
 
     // So long as we are within a given job check/assignment of PUAH's `WorkGiver_HaulToInventory`
     //  we can cache store cell by thing and reuse it since pawn, distance, etc. will remain the same. :Cache
-    static readonly Dictionary<Thing, IntVec3> puahStoreCellCache = new();
+    static readonly Dictionary<Thing, IntVec3> puahStoreCellCache = new(64);
 
     [HarmonyPatch]
     static class Puah_WorkGiver_HaulToInventory__TryFindBestBetterStoreCellFor_Patch

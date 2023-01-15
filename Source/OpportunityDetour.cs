@@ -16,7 +16,7 @@ namespace JobsOfOpportunity;
 [SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
 partial class Mod
 {
-    static readonly Dictionary<Thing, IntVec3> opportunityStoreCellCache = new();
+    static readonly Dictionary<Thing, IntVec3> opportunityStoreCellCache = new(64);
 
     [HarmonyPatch(typeof(Pawn_JobTracker), nameof(Pawn_JobTracker.TryOpportunisticJob))]
     static class Pawn_JobTracker__TryOpportunisticJob_Patch

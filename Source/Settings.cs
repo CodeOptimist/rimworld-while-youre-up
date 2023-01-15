@@ -81,7 +81,7 @@ partial class Mod
         static readonly SettingsThingFilter             hbcDummyFilter  = new();
 
         static readonly ThingCategoryDef storageBuildingCategoryDef;
-        static readonly List<TabRecord>  tabsList = new();
+        static readonly List<TabRecord>  tabsList = new(4);
         static          Tab              tab      = Tab.Opportunity;
 
         static SettingsWindow() {
