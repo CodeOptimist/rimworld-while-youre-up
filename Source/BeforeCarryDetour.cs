@@ -11,7 +11,7 @@ using Verse.AI;
 // ReSharper disable once RedundantUsingDirective
 using Debug = System.Diagnostics.Debug;
 
-namespace JobsOfOpportunity;
+namespace WhileYoureUp;
 
 [SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
 partial class Mod

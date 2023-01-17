@@ -3,7 +3,7 @@ using System.Linq;
 using RimWorld;
 using Verse;
 
-namespace JobsOfOpportunity;
+namespace WhileYoureUp;
 
 [SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
 partial class Mod

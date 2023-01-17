@@ -12,7 +12,7 @@ using Verse;
 // ReSharper disable once RedundantUsingDirective
 using Debug = System.Diagnostics.Debug;
 
-namespace JobsOfOpportunity;
+namespace WhileYoureUp;
 
 [SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
 partial class Mod
@@ -388,7 +388,7 @@ partial class Mod
     }
 
     [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
-    class Settings : ModSettings
+    internal class Settings : ModSettings
     {
         public enum PathCheckerEnum { Default, Vanilla, Pathfinding }
 
