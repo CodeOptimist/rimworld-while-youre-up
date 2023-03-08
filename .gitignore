@@ -1,9 +1,6 @@
 .suo
 .user
-About.xml
-Assemblies/
-Settings.xml
 Source/.vs/
 Source/bin/
 Source/obj/
-UpdateFeatures.xml
+Source/.idea/
