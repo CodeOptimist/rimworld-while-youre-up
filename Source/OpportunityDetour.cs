@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
@@ -102,7 +103,7 @@ partial class Mod
         }
     }
 
-    enum CanHaulResult { RangeFail, HardFail, PrePathSuccess, Success }
+    enum CanHaulResult { RangeFail, HardFail, FullStop, Success }
 
     struct MaxRanges
     {
@@ -137,7 +138,6 @@ partial class Mod
 
     static Job Opportunity_Job(Pawn pawn, LocalTargetInfo jobTarget) {
         Job _Opportunity_Job() {
-            var forcePathfinding = false;
             maxRanges.Reset();
             haulables.Clear();
             haulables.AddRange(pawn.Map.listerHaulables.ThingsPotentiallyNeedingHauling());
@@ -152,7 +152,7 @@ partial class Mod
                 }
 
                 var thing   = haulables[i];
-                var canHaul = CanHaul(pawn, thing, jobTarget, out var storeCell, forcePathfinding);
+                var canHaul = CanHaul(pawn, thing, jobTarget, out var storeCell);
                 switch (canHaul) {
                     case CanHaulResult.RangeFail:
                         if (settings.Opportunity_PathChecker == Settings.PathCheckerEnum.Vanilla)
@@ -163,9 +163,8 @@ partial class Mod
                     case CanHaulResult.HardFail:
                         haulables.RemoveAt(i);
                         continue;
-                    case CanHaulResult.PrePathSuccess:
-                        forcePathfinding = true;
-                        continue; // repeat
+                    case CanHaulResult.FullStop:
+                        return null;
                     case CanHaulResult.Success:
                         // todo test our heuristic expand factor more thoroughly
                         Debug.WriteLine($"Checked: {1 - (haulables.Count - 1) / (float)pawn.Map.listerHaulables.haulables.Count:P}. Expansions: {maxRanges.expandCount}");
@@ -208,7 +207,7 @@ partial class Mod
         return result;
     }
 
-    static CanHaulResult CanHaul(Pawn pawn, Thing thing, LocalTargetInfo jobTarget, out IntVec3 storeCell, bool forcePathfinding) {
+    static CanHaulResult CanHaul(Pawn pawn, Thing thing, LocalTargetInfo jobTarget, out IntVec3 storeCell) {
         storeCell = IntVec3.Invalid;
 
         // I don't know if avoiding `Sqrt()` is currently faster in Unity, but it's easy enough (when not summing distances).
@@ -250,10 +249,17 @@ partial class Mod
         if (startToThing + thingToStore + storeToJob > pawnToJob * settings.Opportunity_MaxTotalTripPctOrigTrip) // :MaxTotalTrip
             return CanHaulResult.HardFail;
 
-        if (settings.Opportunity_PathChecker == Settings.PathCheckerEnum.Vanilla)
-            return CanHaulResult.Success;
-        
-        if (forcePathfinding || settings.Opportunity_PathChecker == Settings.PathCheckerEnum.Pathfinding) {
+        bool WithinRegionCount(IntVec3 storeCell) {
+            if (!pawn.Position.WithinRegions(thing.Position, pawn.Map, settings.Opportunity_MaxStartToThingRegionLookCount, TraverseParms.For(pawn)))
+                return false;
+
+            if (!storeCell.WithinRegions(jobTarget.Cell, pawn.Map, settings.Opportunity_MaxStoreToJobRegionLookCount, TraverseParms.For(pawn)))
+                return false;
+
+            return true;
+        }
+
+        bool WithinPathCost(IntVec3 storeCell) {
             float GetPathCost(IntVec3 start, LocalTargetInfo dest, PathEndMode peMode) {
                 var pawnPath = pawn.Map.pathFinder.FindPath(start, dest, TraverseParms.For(pawn), peMode);
                 var result   = pawnPath.TotalCost;
@@ -262,27 +268,32 @@ partial class Mod
             }
 
             var pawnToThingPathCost = GetPathCost(pawn.Position, thing, PathEndMode.ClosestTouch);
-            if (pawnToThingPathCost == 0) return CanHaulResult.HardFail;
+            if (pawnToThingPathCost == 0) return false;
 
             var storeToJobPathCost = GetPathCost(storeCell, jobTarget, PathEndMode.Touch);
-            if (storeToJobPathCost == 0) return CanHaulResult.HardFail;
+            if (storeToJobPathCost == 0) return false;
 
             var pawnToJobPathCost = GetPathCost(pawn.Position, jobTarget, PathEndMode.Touch);
-            if (pawnToJobPathCost == 0) return CanHaulResult.HardFail;
+            if (pawnToJobPathCost == 0) return false;
 
             if (pawnToThingPathCost + storeToJobPathCost > pawnToJobPathCost * settings.Opportunity_MaxNewLegsPctOrigTrip)
-                return CanHaulResult.HardFail;
+                return false;
 
             var thingToStorePathCost = GetPathCost(thing.Position, storeCell, PathEndMode.ClosestTouch);
-            if (thingToStorePathCost == 0) return CanHaulResult.HardFail;
+            if (thingToStorePathCost == 0) return false;
 
             if (pawnToThingPathCost + thingToStorePathCost + storeToJobPathCost > pawnToJobPathCost * settings.Opportunity_MaxTotalTripPctOrigTrip)
-                return CanHaulResult.HardFail;
+                return false;
 
-            return CanHaulResult.Success;
+            return true;
         }
 
-        return CanHaulResult.PrePathSuccess;
+        return settings.Opportunity_PathChecker switch {
+            Settings.PathCheckerEnum.Vanilla     => WithinRegionCount(storeCell) ? CanHaulResult.Success : CanHaulResult.HardFail,
+            Settings.PathCheckerEnum.Pathfinding => WithinPathCost(storeCell) ? CanHaulResult.Success : CanHaulResult.HardFail,
+            Settings.PathCheckerEnum.Default     => WithinPathCost(storeCell) ? CanHaulResult.Success : CanHaulResult.FullStop,
+            _                                    => throw new ArgumentOutOfRangeException(),
+        };
     }
 
     partial record BaseDetour

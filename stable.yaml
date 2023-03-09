@@ -323,6 +323,31 @@ updates:
       
       • Fix for a variety of bad "on the way to" hauls from a stupid mistake in v3.2.1 (Oct 24th).
 
+  - at: 4.0.0
+    desc: |-
+      If you experience issues, disable this mod from within its settings without restarting.
+      If willing, please report issues immediately via Discord link here ↗ or in Mods menu.
+      
+      v4 [b]GET THE HECK TO WORK[/b] EDITION
+      
+      [i]Hauling fixes[/i]
+      • Fixed chains of opportunity -> unload -> opportunity.
+      • Also fixed back-to-back opportunistic hauls.
+      • By default, perform a final pathfinding check: if it fails, no opportunity.
+        (Never a bad haul again; mountain bases rejoice!)
+      • During unloading, if our cell became occupied and the next is too far, drop items. (Rare. Better than alternatives.)
+      • Prefer stockpiles not closest to [i]thing[/i] (pre-v3), not closest to [i]job[/i] (pre-v4), but closest to [i]midway[/i] between thing and job!
+      
+      [i]Other[/i]
+      • Major reorganization and documentation improvement of entire codebase.
+      • Added "Make colony (While You're Up)" to [i]Debug actions menu: Autotests[/i] (save your game first). 
+      • Better debug visualization of pawn detours. Enabled from options.
+      • New dedicated "Hauls of Opportunity: Advanced Settings" tab with colors, arrows, and thorough explanations. You won't need it, but it's beautiful!
+      • Performance improvement and simplification from reduction in unnecessary object-oriented-ness.
+      • Performance improvement from using `DistanceToSquared` in some places.
+      
+      [i]As my final act before retiring from RimWorld, possibly the last you'll hear from me: I want to share my journey from depression to an overwhelmingly fulfilling life. I can't guarantee it will help, but I can promise it's a route unlike anything you've ever read, and the only one that would have ever helped me escape:[/i] Read my writings at WEIRDIST.COM. Thanks everyone. <3 -Chris
+
 keyed:
   - name: PickUpAndHaul_Missing
     value: Pick Up And Haul is not installed
@@ -351,21 +376,17 @@ keyed:
     value: Advanced Settings
 
   - name: OpportunityAdvanced_Text1
-    value: |-
-      Vanilla(*Gray): Maximum distance ratios.(/Gray)
-      Default, Pathfinding(*Gray): For these modes, the only settings that control available opportunities.(/Gray)
+    value: |
+      Vanilla, Default, Pathfinding(*Gray): Maximum distance ratios (see tooltips).(/Gray)
 
   - name: OpportunityAdvanced_Text2
-    value: |-
+    value: |
       Vanilla(*Gray): Maximum distances/ratios to limit opportunities in exchange for performance.(/Gray)
-      Default, Pathfinding(*Gray): Ignored as limits, but kept as a performance heuristic.(/Gray)
-      (*Gray)That heuristic checks paths within these ranges first, while slowly expanding them.(/Gray)
+      Default, Pathfinding(*Gray): Soft limits used as a performance heuristic.(/Gray)
 
   - name: OpportunityAdvanced_Text3
-    value: |-
-      Vanilla(*Gray): Maximum region-looks (a distance-limited pathfinding alternative—see tooltip).(/Gray)
-      Default(*Gray): Ignored. Checks pathfinding after search—no opportunity if it fails.(/Gray)
-      Pathfinding(*Gray): Ignored. Uses pathfinding to search; will find an opportunity if present.(/Gray)
+    value: |
+      Vanilla only(*Gray): Maximum region-look count (faster than pathfinding but not actual distances—see tooltip).(/Gray)
 
   - name: HaulBeforeCarry_LoadReport
     value: '{{ORIGINAL}}, headed closer to {{DESTINATION}}.'
@@ -453,19 +474,19 @@ settings:
   - name: Opportunity_PathChecker
     title: Path checking
     desc: |-
-      Our default is performant, but impassable walls and locked doors are ignored until a final check—which means no opportunity if it fails. These circumstances are more common with a mountain base.
+      Our default is performant, but impassable walls and locked doors are ignored until a final check—which means no opportunity if it fails. These circumstances are less common with an open base.
       
-      "Pathfinding during search" is slower, but guaranteed to find an opportunity if it exists. Recommended for small colonies, fast machines, or those desperate for hauls in a mountain base.
+      "Pathfind during search" is slow, but guaranteed to find an opportunity if it exists. Recommended for small colonies, fast machines, or those desperate for hauls in a mountain base.
 
-  - name: Opportunity_PathChecker_Default
-    title: "Pathfind after search (default)\nFPS ✔️\tOpportunities: Most"
   - name: Opportunity_PathChecker_Vanilla
-    title: "Region-look (vanilla)\nFPS ✔️\tOpportunities: Few"
+    title: "Within ranges & region count (vanilla)\nFPS: ★★★★  Opportunities: ★☆☆☆"
+  - name: Opportunity_PathChecker_Default
+    title: "Pathfind once after search (default)\nFPS: ★★★☆  Opportunities: ★★★☆"
   - name: Opportunity_PathChecker_Pathfinding
-    title: "Pathfinding during search\nFPS ✖️\tOpportunities: All"
+    title: "Pathfind during search\nFPS: ★☆☆☆  Opportunities: ★★★★"
 
   - name: Opportunity_TweakVanilla
-    title: Show advanced settings tab...
+    title: Show advanced opportunity settings tab...
 
   - name: Opportunity_MaxStartToThing
     title: (*ColonistCount)start(/ColonistCount)➡(*DateTime)haulable(/DateTime)

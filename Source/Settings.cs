@@ -390,7 +390,7 @@ partial class Mod
     [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
     internal class Settings : ModSettings
     {
-        public enum PathCheckerEnum { Default, Vanilla, Pathfinding }
+        public enum PathCheckerEnum { Vanilla, Default, Pathfinding }
 
         public bool Enabled, UsePickUpAndHaulPlus, DrawSpecialHauls;
 
