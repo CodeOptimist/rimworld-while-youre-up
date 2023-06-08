@@ -108,6 +108,11 @@ partial class Mod
         IntVec3? storeCell = null, LocalTargetInfo? carryTarget = null) {
         if (!detours.TryGetValue(pawn, out var detour)) {
             detour        = new BaseDetour();
+            // initialize for NRE safety, especially when loading a save
+            detour.opportunity.puah.startCell = IntVec3.Invalid;
+            detour.opportunity.jobTarget      = LocalTargetInfo.Invalid;
+            detour.beforeCarry.puah.storeCell = IntVec3.Invalid;
+            detour.beforeCarry.carryTarget    = LocalTargetInfo.Invalid;
             detours[pawn] = detour;
         }
 

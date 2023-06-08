@@ -348,6 +348,11 @@ updates:
       
       [i]As my final act before retiring from RimWorld, possibly the last you'll hear from me: I want to share my journey from depression to an overwhelmingly fulfilling life. I can't guarantee it will help, but I can promise it's a route unlike anything you've ever read, and the only one that would have ever helped me escape:[/i] Read my writings at WEIRDIST.COM. Thanks everyone. <3 -Chris
 
+#  - at: 4.0.1
+#    credit: Madman666#6663
+#    desc: |-
+#      Fixed possible NREs from loading a save with in-progress inventory hauls.
+
 keyed:
   - name: PickUpAndHaul_Missing
     value: Pick Up And Haul is not installed
