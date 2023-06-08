@@ -79,7 +79,7 @@ partial class Mod
 
                     puahOrHtcJob = BeforeCarryDetour_Job(pawn, job.targetA, ingredient.Thing); // :BeforeBillDetour
                     if (puahOrHtcJob is not null)
-                        return JobUtility__TryStartErrorRecoverJob_Patch.CatchStanding_Job(pawn, puahOrHtcJob);
+                        return BaseDetour.CatchLoop_Job(pawn, puahOrHtcJob);
                 }
             }
 
@@ -99,7 +99,7 @@ partial class Mod
             // use first ingredient location if bill because our pawn will go directly to it
             var jobTarget = job.def == JobDefOf.DoBill ? job.targetQueueB?.FirstOrDefault() ?? job.targetA : job.targetA;
             puahOrHtcJob = Opportunity_Job(pawn, jobTarget);
-            return JobUtility__TryStartErrorRecoverJob_Patch.CatchStanding_Job(pawn, puahOrHtcJob);
+            return BaseDetour.CatchLoop_Job(pawn, puahOrHtcJob);
         }
     }
 

@@ -82,7 +82,7 @@ partial class Mod
             }
 
             var puahOrHtcJob = BeforeCarryDetour_Job(pawn, constructible.Position, mostThing ?? th); // :BeforeSupplyDetour
-            return JobUtility__TryStartErrorRecoverJob_Patch.CatchStanding_Job(pawn, puahOrHtcJob);
+            return BaseDetour.CatchLoop_Job(pawn, puahOrHtcJob);
         }
     }
 

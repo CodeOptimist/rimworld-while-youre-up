@@ -100,28 +100,17 @@ namespace WhileYoureUp
         [HarmonyPatch(typeof(JobUtility), nameof(JobUtility.TryStartErrorRecoverJob))]
         static class JobUtility__TryStartErrorRecoverJob_Patch
         {
-            static Pawn   lastPawn;
-            static int    lastFrameCount;
-            static string lastCallerName;
-
             [HarmonyPrefix]
             static void OfferSupport(Pawn pawn) {
-                if (RealTime.frameCount == lastFrameCount && pawn == lastPawn) {
+                if (RealTime.frameCount == BaseDetour.lastFrameCount && pawn == BaseDetour.lastPawn) {
                     Log.Warning(
                         $"[{mod.Content.Name}] You're welcome to 'Share logs' to my Discord: https://discord.gg/pnZGQAN \n" +
-                        $"[{mod.Content.Name}] Below \"10 jobs in one tick\" error occurred during {lastCallerName}, but could be from several mods.");
+                        $"[{mod.Content.Name}] Below \"10 jobs in one tick\" error occurred during {BaseDetour.lastCallerName}, but could be from several mods.");
                 }
-            }
-
-            public static Job CatchStanding_Job(Pawn pawn, Job job, [CallerMemberName] string callerName = "") {
-                lastPawn       = pawn;
-                lastFrameCount = RealTime.frameCount;
-                lastCallerName = callerName;
-                return job;
             }
         }
     }
-    
+
     static class Extensions
     {
         // `Resolve()` supports colored text e.g. `<Threat>text</Threat>`

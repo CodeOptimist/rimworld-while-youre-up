@@ -2,6 +2,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using HarmonyLib;
 using RimWorld;
 using Verse;
@@ -19,6 +20,7 @@ partial class Mod
     public enum DetourType { Inactive, HtcOpportunity, HtcBeforeCarry, ExistingElsePuah, Puah, PuahOpportunity, PuahBeforeCarry }
 
     static bool AlreadyHauling(Pawn pawn) {
+        if (RealTime.frameCount == BaseDetour.lastFrameCount && pawn == BaseDetour.lastPawn) return true;
         if (detours.TryGetValue(pawn, out var detour) && detour.type != DetourType.Inactive) return true;
 
         // because we may load a game with an incomplete haul
@@ -36,6 +38,17 @@ partial class Mod
     // can't use `?` operator with `record struct`, which makes usage with `detours` more annoying
     public partial record BaseDetour
     {
+        public static Pawn   lastPawn;
+        public static int    lastFrameCount;
+        public static string lastCallerName;
+
+        public static Job CatchLoop_Job(Pawn pawn, Job job, [CallerMemberName] string callerName = "") {
+            lastPawn       = pawn;
+            lastFrameCount = RealTime.frameCount;
+            lastCallerName = callerName;
+            return job;
+        }
+
         public DetourType type;
 
         public record struct Puah(Dictionary<ThingDef, IntVec3> defHauls);

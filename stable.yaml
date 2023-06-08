@@ -353,6 +353,10 @@ updates:
 #    desc: |-
 #      Fixed possible NREs from loading a save with in-progress inventory hauls.
 
+  - at: 4.0.2
+    desc: |-
+      Fixed
+
 keyed:
   - name: PickUpAndHaul_Missing
     value: Pick Up And Haul is not installed
