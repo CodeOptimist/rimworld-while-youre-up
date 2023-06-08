@@ -80,9 +80,9 @@ partial class Mod
                 // we reproduce PUAH's `skipCells` within `…MidwayToTarget()` below but we also need it here with caching
                 if (foundCell.IsValid && skipCells is not null) {
                     if (skipCells.Contains(foundCell))
-                        foundCell = IntVec3.Invalid; // cache is no good; skipCells will be used below
-                    else                             // successful cache hit
-                        skipCells.Add(foundCell);    // not used below, but the next call of this method, like PUAH
+                        foundCell = IntVec3.Invalid;
+                    else                          // successful cache hit
+                        skipCells.Add(foundCell); // not used below, but the next call of this method, like PUAH
                 }
             }
 
@@ -114,7 +114,7 @@ partial class Mod
                 if (!detour.puah.defHauls.TryGetValue(t.def, out var storeCell)) return Halt(__result = true);
                 if (foundCell.GetSlotGroup(map) == storeCell.GetSlotGroup(map)) return Halt(__result = true);
 
-                var newStoreCell = foundCell; // "cannot use 'out' parameter 'foundCell' inside local function declaration"
+                var newStoreCell = foundCell; // because "cannot use 'out' parameter 'foundCell' inside local function declaration"
                 bool IsNewStoreOpportune() {
                     // For these checks let's take it as a given that our unloading pawn is at `originalFoundCell` by now.
                     //  This isn't necessarily true?, but since we found the distance acceptable if we did make it there,
@@ -136,7 +136,7 @@ partial class Mod
                     return Halt(__result = true);
 
                 if (DebugViewSettings.drawOpportunisticJobs) {
-                    for (var _ = 0; _ < 3; _++) {
+                    for (var _ = 0; _ < 3; _++) { // for bolder lines
                         var duration = 600;
                         map.debugDrawer.FlashCell(foundCell,                         0.26f, carrier.Name.ToStringShort, duration); // yellow
                         map.debugDrawer.FlashCell(storeCell,                         0.22f, carrier.Name.ToStringShort, duration); // orange

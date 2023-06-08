@@ -20,7 +20,7 @@ partial class Mod
     public enum DetourType { Inactive, HtcOpportunity, HtcBeforeCarry, ExistingElsePuah, Puah, PuahOpportunity, PuahBeforeCarry }
 
     static bool AlreadyHauling(Pawn pawn) {
-        if (RealTime.frameCount == BaseDetour.lastFrameCount && pawn == BaseDetour.lastPawn) return true;
+        if (RealTime.frameCount == BaseDetour.lastFrameCount && pawn == BaseDetour.lastPawn) return true; // already attempted
         if (detours.TryGetValue(pawn, out var detour) && detour.type != DetourType.Inactive) return true;
 
         // because we may load a game with an incomplete haul
@@ -62,8 +62,10 @@ partial class Mod
                 public static List<(Thing thing, IntVec3 storeCell)> haulsByUnloadDistanceOrdered;
                 public static List<(Thing thing, IntVec3 storeCell)> haulsByUnloadDistancePending;
             }
+
             public OpportunityPuah puah = new();
         }
+
         public Opportunity opportunity = new() { hauls = new List<(Thing thing, IntVec3 storeCell)>(16) };
 
         public record struct BeforeCarry(LocalTargetInfo carryTarget)
@@ -71,6 +73,7 @@ partial class Mod
             public record struct BeforeCarryPuah(IntVec3 storeCell);
             public BeforeCarryPuah puah = new();
         }
+
         // ReSharper disable once RedundantDefaultMemberInitializer
         public BeforeCarry beforeCarry = new();
 
@@ -120,13 +123,13 @@ partial class Mod
         IntVec3? startCell = null, LocalTargetInfo? jobTarget = null,
         IntVec3? storeCell = null, LocalTargetInfo? carryTarget = null) {
         if (!detours.TryGetValue(pawn, out var detour)) {
-            detour        = new BaseDetour();
+            detour = new BaseDetour();
             // initialize for NRE safety, especially when loading a save
             detour.opportunity.puah.startCell = IntVec3.Invalid;
             detour.opportunity.jobTarget      = LocalTargetInfo.Invalid;
             detour.beforeCarry.puah.storeCell = IntVec3.Invalid;
             detour.beforeCarry.carryTarget    = LocalTargetInfo.Invalid;
-            detours[pawn] = detour;
+            detours[pawn]                     = detour;
         }
 
         BaseDetour Result(BaseDetour result) {

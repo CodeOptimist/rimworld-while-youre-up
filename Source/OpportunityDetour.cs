@@ -170,7 +170,7 @@ partial class Mod
                         Debug.WriteLine($"Checked: {1 - (haulables.Count - 1) / (float)pawn.Map.listerHaulables.haulables.Count:P}. Expansions: {maxRanges.expandCount}");
 
                         if (DebugViewSettings.drawOpportunisticJobs) {
-                            for (var _ = 0; _ < 3; _++) {
+                            for (var _ = 0; _ < 3; _++) { // for bolder lines
                                 var duration = 600;
                                 pawn.Map.debugDrawer.FlashCell(pawn.Position,  0.50f, pawn.Name.ToStringShort, duration); // green
                                 pawn.Map.debugDrawer.FlashCell(thing.Position, 0.62f, pawn.Name.ToStringShort, duration); // cyan

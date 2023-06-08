@@ -99,7 +99,7 @@ partial class Mod
 
         var fromHereSquared  = thing.Position.DistanceToSquared(carryTarget.Cell);
         var fromStoreSquared = storeCell.DistanceToSquared(carryTarget.Cell);
-        Debug.WriteLine($"Carry from here: {thing.Position.DistanceTo(carryTarget.Cell)};carry from store: {storeCell.DistanceTo(carryTarget.Cell)}");
+        Debug.WriteLine($"Carry from here: {thing.Position.DistanceTo(carryTarget.Cell)}; carry from store: {storeCell.DistanceTo(carryTarget.Cell)}");
 
         if (fromStoreSquared < fromHereSquared) {
             Debug.WriteLine(
@@ -107,7 +107,7 @@ partial class Mod
                 + $" because '{storeCell.GetSlotGroup(pawn.Map)}' is closer to original destination '{carryTarget} {carryTarget.Cell}'.");
 
             if (DebugViewSettings.drawOpportunisticJobs) {
-                for (var _ = 0; _ < 3; _++) {
+                for (var _ = 0; _ < 3; _++) { // for bolder lines
                     var duration = 600;
                     pawn.Map.debugDrawer.FlashCell(thing.Position,   0.62f, pawn.Name.ToStringShort, duration); // cyan
                     pawn.Map.debugDrawer.FlashCell(storeCell,        0.22f, pawn.Name.ToStringShort, duration); // orange

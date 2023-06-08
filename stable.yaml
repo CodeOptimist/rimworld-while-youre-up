@@ -28,10 +28,13 @@ preview_from_path: '{out_dir}\..\JoO.png'
 
 is_stable: True
 intro: |-
-  [b]Opportunistic hauling; haul-to-inventory improvements (if [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1279012058]Pick Up And Haul[/url] is installed).[/b]
+  [b]Opportunistic hauling. Haul-to-inventory improvements (if [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1279012058]Pick Up And Haul[/url] is installed).[/b]
   A must-have with PUAH. Compatible with existing saves. Any load order.
 
 header: |-
+  [img]https&#58;//steamuserimages-a.akamaihd.net/ugc/2039614501967758556/E8A0F2430B67773F5A13F3ADD8077E9E1CB00AF9/?imw=5000&imh=5000&ima=fit&impolicy=Letterbox&imcolor=#000000&letterbox=false[/img]
+  
+  [h1]Description[/h1]
   Recognizing this mod: "on the way to", "closer to", "Efficiently unloading".
   {is_steam?=
   [img]https&#58;//i.imgur.com/MJzgkiK.png[/img]
@@ -395,7 +398,7 @@ keyed:
 
   - name: OpportunityAdvanced_Text3
     value: |
-      Vanilla only(*Gray): Maximum region-look count (faster than pathfinding but not actual distances—see tooltip).(/Gray)
+      Vanilla only(*Gray): Maximum region-look count (faster than pathfinding but variable distance—see tooltip).(/Gray)
 
   - name: HaulBeforeCarry_LoadReport
     value: '{{ORIGINAL}}, headed closer to {{DESTINATION}}.'
