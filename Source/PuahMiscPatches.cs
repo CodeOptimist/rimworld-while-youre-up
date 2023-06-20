@@ -7,6 +7,7 @@ using RimWorld;
 using Verse;
 // ReSharper disable once RedundantUsingDirective
 using Debug = System.Diagnostics.Debug;
+using Patch = CodeOptimist.Patch;
 
 namespace WhileYoureUp;
 
@@ -134,11 +135,11 @@ partial class Mod
         // todo :PatchNeighborCheck
         [HarmonyPrefix]
         static bool DetourAwareFirstUnloadableThing(ref ThingCount __result, Pawn pawn) {
-            if (!settings.Enabled || !settings.UsePickUpAndHaulPlus) return Continue();
+            if (!settings.Enabled || !settings.UsePickUpAndHaulPlus) return Patch.Continue();
 
             var hauledToInventoryComp = (ThingComp)PuahMethod_CompHauledToInventory_GetComp.Invoke(pawn, null);
             var carriedThings         = Traverse.Create(hauledToInventoryComp).Method("GetHashSet").GetValue<HashSet<Thing>>(); // `Traverse` is cached
-            if (!carriedThings.Any()) return Halt(__result = default);
+            if (!carriedThings.Any()) return Patch.Halt(__result = default);
 
             // just loaded game, or half-state from toggling settings, etc.
             var detour = SetOrAddDetour(pawn, DetourType.ExistingElsePuah);
@@ -192,10 +193,10 @@ partial class Mod
                 // because of merges
                 var thingFoundByDef = pawn.inventory.innerContainer.FirstOrDefault(t => t.def == firstThingToUnload.def);
                 if (thingFoundByDef != default)
-                    return Halt(__result = new ThingCount(thingFoundByDef, thingFoundByDef.stackCount));
+                    return Patch.Halt(__result = new ThingCount(thingFoundByDef, thingFoundByDef.stackCount));
             }
 
-            return Halt(__result = new ThingCount(firstThingToUnload, firstThingToUnload.stackCount));
+            return Patch.Halt(__result = new ThingCount(firstThingToUnload, firstThingToUnload.stackCount));
         }
     }
 #endregion

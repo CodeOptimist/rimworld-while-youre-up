@@ -3,10 +3,8 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using CodeOptimist;
 using HarmonyLib;
-using JetBrains.Annotations;
 using RimWorld;
 using Verse;
 using Verse.AI;
@@ -76,12 +74,12 @@ namespace WhileYoureUp
         static bool      foundConfig;
 
         // Prefix for our XML keys (language translations); PackageId may change (e.g. "__copy__" suffix).
-        public static readonly string  modId   = "CodeOptimist.WhileYoureUp";
-        static readonly        Harmony harmony = new(modId); // just a unique id
+        static readonly string  modId   = "CodeOptimist.WhileYoureUp";
+        static readonly Harmony harmony = new(modId); // just a unique id
 
         public Mod(ModContentPack content) : base(content) {
             mod       = this;  // static reference to mod for e.g. mod name in log messages
-            Gui.modId = modId; // setup for CodeOptimist Gui library
+            Gui.modId = modId; // setup for CodeOptimist library
 
             settings = GetSettings<Settings>(); // read settings from file
             if (!foundConfig)
@@ -89,10 +87,6 @@ namespace WhileYoureUp
 
             harmony.PatchAll();
         }
-
-        // Harmony patch syntactic sugar to distinguish result from return behavior e.g. 'return Continue(_result = false)'
-        static bool Continue(object _ = null) => true;
-        static bool Halt(object _ = null)     => false;
 
         // name in "Mod options" and top of settings window
         public override string SettingsCategory() => mod.Content.Name;
@@ -109,20 +103,6 @@ namespace WhileYoureUp
                 }
             }
         }
-    }
-
-    static class Extensions
-    {
-        // `Resolve()` supports colored text e.g. `<Threat>text</Threat>`
-        public static string ModTranslate(this string key, params NamedArgument[] args) => $"{Mod.modId}_{key}".Translate(args).Resolve();
-
-        // same as HarmonyLib's `GeneralExtensions.GetValueSafe()` but with `[CanBeNull]` for ReSharper/Rider,
-        //  otherwise forgetting the `?` and throwing an NRE is a real concern.
-        [CanBeNull]
-        public static T GetValueSafe<S, T>(this Dictionary<S, T> dictionary, S key) => dictionary.TryGetValue(key, out var obj) ? obj : default;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float Squared(this float val) => val * val;
     }
 }
 

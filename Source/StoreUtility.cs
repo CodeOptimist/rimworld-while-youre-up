@@ -5,12 +5,14 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
+using CodeOptimist;
 using HarmonyLib;
 using RimWorld;
 using UnityEngine;
 using Verse;
 // ReSharper disable once RedundantUsingDirective
 using Debug = System.Diagnostics.Debug;
+using Patch = CodeOptimist.Patch;
 
 namespace WhileYoureUp;
 
@@ -38,9 +40,9 @@ partial class Mod
         [HarmonyPrefix]
         static bool Use_DetourAware_TryFindStore(ref bool __result, Thing thing, Pawn carrier, Map map, StoragePriority currentPriority, Faction faction,
             ref IntVec3 foundCell) {
-            if (!settings.Enabled || !settings.UsePickUpAndHaulPlus) return Continue();
+            if (!settings.Enabled || !settings.UsePickUpAndHaulPlus) return Patch.Continue();
             __result = StoreUtility.TryFindBestBetterStoreCellFor(thing, carrier, map, currentPriority, faction, out foundCell);
-            return Halt();
+            return Patch.Halt();
         }
     }
 
@@ -58,9 +60,9 @@ partial class Mod
         static bool DetourAware_TryFindStore(ref bool __result, Thing t, Pawn carrier, Map map, StoragePriority currentPriority,
             Faction faction, out IntVec3 foundCell, bool needAccurateResult) {
             foundCell = IntVec3.Invalid;
-            if (carrier is null || !settings.Enabled || !settings.UsePickUpAndHaulPlus) return Continue();
+            if (carrier is null || !settings.Enabled || !settings.UsePickUpAndHaulPlus) return Patch.Continue();
             var isUnloadJob = carrier.CurJobDef == DefDatabase<JobDef>.GetNamed("UnloadYourHauledInventory");
-            if (!puahToInventoryCallStack.Any() && !isUnloadJob) return Continue();
+            if (!puahToInventoryCallStack.Any() && !isUnloadJob) return Patch.Continue();
 
             var canCache      = !isUnloadJob; // unload job happens over multiple ticks
             var usesSkipCells = puahToInventoryCallStack.Contains(PuahMethod_WorkGiver_HaulToInventory_AllocateThingAt);
@@ -98,7 +100,7 @@ partial class Mod
                                         && (jobTarget.IsValid || carryTarget.IsValid)
                                         && Find.TickManager.CurTimeSpeed == TimeSpeed.Normal,
                     skipCells))
-                return Halt(__result = false);
+                return Patch.Halt(__result = false);
 
             // PUAH can repeat a store lookup on its own outside the context of `Opportunity_Job()`
             // —both from dedicated "Haul" labor, or from `BeforeCarry_Job()`, but it's seldom. :Cache
@@ -109,10 +111,10 @@ partial class Mod
             // If we're only hauling because it was opportune, and the goal posts have been moved,
             //  let's check if they've moved farther than we're willing to tolerate.
             if (isUnloadJob) {
-                if (!DumpIfStoreFilledAndAltsInopportune && !DebugViewSettings.drawOpportunisticJobs) return Halt(__result = true);
-                if (detour?.type != DetourType.PuahOpportunity) return Halt(__result = true);
-                if (!detour.puah.defHauls.TryGetValue(t.def, out var storeCell)) return Halt(__result = true);
-                if (foundCell.GetSlotGroup(map) == storeCell.GetSlotGroup(map)) return Halt(__result = true);
+                if (!DumpIfStoreFilledAndAltsInopportune && !DebugViewSettings.drawOpportunisticJobs) return Patch.Halt(__result = true);
+                if (detour?.type != DetourType.PuahOpportunity) return Patch.Halt(__result = true);
+                if (!detour.puah.defHauls.TryGetValue(t.def, out var storeCell)) return Patch.Halt(__result = true);
+                if (foundCell.GetSlotGroup(map) == storeCell.GetSlotGroup(map)) return Patch.Halt(__result = true);
 
                 var newStoreCell = foundCell; // because "cannot use 'out' parameter 'foundCell' inside local function declaration"
                 bool IsNewStoreOpportune() {
@@ -133,7 +135,7 @@ partial class Mod
                 }
 
                 if (!DumpIfStoreFilledAndAltsInopportune || IsNewStoreOpportune())
-                    return Halt(__result = true);
+                    return Patch.Halt(__result = true);
 
                 if (DebugViewSettings.drawOpportunisticJobs) {
                     for (var _ = 0; _ < 3; _++) { // for bolder lines
@@ -153,12 +155,12 @@ partial class Mod
                     MoteMaker.ThrowText(carrier.DrawPos,       carrier.Map, "Debug_Dropping".ModTranslate(),     Color.green);
                 }
 
-                return Halt(__result = false); // Denied! Find a desperate spot instead.
+                return Patch.Halt(__result = false); // Denied! Find a desperate spot instead.
             }
 
             if (detour?.type == DetourType.PuahOpportunity) {
                 if (!detour.TrackPuahThingIfOpportune(t, carrier, ref foundCell))
-                    return Halt(__result = false);
+                    return Patch.Halt(__result = false);
             }
 
             if (detour?.type == DetourType.PuahBeforeCarry) {
@@ -166,14 +168,14 @@ partial class Mod
 
                 // only grab extra things going to the same store
                 if (foundCellGroup != detour.beforeCarry.puah.storeCell.GetSlotGroup(map))
-                    return Halt(__result = false);
+                    return Patch.Halt(__result = false);
 
                 // Debug.WriteLine($"{t} is destined for same storage {foundCellGroup} {foundCell}");
 
                 if (foundCellGroup.Settings.Priority == t.Position.GetSlotGroup(map)?.Settings?.Priority) {
                     if (carrier.CurJobDef == JobDefOf.HaulToContainer && carrier.CurJob.targetC.Thing is Frame frame) {
                         if (!frame.cachedMaterialsNeeded.Select(x => x.thingDef).Contains(t.def))
-                            return Halt(__result = false);
+                            return Patch.Halt(__result = false);
 
                         Debug.WriteLine(
                             $"APPROVED {t} {t.Position} as needed supplies for {detour.beforeCarry.carryTarget}"
@@ -182,7 +184,7 @@ partial class Mod
 
                     if (carrier.CurJobDef == JobDefOf.DoBill) {
                         if (!carrier.CurJob.targetQueueB.Select(x => x.Thing?.def).Contains(t.def))
-                            return Halt(__result = false);
+                            return Patch.Halt(__result = false);
 
                         Debug.WriteLine(
                             $"APPROVED {t} {t.Position} as ingredients for {detour.beforeCarry.carryTarget}"
@@ -195,7 +197,7 @@ partial class Mod
                 detour = SetOrAddDetour(carrier, DetourType.ExistingElsePuah);
                 detour.TrackPuahThing(t, foundCell);
             }
-            return Halt(__result = true);
+            return Patch.Halt(__result = true);
         }
     }
 
