@@ -201,7 +201,7 @@ partial class Mod
         }
     }
 
-    static bool TryFindBestBetterStoreCellFor_MidwayToTarget(Thing thing, LocalTargetInfo opportunity, LocalTargetInfo beforeCarry,
+    static bool TryFindBestBetterStoreCellFor_MidwayToTarget(Thing thing, LocalTargetInfo opportunityTarget, LocalTargetInfo beforeCarryTarget,
         Pawn carrier, Map map, StoragePriority currentPriority, Faction faction,
         out IntVec3 foundCell, bool needAccurateResult, HashSet<IntVec3> skipCells = null) {
         var closestSlot        = IntVec3.Invalid;
@@ -214,17 +214,17 @@ partial class Mod
             // original: if (slotGroup.Settings.Priority <= currentPriority) break;
             if (slotGroup.Settings.Priority < currentPriority) break;
             if (slotGroup.Settings.Priority == StoragePriority.Unstored) break;
-            if (slotGroup.Settings.Priority == currentPriority && !beforeCarry.IsValid) break; // :ToEqualPriority
+            if (slotGroup.Settings.Priority == currentPriority && !beforeCarryTarget.IsValid) break; // :ToEqualPriority
 
             var stockpile       = slotGroup.parent as Zone_Stockpile;
             var buildingStorage = slotGroup.parent as Building_Storage;
 
-            if (opportunity.IsValid) {
+            if (opportunityTarget.IsValid) {
                 if (stockpile is not null && !settings.Opportunity_ToStockpiles) continue;
                 if (buildingStorage is not null && !settings.Opportunity_BuildingFilter.Allows(buildingStorage.def)) continue;
             }
 
-            if (beforeCarry.IsValid) {
+            if (beforeCarryTarget.IsValid) {
                 // :ToEqualPriority
                 if (!settings.HaulBeforeCarry_ToEqualPriority && slotGroup.Settings.Priority == currentPriority) break;
                 if (settings.HaulBeforeCarry_ToEqualPriority && thing.Position.IsValid && slotGroup == map.haulDestinationManager.SlotGroupAt(thing.Position)) continue;
@@ -242,7 +242,7 @@ partial class Mod
 
             // closest to halfway to target
             var thingPos     = thing.SpawnedOrAnyParentSpawned ? thing.PositionHeld : carrier.PositionHeld;
-            var detourTarget = opportunity.IsValid ? opportunity.Cell : beforeCarry.IsValid ? beforeCarry.Cell : IntVec3.Invalid;
+            var detourTarget = opportunityTarget.IsValid ? opportunityTarget.Cell : beforeCarryTarget.IsValid ? beforeCarryTarget.Cell : IntVec3.Invalid;
             var detourMidway = detourTarget.IsValid ? new IntVec3((detourTarget.x + thingPos.x) / 2, detourTarget.y, (detourTarget.z + thingPos.z) / 2) : IntVec3.Invalid;
             var position     = detourMidway.IsValid ? detourMidway : thingPos; // originally just thingPos
 

@@ -260,8 +260,11 @@ partial class Mod
         }
 
         bool WithinPathCost(IntVec3 storeCell) {
-            float GetPathCost(IntVec3 start, LocalTargetInfo dest, PathEndMode peMode) {
-                var pawnPath = pawn.Map.pathFinder.FindPath(start, dest, TraverseParms.For(pawn), peMode);
+            float GetPathCost(IntVec3 start, LocalTargetInfo destTarget, PathEndMode peMode) {
+                // Vanilla always calls `FindPath` with an `IntVec3` for the `LocalTargetInfo`.
+                // Without `.Cell` we get: "System.IndexOutOfRangeException: Index was outside the bounds of the array.
+                //  at Verse.EdificeGrid.get_Item(Verse.IntVec3c)"
+                var pawnPath = pawn.Map.pathFinder.FindPath(start, destTarget.Cell, TraverseParms.For(pawn), peMode);
                 var result   = pawnPath.TotalCost;
                 pawnPath.ReleaseToPool();
                 return result;
