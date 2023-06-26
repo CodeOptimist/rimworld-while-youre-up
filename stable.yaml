@@ -35,9 +35,8 @@ header: |-
   [img]https&#58;//steamuserimages-a.akamaihd.net/ugc/2039614501967758556/E8A0F2430B67773F5A13F3ADD8077E9E1CB00AF9/?imw=5000&imh=5000&ima=fit&impolicy=Letterbox&imcolor=#000000&letterbox=false[/img]
   
   [h1]Description[/h1]
-  Recognizing this mod: "on the way to", "closer to", "Efficiently unloading".
   {is_steam?=
-  [img]https&#58;//i.imgur.com/MJzgkiK.png[/img]
+  [img]https&#58;//i.imgur.com/337WtE4.png[/img]
   }
   
   Much of this mod is improving [i]Pick Up And Haul[/i] (optional; installed separately). If you already use PUAH, you want this mod too.
@@ -57,15 +56,19 @@ footer: |-
   [h1]Performance[/h1]
   Vanilla's opportunistic hauling was well-optimized for performance, which this mod painstakingly preserves in its enhancements.
   Likewise we aggressively cache all haul destination lookups for all features, even base Pick Up And Haul.
+  
+  [img]https://i.imgur.com/NXaruPi.png[/img]
 
 
-  [h1]Known Issues[/h1]
-  [i]• Hauling resources to storage ("closer to") despite no extras.[/i]
-  Will occasionally happen with Pick Up And Haul. Not easily fixed.
+  [h1]Troubleshooting[/h1]
+  • Enable [i]Draw colored path detours[/i] in settings, and pay attention to job descriptions.
+  ([url=https://steamcommunity.com/sharedfiles/filedetails/?id=826998327]Moody[/url] is an excellent way to view them all at once.)
+  • Remember you can disable features without restarting.
+  • Report a bug to my [url={discord}]Discord[/url].
 
 
-  [h1]Report Bugs[/h1]
-  1. Please save a game when it occurs, then reload to verify it reoccurs.
+  [h1]Get It Fixed[/h1]
+  1. Please save a game when a bug occurs, then reload to verify it reoccurs.
   2. Disable the mod from its own options menu - did the bug stop? If so...
   3. Send me your save ([i]Options → Open save data folder[/i]). (They zip much smaller.)
   [b]I can now fix your bug in [i]days[/i] instead of [i]months[/i]! 🎉🥳[/b]
@@ -116,7 +119,7 @@ features: !join
       [u]Storage building filters for mod compatibility[/u]
       Permit or deny for any storage building through settings, or leave automatically managed with mod updates.{is_steam?=
 
-      [img]https&#58;//i.imgur.com/CmFpxJU.png[/img]
+      [img]https&#58;//i.imgur.com/BIDFkJk.png[/img]
       }
 
 
@@ -271,7 +274,7 @@ updates:
       • Renamed mod to ^ from: Jobs of Opportunity (While You're Up)
 
   - at: 3.0.2
-    credit: [ xeotrel2#0743, '"tuk0z" https://steamcommunity.com/profiles/76561198827752749 ' ]
+    credit: ' "tuk0z" https://steamcommunity.com/profiles/76561198827752749 '
     desc: |-
       • Fixed a v3.0 crash related to storage capacity with PUAH.
       (I was making PUAH cache haul destinations where it shouldn't: in a loop!)
@@ -328,9 +331,6 @@ updates:
 
   - at: 4.0.0
     desc: |-
-      If you experience issues, disable this mod from within its settings without restarting.
-      If willing, please report issues immediately via Discord link here ↗ or in Mods menu.
-      
       v4 [b]GET THE HECK TO WORK[/b] EDITION
       
       [i]Hauling fixes[/i]
@@ -351,14 +351,21 @@ updates:
       
       [i]As my final act before retiring from RimWorld, possibly the last you'll hear from me: I want to share my journey from depression to an overwhelmingly fulfilling life. I can't guarantee it will help, but I can promise it's a route unlike anything you've ever read, and the only one that would have ever helped me escape:[/i] Read my writings at WEIRDIST.COM. Thanks everyone. <3 -Chris
 
-#  - at: 4.0.1
-#    credit: Madman666#6663
-#    desc: |-
-#      Fixed possible NREs from loading a save with in-progress inventory hauls.
+  - at: 4.0.1
+    credit: ' "Madman666" https://steamcommunity.com/profiles/76561198089237221 '
+    desc: |-
+      (June 5th) Fixed errors when loading a save with in-progress inventory hauls.
 
   - at: 4.0.2
+    credit: ' "Nexie" .mantid '
     desc: |-
-      Fixed
+      (June 8th) Fixed cancelled jobs from repeating on the same tick.
+
+  - at: 4.0.3
+    credit: kilowatt#1393
+    desc: |-
+      (June 26th) Fixed error when pathfinding to an animal's inventory.
+
 
 keyed:
   - name: PickUpAndHaul_Missing
