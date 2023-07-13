@@ -64,8 +64,8 @@ partial class Mod
 
     public override void DoSettingsWindowContents(Rect inRect) => SettingsWindow.DoWindowContents(inRect);
 
-    // Don't reference this except in DoSettingsWindowContents()! Referencing it early will trigger the static constructor before defs are loaded.
     [StaticConstructorOnStartup]
+    // Don't reference this except in DoSettingsWindowContents()! Referencing it early will trigger the static constructor before defs are loaded.
     public static class SettingsWindow
     {
         static          Vector2                         opportunityScrollPosition;

@@ -99,12 +99,12 @@ partial class Mod
 
         var fromHereSquared  = thing.Position.DistanceToSquared(carryTarget.Cell);
         var fromStoreSquared = storeCell.DistanceToSquared(carryTarget.Cell);
-        Debug.WriteLine($"Carry from here: {thing.Position.DistanceTo(carryTarget.Cell)}; carry from store: {storeCell.DistanceTo(carryTarget.Cell)}");
+        // Debug.WriteLine($"Carry from here: {thing.Position.DistanceTo(carryTarget.Cell)}; carry from store: {storeCell.DistanceTo(carryTarget.Cell)}");
 
         if (fromStoreSquared < fromHereSquared) {
-            Debug.WriteLine(
-                $"'{pawn}' prefixed job with haul for '{thing.Label}'"
-                + $" because '{storeCell.GetSlotGroup(pawn.Map)}' is closer to original destination '{carryTarget} {carryTarget.Cell}'.");
+            // Debug.WriteLine(
+            //     $"'{pawn}' prefixed job with haul for '{thing.Label}'"
+            //     + $" because '{storeCell.GetSlotGroup(pawn.Map)}' is closer to original destination '{carryTarget} {carryTarget.Cell}'.");
 
             if (DebugViewSettings.drawOpportunisticJobs) {
                 for (var _ = 0; _ < 3; _++) { // for bolder lines

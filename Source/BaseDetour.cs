@@ -133,8 +133,9 @@ partial class Mod
             detours[pawn]                     = detour;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         BaseDetour Result(BaseDetour result) {
-            Debug.WriteLine($"{pawn} {type} -> {result.type}");
+            // Debug.WriteLine($"{pawn} {type} -> {result.type}");
             return result;
         }
 

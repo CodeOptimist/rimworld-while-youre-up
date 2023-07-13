@@ -74,7 +74,7 @@ namespace WhileYoureUp
         static bool      foundConfig;
 
         // Prefix for our XML keys (language translations); PackageId may change (e.g. "__copy__" suffix).
-        static readonly string  modId   = "CodeOptimist.WhileYoureUp";
+        const           string  modId   = "CodeOptimist.WhileYoureUp";
         static readonly Harmony harmony = new(modId); // just a unique id
 
         public Mod(ModContentPack content) : base(content) {

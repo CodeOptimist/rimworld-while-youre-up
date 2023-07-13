@@ -21,7 +21,7 @@ partial class Mod
 {
     // ReSharper disable once MemberCanBePrivate.Global
     // ReSharper disable once FieldCanBeMadeReadOnly.Global
-    [TweakValue("WhileYoureUp.Unloading")] public static bool DumpIfStoreFilledAndAltsInopportune = true;
+    [TweakValue("WhileYoureUp.Unloading")] public static bool dumpIfStoreFilledAndAltsInopportune = true;
 
     // So long as we are within a given job check/assignment of PUAH's `WorkGiver_HaulToInventory`
     //  we can cache store cell by thing and reuse it since pawn, distance, etc. will remain the same. :Cache
@@ -76,8 +76,8 @@ partial class Mod
                 }
                 if (!puahStoreCellCache.TryGetValue(t, out foundCell))
                     foundCell = IntVec3.Invalid;
-                else
-                    Debug.WriteLine($"{RealTime.frameCount} {carrier} Cache hit! (Size: {puahStoreCellCache.Count}) {MethodBase.GetCurrentMethod()!.Name}");
+                // else
+                //     Debug.WriteLine($"{RealTime.frameCount} {carrier} Cache hit! (Size: {puahStoreCellCache.Count}) {MethodBase.GetCurrentMethod()!.Name}");
 
                 // we reproduce PUAH's `skipCells` within `…MidwayToTarget()` below but we also need it here with caching
                 if (foundCell.IsValid && skipCells is not null) {
@@ -111,7 +111,7 @@ partial class Mod
             // If we're only hauling because it was opportune, and the goal posts have been moved,
             //  let's check if they've moved farther than we're willing to tolerate.
             if (isUnloadJob) {
-                if (!DumpIfStoreFilledAndAltsInopportune && !DebugViewSettings.drawOpportunisticJobs) return Patch.Halt(__result = true);
+                if (!dumpIfStoreFilledAndAltsInopportune && !DebugViewSettings.drawOpportunisticJobs) return Patch.Halt(__result = true);
                 if (detour?.type != DetourType.PuahOpportunity) return Patch.Halt(__result = true);
                 if (!detour.puah.defHauls.TryGetValue(t.def, out var storeCell)) return Patch.Halt(__result = true);
                 if (foundCell.GetSlotGroup(map) == storeCell.GetSlotGroup(map)) return Patch.Halt(__result = true);
@@ -134,7 +134,7 @@ partial class Mod
                     return true;
                 }
 
-                if (!DumpIfStoreFilledAndAltsInopportune || IsNewStoreOpportune())
+                if (!dumpIfStoreFilledAndAltsInopportune || IsNewStoreOpportune())
                     return Patch.Halt(__result = true);
 
                 if (DebugViewSettings.drawOpportunisticJobs) {

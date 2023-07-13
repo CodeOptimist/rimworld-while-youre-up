@@ -61,8 +61,8 @@ partial class Mod
             // we had to transpile to implement :BeforeSupplyDetour, but lucky for us we can implement
             //  :BeforeBillDetour right here from `TryOpportunisticJob()` that we're already modifying
             if (job.def == JobDefOf.DoBill && settings.HaulBeforeCarry_Bills) {
-                Debug.WriteLine($"Bill: '{job.bill}' label: '{job.bill.Label}'");
-                Debug.WriteLine($"Recipe: '{job.bill.recipe}' workerClass: '{job.bill.recipe.workerClass}'");
+                // Debug.WriteLine($"Bill: '{job.bill}' label: '{job.bill.Label}'");
+                // Debug.WriteLine($"Recipe: '{job.bill.recipe}' workerClass: '{job.bill.recipe.workerClass}'");
                 for (var i = 0; i < job.targetQueueB.Count; i++) {
                     var ingredient = job.targetQueueB[i];
                     if (ingredient.Thing is null) continue;
@@ -109,7 +109,7 @@ partial class Mod
     {
         [TweakValue("WhileYoureUp.Opportunity", 1.1f, 3f)]
         // ReSharper disable once FieldCanBeMadeReadOnly.Local
-        public static float HeuristicRangeExpandFactor = 2f;
+        public static float heuristicRangeExpandFactor = 2f;
 
         public int   expandCount;
         public float startToThing, startToThingPctOrigTrip;
@@ -147,7 +147,7 @@ partial class Mod
                     // By expanding our cheap range checks gradually, our expensive checks will be performed in the most optimistic order.
                     // It won't always help—a detour can be far away yet still perfectly along our path—but it's a good performance heuristic.
                     // todo A smaller number might perform better in the worst (but rarer) cases? It's a TweakValue now.
-                    maxRanges *= MaxRanges.HeuristicRangeExpandFactor;
+                    maxRanges *= MaxRanges.heuristicRangeExpandFactor;
                     i         =  0;
                 }
 
@@ -167,7 +167,7 @@ partial class Mod
                         return null;
                     case CanHaulResult.Success:
                         // todo test our heuristic expand factor more thoroughly
-                        Debug.WriteLine($"Checked: {1 - (haulables.Count - 1) / (float)pawn.Map.listerHaulables.haulables.Count:P}. Expansions: {maxRanges.expandCount}");
+                        // Debug.WriteLine($"Checked: {1 - (haulables.Count - 1) / (float)pawn.Map.listerHaulables.haulables.Count:P}. Expansions: {maxRanges.expandCount}");
 
                         if (DebugViewSettings.drawOpportunisticJobs) {
                             for (var _ = 0; _ < 3; _++) { // for bolder lines
