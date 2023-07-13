@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using CodeOptimist;
 using HarmonyLib;
 using RimWorld;
@@ -103,6 +104,9 @@ namespace WhileYoureUp
                 }
             }
         }
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static bool AmBleeding(Pawn pawn) => pawn.health.hediffSet.BleedRateTotal > 0.001f;
     }
 }
 

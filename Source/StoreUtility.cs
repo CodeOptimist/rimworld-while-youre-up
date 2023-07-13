@@ -172,7 +172,10 @@ partial class Mod
 
                 // Debug.WriteLine($"{t} is destined for same storage {foundCellGroup} {foundCell}");
 
-                if (foundCellGroup.Settings.Priority == t.Position.GetSlotGroup(map)?.Settings?.Priority) {
+                var isSamePriority = foundCellGroup.Settings.Priority == t.Position.GetSlotGroup(map)?.Settings?.Priority;
+                // It's okay to grab extra supplies (could be defense critical) or ingredients (could be medicine)
+                //  when bleeding, but not extra generic things. :Bleeding
+                if (isSamePriority || AmBleeding(carrier)) {
                     if (carrier.CurJobDef == JobDefOf.HaulToContainer && carrier.CurJob.targetC.Thing is Frame frame) {
                         if (!frame.cachedMaterialsNeeded.Select(x => x.thingDef).Contains(t.def))
                             return Patch.Halt(__result = false);

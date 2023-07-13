@@ -74,9 +74,9 @@ partial class Mod
 
                     if (!HaulAIUtility.PawnCanAutomaticallyHaulFast(pawn, ingredient.Thing, false)) continue; // fast check
 
-                    // permitted when bleeding because facilitates whatever bill is important enough to do while bleeding
-                    //  may save precious time going back for ingredients... unless we want only 1 medicine ASAP; it's a trade-off
-
+                    // Permitted when bleeding because facilitates whatever bill is important enough to do while bleeding;
+                    //  may save precious time going back for ingredients, unless we want only 1 medicine ASAP. It's a trade-off. :Bleeding
+                    
                     puahOrHtcJob = BeforeCarryDetour_Job(pawn, job.targetA, ingredient.Thing); // :BeforeBillDetour
                     if (puahOrHtcJob is not null)
                         return BaseDetour.CatchLoop_Job(pawn, puahOrHtcJob);
@@ -88,7 +88,7 @@ partial class Mod
                 JobDefOf.PrepareCaravan_GatherDownedPawns, JobDefOf.PrepareCaravan_GatherItems,
             };
             if (prepareCaravanJobDefs.Contains(job.def)) return null;
-            if (pawn.health.hediffSet.BleedRateTotal > 0.001f) return null;
+            if (AmBleeding(pawn)) return null; // :Bleeding
 
             var detour = detours.GetValueSafe(pawn);
             // We'll check for a repeat opportunity within 5 ticks.
