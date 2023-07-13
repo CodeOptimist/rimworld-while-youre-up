@@ -24,9 +24,8 @@ ModMetaData: !merge
 
 key_prefix: 'CodeOptimist.WhileYoureUp'
 published_file_id: 2034960453
-preview_from_path: '{out_dir}\..\JoO.png'
+preview_from_path: '{out_dir}\..\WYUP.png'
 
-is_stable: True
 intro: |-
   [b]Opportunistic hauling. Haul-to-inventory improvements (if [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1279012058]Pick Up And Haul[/url] is installed).[/b]
   A must-have with PUAH. Compatible with existing saves. Any load order.
@@ -35,9 +34,7 @@ header: |-
   [img]https&#58;//steamuserimages-a.akamaihd.net/ugc/2039614501967758556/E8A0F2430B67773F5A13F3ADD8077E9E1CB00AF9/?imw=5000&imh=5000&ima=fit&impolicy=Letterbox&imcolor=#000000&letterbox=false[/img]
   
   [h1]Description[/h1]
-  {is_steam?=
-  [img]https&#58;//i.imgur.com/337WtE4.png[/img]
-  }
+  {is_steam?=[img]https&#58;//i.imgur.com/neL6g6Q.png[/img]}
   
   Much of this mod is improving [i]Pick Up And Haul[/i] (optional; installed separately). If you already use PUAH, you want this mod too.
 
@@ -61,28 +58,28 @@ footer: |-
 
 
   [h1]Troubleshooting[/h1]
-  • Enable [i]Draw colored path detours[/i] in settings, and pay attention to job descriptions.
-  ([url=https://steamcommunity.com/sharedfiles/filedetails/?id=826998327]Moody[/url] is an excellent way to view them all at once.)
+  • Enable [i]Draw colored path detours[/i] in settings.
+  • Pay attention to job descriptions, is it "on the way to" or "closer to"?
+    ([url=https://steamcommunity.com/sharedfiles/filedetails/?id=826998327]Moody[/url] can display them all.)
   • Remember you can disable features without restarting.
-  • Report a bug to my [url={discord}]Discord[/url].
 
 
   [h1]Get It Fixed[/h1]
   1. Please save a game when a bug occurs, then reload to verify it reoccurs.
   2. Disable the mod from its own options menu - did the bug stop? If so...
-  3. Send me your save ([i]Options → Open save data folder[/i]). (They zip much smaller.)
+  3. [url={discord}]Send me[/url] your save ([i]Options → Open save data folder[/i]). (They zip much smaller.)
   [b]I can now fix your bug in [i]days[/i] instead of [i]months[/i]! 🎉🥳[/b]
 
 
   [h1]History[/h1]
   I intended to [url=https://gist.github.com/CodeOptimist/5a740dd803fc370ec43f22ffa8bc953d#file-utils-cs-L48]fork[/url] the original [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1544626521]While You're Up[/url], until I saw [url=https://github.com/CodeOptimist/rimworld-jobs-of-opportunity/blob/29391b0a075a1dd77d4788777b0137e26390328c/Source/Patch_TryOpportunisticJob.cs]RimWorld 1.0 added it[/url]. This mod improves vanilla's integration, and so is a spiritual successor to the original [i]While You're Up[/i] 💜.
 
+
 features: !join
   - "\n"
   - - &v2_0_0 |-
       [u][i]Pick Up And Haul+[/i]: Better unloading[/u]
       We enhance all inventory hauling by unloading only once at each storage destination, in closest order.
-    - &v3_0_0_puah |-
       We cache haulable destinations to improve performance.
 
     - "\n"
@@ -325,8 +322,6 @@ updates:
   - at: 3.2.2
     credit: '"renegade_sock" https://steamcommunity.com/id/renegade_sock '
     desc: |-
-      If willing, please report issues immediately via Discord link here ↗ or in Mods menu.
-      
       • Fix for a variety of bad "on the way to" hauls from a stupid mistake in v3.2.1 (Oct 24th).
 
   - at: 4.0.0
@@ -367,6 +362,13 @@ updates:
       (June 26th) Fixed error when pathfinding to an animal's inventory.
 
 
+start:    '#dcffaf' # light green
+haulable: '#87f6f6' # light blue
+job:      '#d46f68' # light red
+storage:  '#d09b61' # light orange
+gray:     '#999999'
+
+
 keyed:
   - name: PickUpAndHaul_Missing
     value: Pick Up And Haul is not installed
@@ -385,27 +387,27 @@ keyed:
 
   - name: Opportunity_Intro
     value: |-
-      (*Gray)"(/Gray)(*DateTime)... on the way to ...(/DateTime)(*Gray)"
+      <color={gray}>"</color><color={haulable}>... on the way to ...</color><color={gray}>"
 
       Hauling on the way to a job is a vanilla feature, hence generally compatible with all mods. Some storage mods use delays, so are disallowed by default.
 
-      We skip opportunities when bleeding or forming a caravan.(/Gray)
+      We skip opportunities when bleeding or forming a caravan.</color>
 
   - name: OpportunityAdvanced_Tab
     value: Advanced Settings
 
   - name: OpportunityAdvanced_Text1
     value: |
-      Vanilla, Default, Pathfinding(*Gray): Maximum distance ratios (see tooltips).(/Gray)
+      Vanilla, Default, Pathfinding<color={gray}>: Maximum distance ratios (see tooltips).</color>
 
   - name: OpportunityAdvanced_Text2
     value: |
-      Vanilla(*Gray): Maximum distances/ratios to limit opportunities in exchange for performance.(/Gray)
-      Default, Pathfinding(*Gray): Soft limits used as a performance heuristic.(/Gray)
+      Vanilla<color={gray}>: Maximum distances/ratios to limit opportunities in exchange for performance.</color>
+      Default, Pathfinding<color={gray}>: Soft limits used as a performance heuristic.</color>
 
   - name: OpportunityAdvanced_Text3
     value: |
-      Vanilla only(*Gray): Maximum region-look count (faster than pathfinding but variable distance—see tooltip).(/Gray)
+      Vanilla only<color={gray}>: Maximum region-look count (faster than pathfinding but variable distance—see tooltip).</color>
 
   - name: HaulBeforeCarry_LoadReport
     value: '{{ORIGINAL}}, headed closer to {{DESTINATION}}.'
@@ -418,13 +420,13 @@ keyed:
 
   - name: HaulBeforeCarry_Intro
     value: |-
-      (*Gray)"(/Gray)(*DateTime)... closer to ...(/DateTime)(*Gray)"
+      <color={gray}>"</color><color={haulable}>... closer to ...</color><color={gray}>"
 
-      A pawn will find the closest resource, which is sometimes awaiting delivery to storage near our job site. By doing that first, our pawn can grab extras.(/Gray)
+      A pawn will find the closest resource, which is sometimes awaiting delivery to storage near our job site. By doing that first, our pawn can grab extras.</color>
 
   - name: HaulBeforeCarry_EqualPriority
     value: |-
-      (*Gray)If a resource is already in storage, our pawn won't save a trip for a dedicated hauler, but can still grab extras that expedite their future work.(/Gray)
+      <color={gray}>If a resource is already in storage, our pawn won't save a trip for a dedicated hauler, but can still grab extras that expedite their future work.</color>
 
   - name: PickUpAndHaulPlus_LoadReport
     value: '{{ORIGINAL}}.'
@@ -445,19 +447,19 @@ keyed:
       - - |
           Pick Up And Haul
         - |
-          (*Gray)Pawns will unload once at each destination, in closest order.
+          <color={gray}>Pawns will unload once at each destination, in closest order.
           
-          Haulable destinations are cached to improve performance.(/Gray)
+          Haulable destinations are cached to improve performance.</color>
 
         - *opportunity_tab
         - ""
         - |
-          (*Gray)Gathering and unloading a pawn's entire inventory will never exceed the criteria for "opportunistic".(/Gray)
+          <color={gray}>Gathering and unloading a pawn's entire inventory will never exceed the criteria for "opportunistic".</color>
 
         - *haul_before_carry_tab
         - ""
         - |
-          (*Gray)Pawns hauling extra supplies or ingredients to closer storage will also grab non-resources.(/Gray)
+          <color={gray}>Pawns hauling extra supplies or ingredients to closer storage will also grab non-resources.</color>
 
   - name: Debug_CellOccupied
     value: Cell occupied
@@ -467,6 +469,7 @@ keyed:
 
   - name: Debug_Dropping
     value: Dropping
+
 
 settings:
   - name: Enabled
@@ -508,42 +511,42 @@ settings:
     title: Show advanced opportunity settings tab...
 
   - name: Opportunity_MaxStartToThing
-    title: (*ColonistCount)start(/ColonistCount)➡(*DateTime)haulable(/DateTime)
+    title: <color={start}>start</color>➡<color={haulable}>haulable</color>
     desc: |-
-      If ((*ColonistCount)start(/ColonistCount)➡(*DateTime)haulable(/DateTime)) exceeds this value, the haul is disqualified.
+      If (<color={start}>start</color>➡<color={haulable}>haulable</color>) exceeds this value, the haul is disqualified.
       
       "Start" is the pawn's starting location, 
       If a haulable is farther from the pawn's starting position than this, the haul is disqualified.
 
   - name: Opportunity_MaxStoreToJob
-    title: (*Name)storage(/Name)➡(*Threat)job(/Threat)
+    title: <color={storage}>storage</color>➡<color={job}>job</color>
     desc: |-
-      If ((*Name)storage(/Name)➡(*Threat)job(/Threat)) exceeds this value, the haul is disqualified.
+      If (<color={storage}>storage</color>➡<color={job}>job</color>) exceeds this value, the haul is disqualified.
       
       If a haulable's storage is farther from the pawn's ending position than this, the haul is disqualified.
 
   - name: Opportunity_MaxStartToThingPctOrigTrip
-    title: "(*ColonistCount)start(/ColonistCount)➡(*DateTime)haulable(/DateTime) : (*ColonistCount)start(/ColonistCount)➡(*Threat)job(/Threat)"
+    title: "<color={start}>start</color>➡<color={haulable}>haulable</color> : <color={start}>start</color>➡<color={job}>job</color>"
     desc: |-
-      If ((*ColonistCount)start(/ColonistCount)➡(*DateTime)haulable(/DateTime) / (*ColonistCount)start(/ColonistCount)➡(*Threat)job(/Threat)) exceeds this percentage, the haul is disqualified.
+      If (<color={start}>start</color>➡<color={haulable}>haulable</color> / <color={start}>start</color>➡<color={job}>job</color>) exceeds this percentage, the haul is disqualified.
 
   - name: Opportunity_MaxStoreToJobPctOrigTrip
-    title: "(*Name)storage(/Name)➡(*Threat)job(/Threat) : (*ColonistCount)start(/ColonistCount)➡(*Threat)job(/Threat)"
+    title: "<color={storage}>storage</color>➡<color={job}>job</color> : <color={start}>start</color>➡<color={job}>job</color>"
     desc: |-
-      If ((*Name)storage(/Name)➡(*Threat)job(/Threat) / (*ColonistCount)start(/ColonistCount)➡(*Threat)job(/Threat)) exceeds this percentage, the haul is disqualified.
+      If (<color={storage}>storage</color>➡<color={job}>job</color> / <color={start}>start</color>➡<color={job}>job</color>) exceeds this percentage, the haul is disqualified.
 
   - name: Opportunity_MaxNewLegsPctOrigTrip
-    title: "(*ColonistCount)start(/ColonistCount)➡(*DateTime)haulable(/DateTime) + (*Name)storage(/Name)➡(*Threat)job(/Threat) : (*ColonistCount)start(/ColonistCount)➡(*Threat)job(/Threat)"
+    title: "<color={start}>start</color>➡<color={haulable}>haulable</color> + <color={storage}>storage</color>➡<color={job}>job</color> : <color={start}>start</color>➡<color={job}>job</color>"
     desc: |-
       This is a ratio of the "additional legs" of the new trip to the original trip.
 
   - name: Opportunity_MaxTotalTripPctOrigTrip
-    title: "(*ColonistCount)start(/ColonistCount)➡(*DateTime)haulable(/DateTime)➡(*Name)storage(/Name)➡(*Threat)job(/Threat) : (*ColonistCount)start(/ColonistCount)➡(*Threat)job(/Threat)"
+    title: "<color={start}>start</color>➡<color={haulable}>haulable</color>➡<color={storage}>storage</color>➡<color={job}>job</color> : <color={start}>start</color>➡<color={job}>job</color>"
     desc: |-
       This is a ratio of the new trip to the original trip.
 
   - name: Opportunity_MaxStartToThingRegionLookCount
-    title: (*ColonistCount)start(/ColonistCount)➡(*DateTime)haulable(/DateTime)
+    title: <color={start}>start</color>➡<color={haulable}>haulable</color>
     desc: &region_look_count |-
       To understand this, enable [i]Development mode → inspector icon → Visibility → Draw Regions[/i].
 
@@ -553,7 +556,7 @@ settings:
       But in a completely open field, if a pawn must travel the distance of n=3 full-sized 12x12 regions (~36 tiles), the algorithm will explore 2(n^2+n)+1 or 25 regions.
 
   - name: Opportunity_MaxStoreToJobRegionLookCount
-    title: (*Name)storage(/Name)➡(*Threat)job(/Threat)
+    title: <color={storage}>storage</color>➡<color={job}>job</color>
     desc: *region_look_count
 
   - name: Opportunity_ToStockpiles
