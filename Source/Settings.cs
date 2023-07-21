@@ -62,23 +62,35 @@ partial class Mod
         }
     }
 
+    public class Listing_TreeModFilter : Listing_TreeNonThingFilter
+    {
+        public Listing_TreeModFilter(ModFilter filter, ModFilter parentFilter, IEnumerable<ThingDef> forceHiddenDefs,
+            IEnumerable<SpecialThingFilterDef> forceHiddenFilters, List<ThingDef> suppressSmallVolumeTags, QuickSearchFilter searchFilter) : base(
+            filter, parentFilter, forceHiddenDefs, forceHiddenFilters, suppressSmallVolumeTags, searchFilter) {
+        }
+    }
+
+    public class ModFilter : NonThingFilter
+    {
+    }
+
     public override void DoSettingsWindowContents(Rect inRect) => SettingsWindow.DoWindowContents(inRect);
 
     [StaticConstructorOnStartup]
     // Don't reference this except in DoSettingsWindowContents()! Referencing it early will trigger the static constructor before defs are loaded.
     public static class SettingsWindow
     {
-        static          Vector2                         opportunityScrollPosition;
-        static          Listing_SettingsTreeThingFilter opportunityTreeFilter;
-        static readonly QuickSearchFilter               opportunitySearchFilter = new();
-        static readonly QuickSearchWidget               opportunitySearchWidget = new();
-        static readonly SettingsThingFilter             opportunityDummyFilter  = new();
+        static          Vector2               opportunityScrollPosition;
+        static          Listing_TreeModFilter opportunityTreeFilter;
+        static readonly QuickSearchFilter     opportunitySearchFilter = new();
+        static readonly QuickSearchWidget     opportunitySearchWidget = new();
+        static readonly ModFilter             opportunityDummyFilter  = new();
 
-        static          Vector2                         hbcScrollPosition;
-        static          Listing_SettingsTreeThingFilter hbcTreeFilter;
-        static readonly QuickSearchFilter               hbcSearchFilter = new();
-        static readonly QuickSearchWidget               hbcSearchWidget = new();
-        static readonly SettingsThingFilter             hbcDummyFilter  = new();
+        static          Vector2               hbcScrollPosition;
+        static          Listing_TreeModFilter hbcTreeFilter;
+        static readonly QuickSearchFilter     hbcSearchFilter = new();
+        static readonly QuickSearchWidget     hbcSearchWidget = new();
+        static readonly ModFilter             hbcDummyFilter  = new();
 
         static readonly ThingCategoryDef storageBuildingCategoryDef;
         static readonly List<TabRecord>  tabsList = new(4);
@@ -86,10 +98,10 @@ partial class Mod
 
         static SettingsWindow() {
             // now that defs are loaded this will work
-            using (var context = new SettingsThingFilter_LoadingContext()) {
+            using (var context = new NonThingFilter_LoadingContext()) {
                 try {
-                    settings.opportunityBuildingFilter = ScribeExtractor.SaveableFromNode<SettingsThingFilter>(settings.opportunityBuildingFilterXmlNode, null);
-                    settings.hbcBuildingFilter         = ScribeExtractor.SaveableFromNode<SettingsThingFilter>(settings.hbcBuildingFilterXmlNode,         null);
+                    settings.opportunityBuildingFilter = ScribeExtractor.SaveableFromNode<ModFilter>(settings.opportunityBuildingFilterXmlNode, null);
+                    settings.hbcBuildingFilter         = ScribeExtractor.SaveableFromNode<ModFilter>(settings.hbcBuildingFilterXmlNode,         null);
                 } catch (Exception) {
                     context.Dispose(); // cancel error suppression before exception handling
                     throw;
@@ -117,11 +129,11 @@ partial class Mod
             ResetFilters();
 
             if (settings.opportunityBuildingFilter is null) {
-                settings.opportunityBuildingFilter = new SettingsThingFilter();
+                settings.opportunityBuildingFilter = new ModFilter();
                 settings.opportunityBuildingFilter?.CopyAllowancesFrom(settings.opportunityDefaultBuildingFilter);
             }
             if (settings.hbcBuildingFilter is null) {
-                settings.hbcBuildingFilter = new SettingsThingFilter();
+                settings.hbcBuildingFilter = new ModFilter();
                 settings.hbcBuildingFilter?.CopyAllowancesFrom(settings.hbcDefaultBuildingFilter);
             }
         }
@@ -258,7 +270,7 @@ partial class Mod
                     Widgets.BeginScrollView(filterRect, ref opportunityScrollPosition, filterFullRect);
                     if (settings.Opportunity_AutoBuildings)
                         opportunityDummyFilter.CopyAllowancesFrom(settings.opportunityDefaultBuildingFilter);
-                    opportunityTreeFilter = new Listing_SettingsTreeThingFilter(
+                    opportunityTreeFilter = new Listing_TreeModFilter(
                         settings.Opportunity_AutoBuildings ? opportunityDummyFilter : settings.opportunityBuildingFilter, null, null, null, null,
                         opportunitySearchFilter);
                     opportunityTreeFilter.Begin(filterFullRect);
@@ -343,7 +355,7 @@ partial class Mod
                     Widgets.BeginScrollView(filterRect, ref hbcScrollPosition, filterFullRect);
                     if (settings.HaulBeforeCarry_AutoBuildings)
                         hbcDummyFilter.CopyAllowancesFrom(settings.hbcDefaultBuildingFilter);
-                    hbcTreeFilter = new Listing_SettingsTreeThingFilter(
+                    hbcTreeFilter = new Listing_TreeModFilter(
                         settings.HaulBeforeCarry_AutoBuildings ? hbcDummyFilter : settings.hbcBuildingFilter, null, null, null, null,
                         hbcSearchFilter);
                     hbcTreeFilter.Begin(filterFullRect);
@@ -402,19 +414,19 @@ partial class Mod
 
         public int Opportunity_MaxStartToThingRegionLookCount, Opportunity_MaxStoreToJobRegionLookCount;
 
-        internal readonly SettingsThingFilter opportunityDefaultBuildingFilter = new();
-        internal          SettingsThingFilter opportunityBuildingFilter;
-        internal          XmlNode             opportunityBuildingFilterXmlNode;
+        internal readonly ModFilter opportunityDefaultBuildingFilter = new();
+        internal          ModFilter opportunityBuildingFilter;
+        internal          XmlNode   opportunityBuildingFilterXmlNode;
 
 
         public bool HaulBeforeCarry_Supplies, HaulBeforeCarry_Bills, HaulBeforeCarry_Bills_NeedsInitForCs, HaulBeforeCarry_ToEqualPriority, HaulBeforeCarry_ToStockpiles,
             HaulBeforeCarry_AutoBuildings;
 
-        internal readonly SettingsThingFilter hbcDefaultBuildingFilter = new();
-        internal          SettingsThingFilter hbcBuildingFilter;
-        internal          XmlNode             hbcBuildingFilterXmlNode;
-        public            SettingsThingFilter Opportunity_BuildingFilter     => Opportunity_AutoBuildings ? opportunityDefaultBuildingFilter : opportunityBuildingFilter;
-        public            SettingsThingFilter HaulBeforeCarry_BuildingFilter => HaulBeforeCarry_AutoBuildings ? hbcDefaultBuildingFilter : hbcBuildingFilter;
+        internal readonly ModFilter hbcDefaultBuildingFilter = new();
+        internal          ModFilter hbcBuildingFilter;
+        internal          XmlNode   hbcBuildingFilterXmlNode;
+        public            ModFilter Opportunity_BuildingFilter     => Opportunity_AutoBuildings ? opportunityDefaultBuildingFilter : opportunityBuildingFilter;
+        public            ModFilter HaulBeforeCarry_BuildingFilter => HaulBeforeCarry_AutoBuildings ? hbcDefaultBuildingFilter : hbcBuildingFilter;
 
         // we also manually call this to restore defaults and to set them before config file exists (Scribe.mode == LoadSaveMode.Inactive)
         public override void ExposeData() {
