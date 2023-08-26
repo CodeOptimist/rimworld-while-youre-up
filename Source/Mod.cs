@@ -79,8 +79,8 @@ namespace WhileYoureUp
         static readonly Harmony harmony = new(modId); // just a unique id
 
         public Mod(ModContentPack content) : base(content) {
-            mod       = this;  // static reference to mod for e.g. mod name in log messages
-            Gui.modId = modId; // setup for CodeOptimist library
+            mod           = this;  // static reference to mod for e.g. mod name in log messages
+            Gui.keyPrefix = modId; // setup for CodeOptimist library
 
             settings = GetSettings<Settings>(); // read settings from file
             if (!foundConfig)

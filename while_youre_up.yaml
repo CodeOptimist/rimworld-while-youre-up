@@ -30,12 +30,11 @@ intro: |-
   [b]Opportunistic hauling. Haul-to-inventory improvements (if [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1279012058]Pick Up And Haul[/url] is installed).[/b]
   A must-have with PUAH. Compatible with existing saves. Any load order.
 
-header: |-
-  [img]https&#58;//steamuserimages-a.akamaihd.net/ugc/2039614501967758556/E8A0F2430B67773F5A13F3ADD8077E9E1CB00AF9/?imw=5000&imh=5000&ima=fit&impolicy=Letterbox&imcolor=#000000&letterbox=false[/img]
+header: |
+  {is_steam?=[img]https&#58;//steamuserimages-a.akamaihd.net/ugc/2039614501967758556/E8A0F2430B67773F5A13F3ADD8077E9E1CB00AF9/?imw=5000&imh=5000&ima=fit&impolicy=Letterbox&imcolor=#000000&letterbox=false[/img]
   
-  [h1]Description[/h1]
-  {is_steam?=[img]https&#58;//i.imgur.com/neL6g6Q.png[/img]}
-  
+  [img]https&#58;//i.imgur.com/neL6g6Q.png[/img]
+  }
   Much of this mod is improving [i]Pick Up And Haul[/i] (optional; installed separately). If you already use PUAH, you want this mod too.
 
   "But my pawns are walking farther!"
@@ -45,9 +44,9 @@ footer: |-
   [h1]Compatibility[/h1]
   [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1561769193][i]Common Sense[/i][/url]? Yes. (I prevent incompatible settings from being on at the same time.)
   [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1617282896][i]LWM's Deep Storage[/i][/url]? Yes. But off by default for [i]Opportunities[/i] because storing items takes time.
-  [url=https://steamcommunity.com/sharedfiles/filedetails/?id=2341486509][i]Perfect Pathfinding[/i][/url]? I expect WYU's [i]Pathfinding[/i] setting to be compatible, but haven't tested.
+  [url=https://steamcommunity.com/sharedfiles/filedetails/?id=2341486509][i]Perfect Pathfinding[/i][/url]? Yes, both of our "Pathfind" settings should be compatible.
 
-  [i]@Modders:[/i] if you set [i]allowOpportunisticPrefix[/i] to [i]false[/i] for a JobDef, it won't allow opportunistic jobs. This is a vanilla feature.
+  [i]@Modders:[/i] You can set your JobDef to <allowOpportunisticPrefix>[i]true[/i]</...>. This is a vanilla feature.
 
 
   [h1]Performance[/h1]
@@ -64,82 +63,73 @@ footer: |-
   • Remember you can disable features without restarting.
 
 
-  [h1]Get It Fixed[/h1]
-  1. Please save a game when a bug occurs, then reload to verify it reoccurs.
-  2. Disable the mod from its own options menu - did the bug stop? If so...
-  3. [url={discord}]Send me[/url] your save ([i]Options → Open save data folder[/i]). (They zip much smaller.)
-  [b]I can now fix your bug in [i]days[/i] instead of [i]months[/i]! 🎉🥳[/b]
+  {fix.wyup}
 
 
   [h1]History[/h1]
   I intended to [url=https://gist.github.com/CodeOptimist/5a740dd803fc370ec43f22ffa8bc953d#file-utils-cs-L48]fork[/url] the original [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1544626521]While You're Up[/url], until I saw [url=https://github.com/CodeOptimist/rimworld-jobs-of-opportunity/blob/29391b0a075a1dd77d4788777b0137e26390328c/Source/Patch_TryOpportunisticJob.cs]RimWorld 1.0 added it[/url]. This mod improves vanilla's integration, and so is a spiritual successor to the original [i]While You're Up[/i] 💜.
 
+v1_0_0: |
+  [u]Opportunistic hauls[/u]
+  Vanilla has support for opportunities, but with limitations: haulable near your [b]start[/b] position, and storage near your job.
+  We prefer these, but drop them as requirements to include hauls along the path.
 
-features: !join
-  - "\n"
-  - - &v2_0_0 |-
-      [u][i]Pick Up And Haul+[/i]: Better unloading[/u]
-      We enhance all inventory hauling by unloading only once at each storage destination, in closest order.
-      We cache haulable destinations to improve performance.
+v1_1_0: |
+  We skip opportunities when bleeding or forming a caravan.
 
-    - "\n"
-    - &v1_0_0 |-
-      [u]Opportunistic hauls[/u]
-      Vanilla has support for opportunities, but with limitations: haulable near your [b]start[/b] position, and storage near your job.
-      We prefer these, but drop them as requirements to include hauls along the path.
-    - &v1_1_0 |-
-      We skip opportunities when bleeding or forming a caravan.
-    -
-    - |-
-      [i]Pick Up And Haul+[/i]
-    - &v1_4_0 |-
-      Modified to grab only surrounding things whose unload path is also opportunistic.
+v1_4_0: |
+  Modified to grab only surrounding things whose unload path is also opportunistic.
 
-    - "\n"
-    - |-
-      [u]Haul extra supplies & ingredients closer[/u]
-      If hauling resources to storage would bring them closer to their job, do that first (grabbing extra).
-      {is_steam?=
-      [i]Your builder will never again cross the map to retrieve a [b]single[/b] component.[/i]
+v2_0_0: |
+  [u][i]Pick Up And Haul+[/i]: Better unloading[/u]
+  We enhance all inventory hauling by unloading only once at each storage destination, in closest order.
+  We cache haulable destinations to improve performance.
 
-      [img]https&#58;//i.imgur.com/7O9IcfD.png[/img]
-      }
-    #       https://app.code2flow.com/flowcharts/5f56f00cadae889d9e80df8f
-    - |-
-      [i]Pick Up And Haul+[/i]
-    - &v3_0_0_hbc_puah |-
-      Modified to grab extra things headed to the same storage (when higher priority).
-      Grab extra supplies & ingredients headed to the same storage (when equal priority).
+v2_3_0: |
+  [u]Storage building filters for mod compatibility[/u]
+  Permit or deny for any storage building through settings, or leave automatically managed with mod updates.{is_steam?=
+  
+  [img]https&#58;//i.imgur.com/BIDFkJk.png[/img]
+  }
 
-    - "\n"
-    - &v2_3_0 |-
-      [u]Storage building filters for mod compatibility[/u]
-      Permit or deny for any storage building through settings, or leave automatically managed with mod updates.{is_steam?=
+v3_0_0: &v3_0_0 |-
+  
+  Modified to grab extra things headed to the same storage (when higher priority).
+  Grab extra supplies & ingredients headed to the same storage (when equal priority).
 
-      [img]https&#58;//i.imgur.com/BIDFkJk.png[/img]
-      }
+# https://app.code2flow.com/flowcharts/5f56f00cadae889d9e80df8f
+features: |-
+  {v2_0_0}
+  {v1_0_0}
+  {v1_1_0}
+  [i]Pick Up And Haul+[/i]
+  {v1_4_0}
+  [u]Haul extra supplies & ingredients closer[/u]
+  If hauling resources to storage would bring them closer to their job, do that first (grabbing extra).
+  {is_steam?=
+  [i]Your builder will never again cross the map to retrieve a [b]single[/b] component.[/i]
+
+  [img]https&#58;//i.imgur.com/7O9IcfD.png[/img]
+  }
+  [i]Pick Up And Haul+[/i]{v3_0_0}
+  
+  {v2_3_0}
 
 
 updates:
   - at: 1.0.0
-    desc: !join
-      - "\n"
-      - - *v1_0_0
-        - |-
+    desc: |-
+      {v1_0_0}
+      • Triggers [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1279012058][i]Mehni's[/i] Pick Up And Haul[/url].
 
-          • Triggers [url=https://steamcommunity.com/sharedfiles/filedetails/?id=1279012058][i]Mehni's[/i] Pick Up And Haul[/url].
-
-          Haul extra construction supplies closer
-          If hauling supplies to storage would bring them closer to their blueprint, do that first (grabbing extra).
+      Haul extra construction supplies closer
+      If hauling supplies to storage would bring them closer to their blueprint, do that first (grabbing extra).
 
   - at: 1.1.0
-    desc: !join
-      - "\n"
-      - - *v1_1_0
-        - |-
-
-          • Updated [i]Haul extra resources[/i]
-          Now works as expected: instead of denying the inefficient supply job so [i]some[/i] hauler [i]eventually[/i] hauls, the builder themselves will.
+    desc: |-
+      {v1_1_0}
+      • Updated [i]Haul extra resources[/i]
+      Now works as expected: instead of denying the inefficient supply job so [i]some[/i] hauler [i]eventually[/i] hauls, the builder themselves will.
 
   - at: 1.2.0
     desc: |-
@@ -149,11 +139,9 @@ updates:
       • Setting tooltips updated with detailed descriptions.
 
   - at: 1.4.0
-    desc: !join
-      - "\n"
-      - - |-
-          Pick Up And Haul+: Opportunities
-        - *v1_4_0
+    desc: |-
+      Pick Up And Haul+: Opportunities
+      {v1_4_0}
 
   - at: 1.5.0
     desc: |-
@@ -183,15 +171,12 @@ updates:
 
   - at: 2.0.0
     credit: Kellogg''s#0574
-    desc: !join
-      - "\n"
-      - - *v2_0_0
-        - |-
-
-          • [i]Haul extra resources[/i] will trigger more often:
-            - Fixed hauling from existing storage, not just un-stored.
-            - New [i]from same-priority storage[/i] setting.
-            - Checks closest storage (to destination, not thing) for closeness to destination.
+    desc: |-
+      {v2_0_0}
+      • [i]Haul extra resources[/i] will trigger more often:
+        - Fixed hauling from existing storage, not just un-stored.
+        - New [i]from same-priority storage[/i] setting.
+        - Checks closest storage (to destination, not thing) for closeness to destination.
 
   # wrapping issues in HugsLib news from e.g. "Prefix " instead of "Prefix"
   - at: 2.0.0
@@ -231,40 +216,33 @@ updates:
       • Clarity improvements to mod settings dialog.
 
   - at: 2.3.0
-    desc: !join
-      - "\n"
-      - - *v2_3_0
-        - |-
-
-          Skip opportunities when forming a caravan
+    desc: |-
+      {v2_3_0}
+      Skip opportunities when forming a caravan.
 
   - at: 3.0.0
-    desc: !join
-      - ""
-      - - |-
-          BUG FIXES & UI UPDATE
+    v3_0_0_nested: !join [ "\n    - ", !split [ "\n", *v3_0_0 ] ]
+    desc: |-
+      BUG FIXES & UI UPDATE
 
-          • Opportunities
-            - Now prefer storage (of highest priority) closest to job, not to thing.
-            - Added stockpile checkbox and building filters.
-            - New job report: "on the way to [TARGET]"
+      • Opportunities
+        - Now prefer storage (of highest priority) closest to job, not to thing.
+        - Added stockpile checkbox and building filters.
+        - New job report: "on the way to [TARGET]"
 
-          • Supplies & Ingredients
-            - Added stockpile checkbox.
-            - New job report: "closer to [TARGET]"
-        - "\n"
-        - "  - Pick Up And Haul+:"
-        - !join [ "\n    - ", [ ' ', !split [ "\n", *v3_0_0_hbc_puah ] ] ]
-        - "\n\n"
-        - |-
-          • Pick Up And Haul+:
-            - Fixed unloading storage choice to match calculation for haul.
-            - After closest storage, will unload by thing category like original PUAH.
-            - Improved performance by caching haulable destinations.
+      • Supplies & Ingredients
+        - Added stockpile checkbox.
+        - New job report: "closer to [TARGET]"
+         - Pick Up And Haul+:{v3_0_0_nested}
+      
+      • Pick Up And Haul+:
+        - Fixed unloading storage choice to match calculation for haul.
+        - After closest storage, will unload by thing category like original PUAH.
+        - Improved performance by caching haulable destinations.
 
-          • Redesigned settings dialog.
-          • Put job strings in XML for easier translation.
-          • Many code quality improvements that made all of this much easier.
+      • Redesigned settings dialog.
+      • Put job strings in XML for easier translation.
+      • Many code quality improvements that made all of this much easier.
 
   - at: 3.0.1
     desc: |-
@@ -302,7 +280,7 @@ updates:
   - at: 3.1.4
     desc: |-
       • Fixed [i]Haul extra supplies[/i] to check incapable of [i]dumb labor[/i] etc.
-      (Like [i]opportunities[/i] and [i]ingredients[/i].)
+        (Like [i]opportunities[/i] and [i]ingredients[/i].)
 
   - at: 3.2.0
     desc: |-
@@ -369,122 +347,78 @@ storage:  '#d09b61' # light orange
 gray:     '#999999'
 
 
-keyed:
-  - name: PickUpAndHaul_Missing
-    value: Pick Up And Haul is not installed
+keys:
+  - PickUpAndHaul_Missing: Pick Up And Haul is not installed
+  - PickUpAndHaul_Tooltip: PUAH is optional, but will be enhanced if installed.
 
-  - name: PickUpAndHaul_Tooltip
-    value: PUAH is optional, but will be enhanced if installed.
+  - Opportunity_LoadReport: '{{ORIGINAL}} on the way to {{DESTINATION}}.'
+  - Opportunity_UnloadReport: 'Efficiently {{ORIGINAL}}, on the way to {{DESTINATION}}.'
+  - HaulBeforeCarry_LoadReport: '{{ORIGINAL}}, headed closer to {{DESTINATION}}.'
+  - HaulBeforeCarry_UnloadReport: 'Efficiently {{ORIGINAL}}, closer to {{DESTINATION}}.'
+  - PickUpAndHaulPlus_LoadReport: '{{ORIGINAL}}.'
+  - PickUpAndHaulPlus_UnloadReport: 'Efficiently {{ORIGINAL}}.'
 
-  - name: Opportunity_LoadReport
-    value: '{{ORIGINAL}} on the way to {{DESTINATION}}.'
-
-  - name: Opportunity_UnloadReport
-    value: 'Efficiently {{ORIGINAL}}, on the way to {{DESTINATION}}.'
-
-  - name: Opportunity_Tab
-    value: &opportunity_tab Hauls of Opportunity
-
-  - name: Opportunity_Intro
-    value: |-
+  - Opportunity_Tab: Hauls of Opportunity
+  - Opportunity_Intro: |-
       <color={gray}>"</color><color={haulable}>... on the way to ...</color><color={gray}>"
 
       Hauling on the way to a job is a vanilla feature, hence generally compatible with all mods. Some storage mods use delays, so are disallowed by default.
 
       We skip opportunities when bleeding or forming a caravan.</color>
 
-  - name: OpportunityAdvanced_Tab
-    value: Advanced Settings
-
-  - name: OpportunityAdvanced_Text1
-    value: |
+  - OpportunityAdvanced_Tab: Advanced Settings
+  - OpportunityAdvanced_Text1: |
       Vanilla, Default, Pathfinding<color={gray}>: Maximum distance ratios (see tooltips).</color>
 
-  - name: OpportunityAdvanced_Text2
-    value: |
+  - OpportunityAdvanced_Text2: |
       Vanilla<color={gray}>: Maximum distances/ratios to limit opportunities in exchange for performance.</color>
       Default, Pathfinding<color={gray}>: Soft limits used as a performance heuristic.</color>
 
-  - name: OpportunityAdvanced_Text3
-    value: |
+  - OpportunityAdvanced_Text3: |
       Vanilla only<color={gray}>: Maximum region-look count (faster than pathfinding but variable distance—see tooltip).</color>
 
-  - name: HaulBeforeCarry_LoadReport
-    value: '{{ORIGINAL}}, headed closer to {{DESTINATION}}.'
-
-  - name: HaulBeforeCarry_UnloadReport
-    value: 'Efficiently {{ORIGINAL}}, closer to {{DESTINATION}}.'
-
-  - name: HaulBeforeCarry_Tab
-    value: &haul_before_carry_tab Supplies & Ingredients
-
-  - name: HaulBeforeCarry_Intro
-    value: |-
+  - HaulBeforeCarry_Tab: Supplies & Ingredients
+  - HaulBeforeCarry_Intro: |-
       <color={gray}>"</color><color={haulable}>... closer to ...</color><color={gray}>"
 
       A pawn will find the closest resource, which is sometimes awaiting delivery to storage near our job site. By doing that first, our pawn can grab extras.</color>
-
-  - name: HaulBeforeCarry_EqualPriority
-    value: |-
+  - HaulBeforeCarry_EqualPriority: |-
       <color={gray}>If a resource is already in storage, our pawn won't save a trip for a dedicated hauler, but can still grab extras that expedite their future work.</color>
 
-  - name: PickUpAndHaulPlus_LoadReport
-    value: '{{ORIGINAL}}.'
-
-  - name: PickUpAndHaulPlus_UnloadReport
-    value: 'Efficiently {{ORIGINAL}}.'
-
-  - name: PickUpAndHaulPlus_Tab
-    value: Pick Up And Haul+
-
-  - name: PickUpAndHaulPlus_Text1
-    value: |-
+  - PickUpAndHaulPlus_Tab: Pick Up And Haul+
+  - PickUpAndHaulPlus_Text1: |-
       Enhancements & Integrations
+  - PickUpAndHaulPlus_Text2: |-
+      Pick Up And Haul
+      
+      <color={gray}>Pawns will unload once at each destination, in closest order.
+      
+      Haulable destinations are cached to improve performance.</color>
+      
+      {Opportunity_Tab}
+      
+      <color={gray}>Gathering and unloading a pawn's entire inventory will never exceed the criteria for "opportunistic".</color>
+      
+      {HaulBeforeCarry_Tab}
+      
+      <color={gray}>Pawns hauling extra supplies or ingredients to closer storage will also grab non-resources.</color>
 
-  - name: PickUpAndHaulPlus_Text2
-    value: !join
-      - "\n"
-      - - |
-          Pick Up And Haul
-        - |
-          <color={gray}>Pawns will unload once at each destination, in closest order.
-          
-          Haulable destinations are cached to improve performance.</color>
-
-        - *opportunity_tab
-        - ""
-        - |
-          <color={gray}>Gathering and unloading a pawn's entire inventory will never exceed the criteria for "opportunistic".</color>
-
-        - *haul_before_carry_tab
-        - ""
-        - |
-          <color={gray}>Pawns hauling extra supplies or ingredients to closer storage will also grab non-resources.</color>
-
-  - name: Debug_CellOccupied
-    value: Cell occupied
-
-  - name: Debug_TooFar
-    value: Too far
-
-  - name: Debug_Dropping
-    value: Dropping
+  - Debug_CellOccupied: Cell occupied
+  - Debug_TooFar: Too far
+  - Debug_Dropping: Dropping
 
 
-settings:
-  - name: Enabled
-    title: Enabled
-    desc: |-
+  # settings
+  - Label_Enabled: Enabled
+  - Tooltip_Enabled: |-
       Toggle entire mod without restarting.
       Useful for troubleshooting.
 
-  - name: UsePickUpAndHaulPlus
-    title: Use & improve Pick Up And Haul
-    desc: Details in tab when enabled.
+  - Label_UsePickUpAndHaulPlus: Use & improve Pick Up And Haul
+  - Tooltip_UsePickUpAndHaulPlus: Details in tab when enabled.
 
-  - name: DrawSpecialHauls
-    title: Draw colored path detours
-    desc: |-
+  - Label_DrawSpecialHauls: Draw colored path detours
+  - Tooltip_DrawSpecialHauls: |-
       Original job paths are red, new opportunistic paths are green.
 
       Original ingredient/supply paths are magenta, new optimal paths are cyan.
@@ -493,61 +427,50 @@ settings:
 
       (This is sync'd to vanilla's [i]Development mode → inspector icon → Visibility → Draw Opportunistic Jobs[/i].)
 
-  - name: Opportunity_PathChecker
-    title: Path checking
-    desc: |-
+  - Label_Opportunity_PathChecker: Path checking
+  - Tooltip_Opportunity_PathChecker: |-
       Our default is performant, but impassable walls and locked doors are ignored until a final check—which means no opportunity if it fails. These circumstances are less common with an open base.
       
       "Pathfind during search" is slow, but guaranteed to find an opportunity if it exists. Recommended for small colonies, fast machines, or those desperate for hauls in a mountain base.
 
-  - name: Opportunity_PathChecker_Vanilla
-    title: "Within ranges & region count (vanilla)\nFPS: ★★★★  Opportunities: ★☆☆☆"
-  - name: Opportunity_PathChecker_Default
-    title: "Pathfind once after search (default)\nFPS: ★★★☆  Opportunities: ★★★☆"
-  - name: Opportunity_PathChecker_Pathfinding
-    title: "Pathfind during search\nFPS: ★☆☆☆  Opportunities: ★★★★"
+  - Label_Opportunity_PathChecker_Vanilla: "Within ranges & region count (vanilla)\nFPS: ★★★★  Opportunities: ★☆☆☆"
+  - Label_Opportunity_PathChecker_Default: "Pathfind once after search (default)\nFPS: ★★★☆  Opportunities: ★★★☆"
+  - Label_Opportunity_PathChecker_Pathfinding: "Pathfind during search\nFPS: ★☆☆☆  Opportunities: ★★★★"
 
-  - name: Opportunity_TweakVanilla
-    title: Show advanced opportunity settings tab...
+  - Label_Opportunity_TweakVanilla: Show advanced opportunity settings tab...
+  - Tooltip_Opportunity_TweakVanilla: ~
 
-  - name: Opportunity_MaxStartToThing
-    title: <color={start}>start</color>➡<color={haulable}>haulable</color>
-    desc: |-
+  - Label_Opportunity_MaxStartToThing: <color={start}>start</color>➡<color={haulable}>haulable</color>
+  - Tooltip_Opportunity_MaxStartToThing: |-
       If (<color={start}>start</color>➡<color={haulable}>haulable</color>) exceeds this value, the haul is disqualified.
       
       "Start" is the pawn's starting location, 
       If a haulable is farther from the pawn's starting position than this, the haul is disqualified.
 
-  - name: Opportunity_MaxStoreToJob
-    title: <color={storage}>storage</color>➡<color={job}>job</color>
-    desc: |-
+  - Label_Opportunity_MaxStoreToJob: <color={storage}>storage</color>➡<color={job}>job</color>
+  - Tooltip_Opportunity_MaxStoreToJob: |-
       If (<color={storage}>storage</color>➡<color={job}>job</color>) exceeds this value, the haul is disqualified.
       
       If a haulable's storage is farther from the pawn's ending position than this, the haul is disqualified.
 
-  - name: Opportunity_MaxStartToThingPctOrigTrip
-    title: "<color={start}>start</color>➡<color={haulable}>haulable</color> : <color={start}>start</color>➡<color={job}>job</color>"
-    desc: |-
+  - Label_Opportunity_MaxStartToThingPctOrigTrip: "<color={start}>start</color>➡<color={haulable}>haulable</color> : <color={start}>start</color>➡<color={job}>job</color>"
+  - Tooltip_Opportunity_MaxStartToThingPctOrigTrip: |-
       If (<color={start}>start</color>➡<color={haulable}>haulable</color> / <color={start}>start</color>➡<color={job}>job</color>) exceeds this percentage, the haul is disqualified.
 
-  - name: Opportunity_MaxStoreToJobPctOrigTrip
-    title: "<color={storage}>storage</color>➡<color={job}>job</color> : <color={start}>start</color>➡<color={job}>job</color>"
-    desc: |-
+  - Label_Opportunity_MaxStoreToJobPctOrigTrip: "<color={storage}>storage</color>➡<color={job}>job</color> : <color={start}>start</color>➡<color={job}>job</color>"
+  - Tooltip_Opportunity_MaxStoreToJobPctOrigTrip: |-
       If (<color={storage}>storage</color>➡<color={job}>job</color> / <color={start}>start</color>➡<color={job}>job</color>) exceeds this percentage, the haul is disqualified.
 
-  - name: Opportunity_MaxNewLegsPctOrigTrip
-    title: "<color={start}>start</color>➡<color={haulable}>haulable</color> + <color={storage}>storage</color>➡<color={job}>job</color> : <color={start}>start</color>➡<color={job}>job</color>"
-    desc: |-
+  - Label_Opportunity_MaxNewLegsPctOrigTrip: "<color={start}>start</color>➡<color={haulable}>haulable</color> + <color={storage}>storage</color>➡<color={job}>job</color> : <color={start}>start</color>➡<color={job}>job</color>"
+  - Tooltip_Opportunity_MaxNewLegsPctOrigTrip: |-
       This is a ratio of the "additional legs" of the new trip to the original trip.
 
-  - name: Opportunity_MaxTotalTripPctOrigTrip
-    title: "<color={start}>start</color>➡<color={haulable}>haulable</color>➡<color={storage}>storage</color>➡<color={job}>job</color> : <color={start}>start</color>➡<color={job}>job</color>"
-    desc: |-
+  - Label_Opportunity_MaxTotalTripPctOrigTrip: "<color={start}>start</color>➡<color={haulable}>haulable</color>➡<color={storage}>storage</color>➡<color={job}>job</color> : <color={start}>start</color>➡<color={job}>job</color>"
+  - Tooltip_Opportunity_MaxTotalTripPctOrigTrip: |-
       This is a ratio of the new trip to the original trip.
 
-  - name: Opportunity_MaxStartToThingRegionLookCount
-    title: <color={start}>start</color>➡<color={haulable}>haulable</color>
-    desc: &region_look_count |-
+  - Label_Opportunity_MaxStartToThingRegionLookCount: <color={start}>start</color>➡<color={haulable}>haulable</color>
+  - Tooltip_Opportunity_MaxStartToThingRegionLookCount: |-
       To understand this, enable [i]Development mode → inspector icon → Visibility → Draw Regions[/i].
 
       Exploration begins from the start region spreading out to all neighbors until encountering the destination region. This setting caps the total number explored - even those in the wrong direction.
@@ -555,27 +478,26 @@ settings:
       It can't be calculated perfectly from distance, as regions will vary in size and neighbors. (A corridor has only forward and back, so they're explored further.)
       But in a completely open field, if a pawn must travel the distance of n=3 full-sized 12x12 regions (~36 tiles), the algorithm will explore 2(n^2+n)+1 or 25 regions.
 
-  - name: Opportunity_MaxStoreToJobRegionLookCount
-    title: <color={storage}>storage</color>➡<color={job}>job</color>
-    desc: *region_look_count
+  - Label_Opportunity_MaxStoreToJobRegionLookCount: <color={storage}>storage</color>➡<color={job}>job</color>
+  - Tooltip_Opportunity_MaxStoreToJobRegionLookCount: "{Tooltip_Opportunity_MaxStartToThingRegionLookCount}"
 
-  - name: Opportunity_ToStockpiles
-    title: &to_stockpiles Stockpiles
+  - Label_Opportunity_ToStockpiles: Stockpiles
+  - Tooltip_Opportunity_ToStockpiles: ~
 
-  - name: Opportunity_AutoBuildings
-    title: &auto_buildings Edit manually (won't update with mod)
+  - Label_Opportunity_AutoBuildings: Edit manually (won't update with mod)
+  - Tooltip_Opportunity_AutoBuildings: ~
 
-  - name: HaulBeforeCarry_Supplies
-    title: Haul extra construction supplies closer
+  - Label_HaulBeforeCarry_Supplies: Haul extra construction supplies closer
+  - Tooltip_HaulBeforeCarry_Supplies: ~
 
-  - name: HaulBeforeCarry_Bills
-    title: Haul extra bill ingredients closer
+  - Label_HaulBeforeCarry_Bills: Haul extra bill ingredients closer
+  - Tooltip_HaulBeforeCarry_Bills: ~
 
-  - name: HaulBeforeCarry_ToEqualPriority
-    title: Haul extra resources closer from same-priority storage
+  - Label_HaulBeforeCarry_ToEqualPriority: Haul extra resources closer from same-priority storage
+  - Tooltip_HaulBeforeCarry_ToEqualPriority: ~
 
-  - name: HaulBeforeCarry_ToStockpiles
-    title: *to_stockpiles
+  - Label_HaulBeforeCarry_ToStockpiles: "{Label_Opportunity_ToStockpiles}"
+  - Tooltip_HaulBeforeCarry_ToStockpiles: ~
 
-  - name: HaulBeforeCarry_AutoBuildings
-    title: *auto_buildings
+  - Label_HaulBeforeCarry_AutoBuildings: "{Label_Opportunity_AutoBuildings}"
+  - Tooltip_HaulBeforeCarry_AutoBuildings: ~
