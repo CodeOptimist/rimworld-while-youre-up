@@ -104,7 +104,7 @@ namespace WhileYoureUp
                 }
             }
         }
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static bool AmBleeding(Pawn pawn) => pawn.health.hediffSet.BleedRateTotal > 0.001f;
     }

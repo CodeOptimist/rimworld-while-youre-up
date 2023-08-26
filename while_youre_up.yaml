@@ -94,7 +94,7 @@ v2_3_0: |
 
 v3_0_0: &v3_0_0 |-
   
-  Modified to grab extra things headed to the same storage (when higher priority).
+  Modified to grab extra things headed to the same storage (when higher priority) unless bleeding.
   Grab extra supplies & ingredients headed to the same storage (when equal priority).
 
 # https://app.code2flow.com/flowcharts/5f56f00cadae889d9e80df8f
@@ -341,7 +341,12 @@ updates:
 
   - at: 4.0.4
     desc: |-
-      • Fixed an oversight in my handling of [i]Common Sense[/i] compatibility that could cause a pawn to loop while "Efficiently unloading".
+      • Fixed an oversight in the handling of [i]Common Sense[/i] mod compatibility that caused pawns to loop while "Efficiently unloading".
+      
+      • Bleeding pawns will no longer haul extra [i][b]non[/b]-resources[/i] "closer to" a job.
+      (Described in the [i]Pick Up And Haul+[/i] tab in mod settings.)
+      
+      If willing, please report issues immediately via Discord link here ↗ or in Mods menu.
 
 
 start:    '#dcffaf' # light green
@@ -405,7 +410,7 @@ keys:
       
       {HaulBeforeCarry_Tab}
       
-      <color={gray}>Pawns hauling extra supplies or ingredients to closer storage will also grab non-resources.</color>
+      <color={gray}>Pawns hauling extra supplies or ingredients to closer storage will also grab non-resources, unless bleeding.</color>
 
   - Debug_CellOccupied: Cell occupied
   - Debug_TooFar: Too far
