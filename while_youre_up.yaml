@@ -339,6 +339,10 @@ updates:
     desc: |-
       (June 26th) Fixed error when pathfinding to an animal's inventory.
 
+  - at: 4.0.4
+    desc: |-
+      • Fixed an oversight in my handling of [i]Common Sense[/i] compatibility that could cause a pawn to loop while "Efficiently unloading".
+
 
 start:    '#dcffaf' # light green
 haulable: '#87f6f6' # light blue

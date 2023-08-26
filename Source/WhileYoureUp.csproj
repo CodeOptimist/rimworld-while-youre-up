@@ -6,7 +6,7 @@
         <Copyright>Copyright © 2020-$([System.DateTime]::Now.Year) Christopher Galpin</Copyright>
         <MinutesSinceEpoch>$([System.DateTime]::UtcNow.Subtract($([System.DateTime]::MinValue)).TotalMinutes)</MinutesSinceEpoch>
         <Revision>$([System.Math]::Truncate($([System.Decimal]::Remainder($(MinutesSinceEpoch), 10000))))</Revision>
-        <Version>4.0.3.$(Revision)</Version>
+        <Version>4.0.4.$(Revision)</Version>
         <PublicizeAsReferenceAssemblies>false</PublicizeAsReferenceAssemblies>
         <RimWorldAssemblyPath>$(MsBuildProgramFiles32)\Steam\steamapps\common\RimWorld\RimWorldWin64_Data\Managed\</RimWorldAssemblyPath>
         <Nullable>warnings</Nullable>

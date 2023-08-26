@@ -39,25 +39,29 @@ partial class Mod
             return AccessTools.DeclaredMethod(typeof(Dialog_ModSettings), nameof(Dialog_ModSettings.DoWindowContents));
         }
 
-        [HarmonyPostfix]
-        static void CheckCommonSenseSetting(object __instance) {
-            var curMod = SettingsCurModField.GetValue(__instance);
+        static Verse.Mod csMod;
 
-            if (settings.HaulBeforeCarry_Bills && haveCommonSense && (bool)CsField_Settings_HaulingOverBills.GetValue(null)) {
-                var csMod = LoadedModManager.GetMod(CsType_CommonSense);
-                if (curMod == mod) {
-                    CsField_Settings_HaulingOverBills.SetValue(null, false);
-                    csMod.WriteSettings();
-                    Messages.Message(
-                        $"[{mod.Content.Name}] Unticked setting in CommonSense: \"haul ingredients for a bill\". (Can't use both.)", MessageTypeDefOf.SilentInput, false);
-                } else if (curMod == csMod) {
-                    settings.HaulBeforeCarry_Bills = false;
-                    //mod.WriteSettings(); // no save because we handle it best on loading
-                    Messages.Message(
-                        $"[{mod.Content.Name}] Unticked setting in While You're Up: \"Haul extra bill ingredients closer\". (Can't use both.)",
-                        MessageTypeDefOf.SilentInput,
-                        false);
-                }
+        [HarmonyPostfix]
+        static void CheckCommonSenseSetting(object __instance) { // :ResolveCsConflict
+            if (!haveCommonSense) return;
+            if (!settings.HaulBeforeCarry_Bills) return;
+            if (!(bool)CsField_Settings_HaulingOverBills.GetValue(null)) return;
+
+            csMod ??= LoadedModManager.GetMod(CsType_CommonSense);
+
+            var curMod = SettingsCurModField.GetValue(__instance);
+            if (curMod == mod) {
+                CsField_Settings_HaulingOverBills.SetValue(null, false);
+                csMod.WriteSettings();
+                Messages.Message(
+                    $"[{mod.Content.Name}] Unticked setting in CommonSense: \"haul ingredients for a bill\". (Can't use both.)",
+                    MessageTypeDefOf.SilentInput, false);
+            } else if (curMod == csMod) {
+                settings.HaulBeforeCarry_Bills = false;
+                //mod.WriteSettings(); // no save because we handle it best on loading
+                Messages.Message(
+                    $"[{mod.Content.Name}] Unticked setting in While You're Up: \"Haul extra bill ingredients closer\". (Can't use both.)",
+                    MessageTypeDefOf.SilentInput, false);
             }
         }
     }
@@ -97,7 +101,20 @@ partial class Mod
         static          Tab              tab      = Tab.Opportunity;
 
         static SettingsWindow() {
-            // now that defs are loaded this will work
+            // `ExposeData()` (`LoadingVars`) runs late enough, but only if config file exists
+            // so we handle this here; thanks to `[StaticConstructorOnStartup]` mods are loaded
+            if (haveCommonSense) { // :ResolveCsConflict
+                // we'll fix things here on load, but not actually write the settings
+                //  (unless settings dialog is opened and closed)
+                if (settings.HaulBeforeCarry_Bills_NeedsInitForCs) {
+                    CsField_Settings_HaulingOverBills.SetValue(null, false);
+                    settings.HaulBeforeCarry_Bills                = true;
+                    settings.HaulBeforeCarry_Bills_NeedsInitForCs = false;
+                } else if ((bool)CsField_Settings_HaulingOverBills.GetValue(null))
+                    settings.HaulBeforeCarry_Bills = false;
+            }
+
+            // thanks to `[StaticConstructorOnStartup]` defs are loaded
             using (var context = new NonThingFilter_LoadingContext()) {
                 try {
                     settings.opportunityBuildingFilter = ScribeExtractor.SaveableFromNode<ModFilter>(settings.opportunityBuildingFilterXmlNode, null);
@@ -430,7 +447,8 @@ partial class Mod
 
         // we also manually call this to restore defaults and to set them before config file exists (Scribe.mode == LoadSaveMode.Inactive)
         public override void ExposeData() {
-            foundConfig = true;
+            if (Scribe.mode != LoadSaveMode.Inactive)
+                foundConfig = true;
 
             void Look<T>(ref T value, string label, T defaultValue) {
                 if (Scribe.mode == LoadSaveMode.Inactive)
@@ -473,17 +491,6 @@ partial class Mod
 
             if (Scribe.mode is LoadSaveMode.LoadingVars or LoadSaveMode.Saving)
                 DebugViewSettings.drawOpportunisticJobs = DrawSpecialHauls;
-
-            if (Scribe.mode == LoadSaveMode.LoadingVars) {
-                if (haveCommonSense) {
-                    if (HaulBeforeCarry_Bills_NeedsInitForCs) {
-                        CsField_Settings_HaulingOverBills.SetValue(null, false);
-                        HaulBeforeCarry_Bills                = true;
-                        HaulBeforeCarry_Bills_NeedsInitForCs = false;
-                    } else if ((bool)CsField_Settings_HaulingOverBills.GetValue(null))
-                        HaulBeforeCarry_Bills = false;
-                }
-            }
         }
     }
 }
